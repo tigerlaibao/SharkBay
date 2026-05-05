@@ -1,0 +1,142 @@
+import { describe, expect, it } from "vitest";
+import { readProjectDetail } from "../src/main/harness-reader.js";
+import { agentHandoffReason, displayGateStatus, preferredInitialCandidate, projectNeedsUserAction, resolveSelectedCandidate, userActionReason } from "../src/renderer/workflow.js";
+import {
+  createSelfHostFixture,
+  makeTempRoot,
+  missingWorkflowDetailSurfaces,
+  workflowArtifactKeys,
+  workflowDetailSurfaces,
+} from "./helpers.js";
+
+describe("renderer workflow contracts", () => {
+  it("covers the detail data surfaces expected by the self-hosting workflow", async () => {
+    const root = await makeTempRoot("renderer-detail");
+    const repo = await createSelfHostFixture(root);
+    const detail = await readProjectDetail(repo, "manifest", { configuredRoots: [root] });
+
+    expect(workflowDetailSurfaces).toEqual([
+      "overview",
+      "queue",
+      "current-task-artifacts",
+      "recent-decisions",
+      "harness-errors",
+      "runner-lifecycle",
+      "revisions",
+      "url-editor",
+      "prompt",
+    ]);
+    expect(Object.keys(detail.currentTask ?? {}).sort()).toEqual([...workflowArtifactKeys].sort());
+    expect(missingWorkflowDetailSurfaces(detail)).toEqual([]);
+  });
+
+  it("flags missing detail surfaces with stable helper labels", async () => {
+    const root = await makeTempRoot("renderer-missing-detail");
+    const repo = await createSelfHostFixture(root);
+    const detail = await readProjectDetail(repo, "manifest", { configuredRoots: [root] });
+
+    expect(missingWorkflowDetailSurfaces({ ...detail, currentTask: null })).toEqual([
+      "current-task-artifacts",
+      "prompt",
+    ]);
+  });
+
+  it("uses stable display gate fallbacks for active workflow tasks", () => {
+    expect(displayGateStatus({ activeTask: { taskId: "t-003", phase: "coding" } })).toBe("pending");
+    expect(displayGateStatus({ activeTask: { taskId: "t-003", phase: "blocked" } })).toBe("blocked");
+    expect(displayGateStatus({ activeTask: { taskId: "t-003", phase: "blocked", gateStatus: "unknown" } })).toBe("blocked");
+    expect(displayGateStatus({ activeTask: { taskId: "t-002", phase: "done" } })).toBe("pass");
+    expect(displayGateStatus({ gateStatus: "unknown", activeTask: { taskId: "t-003", phase: "coding" } })).toBe("pending");
+    expect(displayGateStatus({ gateStatus: "blocked", activeTask: { taskId: "t-003", phase: "coding" } })).toBe("blocked");
+    expect(displayGateStatus({ activeTask: { taskId: "t-003", phase: "coding", gateStatus: "pass" } })).toBe("pass");
+    expect(displayGateStatus({ activeTask: null })).toBe("unknown");
+  });
+
+  it("separates urgent user action from agent handoff state", () => {
+    expect(projectNeedsUserAction({ activeTask: null })).toBe(false);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "done" } })).toBe(false);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "done" }, gateStatus: "pass" })).toBe(false);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-010", phase: "intake", status: "active" } })).toBe(false);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "spec" } })).toBe(false);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" } })).toBe(false);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "design_review" } })).toBe(false);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "code_review" } })).toBe(false);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "verification" } })).toBe(false);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "running" } })).toBe(false);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "stale" } })).toBe(true);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "waiting_for_human", reason: "Choose a path" } })).toBe(true);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "blocked", reason: "Missing token" } })).toBe(true);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "blocked" } })).toBe(true);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, gateStatus: "blocked" })).toBe(true);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding", requiresUserAction: true } })).toBe(true);
+    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding", userActionReason: "Review generated prompt" } })).toBe(true);
+    expect(userActionReason({ activeTask: { taskId: "t-010", phase: "intake", status: "active" } })).toBeNull();
+    expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "intake", status: "active" } })).toBe("Agent handoff needed");
+    expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "coding" }, runner: { status: "unknown" } })).toBe("Agent handoff needed");
+    expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "coding" }, runner: { status: "running" } })).toBeNull();
+    expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "coding" }, runner: { status: "stale" } })).toBeNull();
+    expect(userActionReason({ activeTask: { taskId: "t-009", phase: "coding", requiresUserAction: true, userActionReason: "Approve deploy" } })).toBe("Approve deploy");
+    expect(userActionReason({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "waiting_for_human", reason: "Approve design" } })).toBe("Approve design");
+  });
+
+  it("resolves selected managed projects even when scan candidates are incomplete", () => {
+    const nestedProject = {
+      id: "/workspace/Container/Nested",
+      name: "Nested",
+      path: "/workspace/Container/Nested",
+      detection: "manifest" as const,
+      repoUrl: null,
+      currentBranch: "main",
+      dirtyWorktree: false,
+      activeTask: null,
+      localUrl: null,
+      testUrl: null,
+      deploymentUrl: null,
+    };
+    const candidates = [
+      {
+        id: "/workspace/Container",
+        name: "Container",
+        path: "/workspace/Container",
+        rootPath: "/workspace",
+        status: "not_setup" as const,
+        managedProjectId: null,
+        detection: null,
+      },
+    ];
+
+    const selected = resolveSelectedCandidate(candidates, new Map([[nestedProject.id, nestedProject]]), nestedProject.id);
+    expect(selected).toEqual(
+      expect.objectContaining({
+        id: nestedProject.id,
+        status: "managed",
+        managedProjectId: nestedProject.id,
+      }),
+    );
+  });
+
+  it("prefers managed projects for the initial selection", () => {
+    const notSetup = {
+      id: "/workspace/Plain",
+      name: "Plain",
+      path: "/workspace/Plain",
+      rootPath: "/workspace",
+      status: "not_setup" as const,
+      managedProjectId: null,
+      detection: null,
+    };
+    const managed = {
+      id: "/workspace/Managed",
+      name: "Managed",
+      path: "/workspace/Managed",
+      rootPath: "/workspace",
+      status: "managed" as const,
+      managedProjectId: "/workspace/Managed",
+      detection: "manifest" as const,
+    };
+
+    expect(preferredInitialCandidate([notSetup, managed])).toBe(managed);
+    expect(preferredInitialCandidate([notSetup])).toBe(notSetup);
+    expect(preferredInitialCandidate([])).toBeNull();
+  });
+});

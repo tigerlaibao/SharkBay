@@ -1,0 +1,69 @@
+# Product
+
+## 1. Background and Terms
+
+SharkBay is a macOS local app for managing AI-assisted software projects. It starts with local projects that have SharkBay's Ripple files installed: a file-based project memory and task protocol under `.agent/`, `docs/`, and `tasks/`. The project exists because switching between many AI sessions and repositories makes it hard to see what each project is doing, what phase each task is in, and what evidence exists for review or verification.
+
+SharkBay is also its own first managed project. This repository is the SharkBay product codebase, and it uses the same `.agent/`, `docs/`, and `tasks/` harness files that SharkBay will later read from other configured projects.
+
+Key terms:
+
+| Term | Meaning |
+| --- | --- |
+| Managed project | A local project SharkBay can read and display |
+| Ripple files | SharkBay's `.agent/`, `docs/`, and `tasks/` project memory files |
+| Scan root | A local parent directory SharkBay scans for managed projects |
+| Phase | The current lifecycle step for a task, such as `spec`, `design`, `coding`, or `verification` |
+| Gate | A quality condition required before a task can advance |
+| Evidence | Logs, command output, screenshots, traces, or scripts proving verification happened |
+
+## 2. Product Summary
+
+| Item | Value |
+| --- | --- |
+| One-line positioning | A macOS workbench for local AI coding projects |
+| Target users | Developers managing multiple local repos with Codex or similar coding agents |
+| Core workflow | Scan user-configured roots, inspect managed project/task state, create new managed projects, and generate next-action prompts |
+| Value proposition | Reduce session switching by making project state, phase, gates, URLs, and verification evidence visible in one place |
+| First managed project | SharkBay itself |
+
+## 3. User Problems
+
+| User | Problem | Current workaround | Desired outcome |
+| --- | --- | --- | --- |
+| Solo developer | Too many AI sessions and repos to track mentally | Manually switch windows and read chats | One dashboard shows project/task state |
+| Solo developer | AI says work is done without durable evidence | Search terminal/chat history | Verification evidence is saved and visible |
+| Solo developer | New project setup repeats the same Ripple file boilerplate | Copy files manually | Create a managed project from templates |
+| Solo developer | Unsure what to ask Codex next | Reconstruct state from memory | Generate a next-action prompt from task state |
+
+## 4. Functional Scope
+
+| Priority | Feature | Description | Acceptance Criteria |
+| --- | --- | --- | --- |
+| P0 | Project workbench | Make Projects the primary view | User sees managed projects, status, current task, links, and next action before low-frequency settings |
+| P0 | Scan root management | Keep directory access in Settings | User can add/remove scan roots without the main workbench being dominated by setup controls |
+| P0 | Project scanning | Scan configured local directories for managed projects | Finds repos with `.agent/manifest.json`; falls back to `.agent/protocol.md` |
+| P0 | Directory safety boundary | Manage only user-configured directories | App does not scan or modify arbitrary filesystem locations outside configured roots |
+| P0 | Project detail | Show queue, active task, lifecycle artifacts, and evidence | User can inspect task files without leaving the app |
+| P0 | New managed project wizard | Create a new project directory from bundled templates | Writes `AGENTS.md`, `.agent/`, `docs/`, `tasks/`, and machine-readable JSON |
+| P1 | Next-action prompt | Generate a prompt for Codex to advance a selected task | Prompt references repo path, task id, phase, and protocol |
+| P1 | URL tracking | Store local, test, and deployment URLs | URLs appear in project dashboard and detail view |
+| P1 | Ordinary folder discovery | Show all direct child folders under scan roots | User can see projects that are not managed yet and start one-click Ripple setup |
+| P2 | Direct Codex invocation | Advance tasks from the UI through Codex CLI/MCP | Requires explicit user approval and visible logs |
+
+## 5. Non-Goals
+
+- Multi-user collaboration in the first version.
+- Cloud sync in the first version.
+- Billing, accounts, or permissions.
+- Remote code execution.
+- Autonomous long-running background execution before the read-only dashboard and prompt generation are stable.
+
+## 6. Risks
+
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| Markdown parsing is brittle | Dashboard may misread state | Use JSON mirrors as primary machine-readable state |
+| Direct agent invocation is risky | Unintended file edits or long-running commands | Start with prompt generation; add execution later behind approval |
+| Local filesystem access differs by platform | Scanning may fail | Start on macOS/local paths; isolate filesystem access behind a service |
+| Scope expands into a full project management suite | MVP slows down | Keep v0 focused on local managed projects and task lifecycle visibility |

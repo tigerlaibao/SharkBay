@@ -1,0 +1,34 @@
+{
+  "name": "sharkbay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A local macOS control panel for harness-enabled AI-assisted repositories.",
+  "type": "module",
+  "main": "dist-electron/electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite --host 127.0.0.1\" \"tsc -p tsconfig.node.json --watch --preserveWatchOutput\" \"wait-on tcp:5173 dist-electron/electron/main.js && electron .\"",
+    "typecheck": "tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "lint": "npm run typecheck",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.node.json && vite build"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.67",
+    "@types/react-dom": "^18.2.22",
+    "concurrently": "^8.2.2",
+    "electron": "^29.1.0",
+    "typescript": "^5.4.2",
+    "vite": "^5.1.6",
+    "vitest": "^1.4.0",
+    "wait-on": "^7.2.0"
+  },
+  "engines": {
+    "node": ">=20.11"
+  }
+}
