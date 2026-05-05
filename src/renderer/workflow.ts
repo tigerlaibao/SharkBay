@@ -214,6 +214,31 @@ export function projectToCandidate(project: WorkflowProjectSummary): WorkflowPro
   };
 }
 
+export function projectSummaryFromDetail<
+  T extends {
+    queue?: unknown;
+    currentTask?: unknown;
+    taskArtifacts?: unknown;
+    recentDecisions?: unknown;
+    gitHistory?: unknown;
+    development?: unknown;
+    revisions?: unknown;
+  },
+>(detail: T): Omit<T, "queue" | "currentTask" | "taskArtifacts" | "recentDecisions" | "gitHistory" | "development" | "revisions"> {
+  const {
+    queue: _queue,
+    currentTask: _currentTask,
+    taskArtifacts: _taskArtifacts,
+    recentDecisions: _recentDecisions,
+    gitHistory: _gitHistory,
+    development: _development,
+    revisions: _revisions,
+    ...summary
+  } = detail;
+
+  return summary;
+}
+
 export function resolveSelectedCandidate(
   candidates: WorkflowProjectCandidate[],
   projectsById: Map<string, WorkflowProjectSummary>,

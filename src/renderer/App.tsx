@@ -17,7 +17,7 @@ import type {
   UpdateProjectUrlsInput,
   UpdateProjectUrlsResult,
 } from "./types";
-import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectToCandidate, resolveSelectedCandidate, userActionReason } from "./workflow";
+import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, userActionReason } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailMode = "overview" | "settings" | "decisions" | "git" | "task";
@@ -488,7 +488,13 @@ export function App() {
     }
 
     try {
-      setDetail(await getProjectDetail(project));
+      const nextDetail = await getProjectDetail(project);
+      setDetail(nextDetail);
+      setProjects((currentProjects) =>
+        currentProjects.map((currentProject) =>
+          currentProject.id === nextDetail.id ? projectSummaryFromDetail(nextDetail) : currentProject,
+        ),
+      );
     } catch (error) {
       if (showToast || setBusy) {
         setToast({ tone: "error", message: asMessage(error) });

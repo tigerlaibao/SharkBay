@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readProjectDetail } from "../src/main/harness-reader.js";
-import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, resolveSelectedCandidate, userActionReason } from "../src/renderer/workflow.js";
+import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, resolveSelectedCandidate, userActionReason } from "../src/renderer/workflow.js";
 import {
   createSelfHostFixture,
   makeTempRoot,
@@ -152,5 +152,58 @@ describe("renderer workflow contracts", () => {
     expect(preferredInitialCandidate([notSetup, managed])).toBe(managed);
     expect(preferredInitialCandidate([notSetup])).toBe(notSetup);
     expect(preferredInitialCandidate([])).toBeNull();
+  });
+
+  it("projects fresh detail status back into the list summary shape", () => {
+    const detail = {
+      id: "/workspace/AIGF",
+      name: "AIGF",
+      path: "/workspace/AIGF",
+      detection: "manifest" as const,
+      repoUrl: null,
+      currentBranch: "main",
+      dirtyWorktree: true,
+      activeTask: {
+        taskId: "t-007-character-explorer-upgrade",
+        title: "Character explorer upgrade",
+        phase: "done",
+        status: "done",
+        priority: 2,
+        gateStatus: "pass" as const,
+        requiresUserAction: false,
+        userActionReason: null,
+      },
+      runner: null,
+      localUrl: null,
+      testUrl: null,
+      deploymentUrl: null,
+      errors: [],
+      queue: { active: [], backlog: [], done: [] },
+      currentTask: null,
+      taskArtifacts: {},
+      recentDecisions: [],
+      gitHistory: [],
+      development: null,
+      revisions: { manifest: "1", state: "2", queue: "3" },
+    };
+
+    expect(projectSummaryFromDetail(detail)).toEqual({
+      id: "/workspace/AIGF",
+      name: "AIGF",
+      path: "/workspace/AIGF",
+      detection: "manifest",
+      repoUrl: null,
+      currentBranch: "main",
+      dirtyWorktree: true,
+      activeTask: expect.objectContaining({
+        taskId: "t-007-character-explorer-upgrade",
+        phase: "done",
+      }),
+      runner: null,
+      localUrl: null,
+      testUrl: null,
+      deploymentUrl: null,
+      errors: [],
+    });
   });
 });
