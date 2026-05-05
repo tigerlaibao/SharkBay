@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readProjectDetail } from "../src/main/harness-reader.js";
-import { agentHandoffReason, displayGateStatus, preferredInitialCandidate, projectNeedsUserAction, resolveSelectedCandidate, userActionReason } from "../src/renderer/workflow.js";
+import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, resolveSelectedCandidate, userActionReason } from "../src/renderer/workflow.js";
 import {
   createSelfHostFixture,
   makeTempRoot,
@@ -76,6 +76,19 @@ describe("renderer workflow contracts", () => {
     expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "coding" }, runner: { status: "unknown" } })).toBe("Agent handoff needed");
     expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "coding" }, runner: { status: "running" } })).toBeNull();
     expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "coding" }, runner: { status: "stale" } })).toBeNull();
+    expect(agentHandoffReason({
+      activeTask: { taskId: "t-006", phase: "done" },
+      queue: {
+        backlog: [{ taskId: "t-007", phase: "backlog", status: "backlog", dependsOn: ["t-006"] }],
+        done: [{ taskId: "t-006", phase: "done", status: "done" }],
+      },
+    })).toBe("Agent handoff needed");
+    expect(nextReadyBacklogTask({
+      queue: {
+        backlog: [{ taskId: "t-008", phase: "backlog", status: "backlog", dependsOn: ["t-007"] }],
+        done: [{ taskId: "t-006", phase: "done", status: "done" }],
+      },
+    })).toBeNull();
     expect(userActionReason({ activeTask: { taskId: "t-009", phase: "coding", requiresUserAction: true, userActionReason: "Approve deploy" } })).toBe("Approve deploy");
     expect(userActionReason({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "waiting_for_human", reason: "Approve design" } })).toBe("Approve design");
   });

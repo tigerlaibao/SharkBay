@@ -17,7 +17,7 @@ import type {
   UpdateProjectUrlsInput,
   UpdateProjectUrlsResult,
 } from "./types";
-import { agentHandoffReason, displayGateStatus, preferredInitialCandidate, projectNeedsUserAction, projectToCandidate, resolveSelectedCandidate, userActionReason } from "./workflow";
+import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectToCandidate, resolveSelectedCandidate, userActionReason } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailMode = "overview" | "settings" | "decisions" | "git" | "task";
@@ -217,7 +217,12 @@ async function createHarnessRepo(input: CreateHarnessRepoInput): Promise<CreateH
   });
 }
 
-async function generatePrompt(project: ProjectDetail): Promise<string> {
+type PromptTask = {
+  taskId?: string | null;
+  phase?: string | null;
+};
+
+async function generatePrompt(project: ProjectDetail, task?: PromptTask | null): Promise<string> {
   const bridge = getBridge();
   const handler = bridge.prompts?.nextAction ?? bridge.generateNextActionPrompt;
 
@@ -229,8 +234,8 @@ async function generatePrompt(project: ProjectDetail): Promise<string> {
     project,
     projectId: project.id,
     repoPath: project.path,
-    taskId: project.activeTask?.taskId,
-    phase: project.activeTask?.phase,
+    taskId: task?.taskId ?? project.activeTask?.taskId,
+    phase: task?.phase ?? project.activeTask?.phase,
     requiredChecks: workflowRequiredChecks,
     stopConditions: workflowStopConditions,
   });
@@ -275,6 +280,13 @@ function activeTaskTitle(project: ProjectSummary | ProjectDetail | null): string
   }
 
   return !isEmptyValue(task.title) ? task.title ?? null : task.taskId;
+}
+
+function promptTaskForDetail(detail: ProjectDetail): PromptTask | null {
+  if (hasMeaningfulActiveTask(detail.activeTask) && detail.activeTask.phase?.trim().toLowerCase() !== "done") {
+    return detail.activeTask;
+  }
+  return nextReadyBacklogTask(detail);
 }
 
 function compareQueueItems(a: TaskQueueItem, b: TaskQueueItem): number {
@@ -1140,10 +1152,10 @@ function ProjectDetailPane({
   const hasDecisions = Boolean(detailLike.recentDecisions?.length);
   const hasGitHistory = Boolean(detailLike.gitHistory?.length || detailLike.currentBranch);
   const hasDiagnostics = projectHasDiagnostics(detailLike);
-  const hasActiveTask = hasMeaningfulActiveTask(detailLike.activeTask);
   const actionReason = userActionReason(detailLike);
   const handoffReason = agentHandoffReason(detailLike);
   const promptReason = actionReason ?? handoffReason;
+  const promptTask = promptTaskForDetail(detailLike);
 
   useEffect(() => {
     setDetailMode("overview");
@@ -1220,7 +1232,7 @@ function ProjectDetailPane({
         </div>
       </div>
 
-      {hasActiveTask && promptReason ? <PromptPanel detail={detailLike} reason={promptReason} setToast={setToast} /> : null}
+      {promptReason && promptTask ? <PromptPanel detail={detailLike} reason={promptReason} task={promptTask} setToast={setToast} /> : null}
       <QueueTabs
         detail={detailLike}
         onSelectTask={(taskId) => {
@@ -1547,7 +1559,7 @@ function QueueItem({ item, isCurrent, onSelect }: { item: TaskQueueItem; isCurre
   );
 }
 
-function PromptPanel({ detail, reason, setToast }: { detail: ProjectDetail; reason: string | null; setToast: (toast: Toast) => void }) {
+function PromptPanel({ detail, reason, task, setToast }: { detail: ProjectDetail; reason: string | null; task: PromptTask; setToast: (toast: Toast) => void }) {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [copyState, setCopyState] = useState<CopyState>("idle");
@@ -1555,14 +1567,14 @@ function PromptPanel({ detail, reason, setToast }: { detail: ProjectDetail; reas
   useEffect(() => {
     setPrompt("");
     setCopyState("idle");
-  }, [detail.id, detail.activeTask?.taskId, detail.activeTask?.phase, reason]);
+  }, [detail.id, task.taskId, task.phase, reason]);
 
   async function loadPrompt() {
     setLoading(true);
     setCopyState("idle");
 
     try {
-      setPrompt(await generatePrompt(detail));
+      setPrompt(await generatePrompt(detail, task));
     } catch (error) {
       setToast({ tone: "error", message: asMessage(error) });
     } finally {

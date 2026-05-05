@@ -22,6 +22,10 @@ export type WorkflowProjectSummary = {
 
 export type GateStatusCandidate = {
   gateStatus?: GateStatus | null;
+  queue?: {
+    backlog?: QueueTaskCandidate[];
+    done?: QueueTaskCandidate[];
+  } | null;
   runner?: {
     status?: RunnerStatus | string | null;
     reason?: string | null;
@@ -36,6 +40,14 @@ export type GateStatusCandidate = {
     requiresUserAction?: boolean | null;
     userActionReason?: string | null;
   } | null;
+};
+
+export type QueueTaskCandidate = {
+  taskId?: string | null;
+  title?: string | null;
+  phase?: string | null;
+  status?: string | null;
+  dependsOn?: string[] | null;
 };
 
 const humanInterventionPhases = new Set(["blocked", "approval_required", "waiting_for_user", "user_action_required"]);
@@ -104,20 +116,33 @@ export function userActionReason(project: GateStatusCandidate): string | null {
 
 export function agentHandoffReason(project: GateStatusCandidate): string | null {
   const activeTask = project.activeTask;
-  if (!activeTask?.taskId || activeTask.phase?.trim().toLowerCase() === "done") {
-    return null;
+  if (activeTask?.taskId && activeTask.phase?.trim().toLowerCase() !== "done") {
+    if (userActionReason(project)) {
+      return null;
+    }
+    const runnerStatus = normalizeRunnerStatus(project.runner?.status);
+    if (runnerStatus === "running") {
+      return null;
+    }
+    if (!runnerStatus && taskIsRunning(activeTask)) {
+      return null;
+    }
+    return "Agent handoff needed";
   }
-  if (userActionReason(project)) {
-    return null;
-  }
-  const runnerStatus = normalizeRunnerStatus(project.runner?.status);
-  if (runnerStatus === "running") {
-    return null;
-  }
-  if (!runnerStatus && taskIsRunning(activeTask)) {
-    return null;
-  }
-  return "Agent handoff needed";
+
+  return nextReadyBacklogTask(project) ? "Agent handoff needed" : null;
+}
+
+export function nextReadyBacklogTask(project: GateStatusCandidate): QueueTaskCandidate | null {
+  const doneTaskIds = new Set((project.queue?.done ?? []).flatMap((item) => normalizeTaskId(item.taskId) ?? []));
+  return (project.queue?.backlog ?? []).find((item) => {
+    const taskId = normalizeTaskId(item.taskId);
+    if (!taskId) return false;
+    const phase = item.phase?.trim().toLowerCase();
+    const status = item.status?.trim().toLowerCase();
+    if (phase === "done" || status === "done") return false;
+    return (item.dependsOn ?? []).every((dependency) => doneTaskIds.has(dependency));
+  }) ?? null;
 }
 
 function normalizeUserActionReason(value: string | null | undefined): string | null {
@@ -128,6 +153,11 @@ function normalizeUserActionReason(value: string | null | undefined): string | n
 function taskIsRunning(task: NonNullable<GateStatusCandidate["activeTask"]>): boolean {
   const status = task.status?.trim().toLowerCase();
   return Boolean(status && runningTaskStatuses.has(status));
+}
+
+function normalizeTaskId(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }
 
 function runnerUserActionReason(project: GateStatusCandidate): string | null {

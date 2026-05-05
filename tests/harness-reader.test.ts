@@ -230,6 +230,65 @@ describe("harness reader", () => {
     expect(detail.errors.some((error) => error.file.endsWith("runner.json"))).toBe(true);
   });
 
+  it("uses task status files to override stale queue and state mirrors", async () => {
+    const root = await makeTempRoot("reader-stale-queue");
+    const repo = await createHarnessFixture(root, "StaleQueueRepo");
+
+    await writeJson(path.join(repo, ".agent", "queue.json"), {
+      schemaVersion: 1,
+      updatedAt: "2026-05-05",
+      active: [],
+      backlog: [
+        {
+          priority: 2,
+          taskId: "t-006-interactive-product-finder",
+          title: "Interactive product finder",
+          dependsOn: ["t-005-community-interaction-ui"],
+          status: "backlog",
+        },
+      ],
+      done: [
+        {
+          taskId: "t-005-community-interaction-ui",
+          title: "Community interaction UI",
+          status: "done",
+          phase: "done",
+          dependsOn: [],
+        },
+      ],
+    });
+    await writeJson(path.join(repo, ".agent", "state.json"), {
+      schemaVersion: 1,
+      project: {},
+      currentTask: { taskId: "t-005-community-interaction-ui", phase: "done" },
+      recentDecisions: [],
+    });
+    await writeText(path.join(repo, "tasks", "t-006-interactive-product-finder", "status.md"), `# Task Status
+
+## Metadata
+
+| Field | Value |
+| --- | --- |
+| Task ID | \`t-006-interactive-product-finder\` |
+| Title | Interactive product finder |
+| Priority | 2 |
+| Phase | implementation |
+| Depends On | \`t-005-community-interaction-ui\` |
+
+## Current Gate
+
+| Gate | Status | Notes |
+| --- | --- | --- |
+| Implementation | pending | In progress. |
+`);
+
+    const detail = await readProjectDetail(repo, "manifest", { configuredRoots: [root] });
+    expect(detail.activeTask?.taskId).toBe("t-006-interactive-product-finder");
+    expect(detail.activeTask?.phase).toBe("implementation");
+    expect(detail.queue.active.map((item) => item.taskId)).toContain("t-006-interactive-product-finder");
+    expect(detail.queue.backlog.map((item) => item.taskId)).not.toContain("t-006-interactive-product-finder");
+  });
+
   it("rejects symlinked harness JSON and unsafe task ids during detail reads", async () => {
     const root = await makeTempRoot("reader-symlink");
     const repo = await createHarnessFixture(root, "SymlinkRepo");

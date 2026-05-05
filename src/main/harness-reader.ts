@@ -84,8 +84,8 @@ export async function readProjectDetail(
   const runner = await readRunnerMetadata(repoPath, configuredRoots, errors);
 
   const queue = normalizeQueue(queueJson.data);
-  const activeTask = normalizeActiveTask(queue, state.data);
-  const visibleQueue = options.includeArtifacts === false ? queue : await mergeTaskDirectoryQueue(repoPath, containingRoot, configuredRoots, queue, errors);
+  const visibleQueue = await mergeTaskDirectoryQueue(repoPath, containingRoot, configuredRoots, queue, errors);
+  const activeTask = normalizeActiveTask(visibleQueue, state.data);
   const urls = readUrls(state.ok, state.data, manifest.data);
   const name = readProjectName(manifest.data, repoPath);
   const repoUrl = readRepoUrl(state.data) || readRepoUrl(manifest.data) || git.githubUrl;
@@ -278,21 +278,77 @@ async function mergeTaskDirectoryQueue(
   const discovered = await readTaskDirectoryItems(repoPath, containingRoot, configuredRoots, errors);
   if (!discovered.length) return queue;
 
+  const discoveredById = new Map(discovered.map((item) => [item.taskId, item]));
   const next: Record<QueueSection, TaskQueueItem[]> = {
-    active: [...queue.active],
-    backlog: [...queue.backlog],
-    done: [...queue.done],
+    active: [],
+    backlog: [],
+    done: [],
   };
-  const seen = new Set(Object.values(next).flat().map((item) => item.taskId));
+  const seen = new Set<string>();
+  const doneTaskIds = new Set(queue.done.map((item) => item.taskId));
+
+  for (const item of Object.values(queue).flat()) {
+    const statusItem = discoveredById.get(item.taskId);
+    const merged = statusItem ? mergeQueueStatusItem(item, statusItem) : item;
+    const section = queueSectionForTask(merged, doneTaskIds);
+    next[section].push(merged);
+    if (section === "done") {
+      doneTaskIds.add(merged.taskId);
+    }
+    seen.add(merged.taskId);
+  }
 
   for (const item of discovered) {
     if (seen.has(item.taskId)) continue;
     seen.add(item.taskId);
-    const section = item.phase === "done" ? "done" : item.phase === "blocked" ? "active" : "backlog";
+    const section = queueSectionForTask(item, doneTaskIds);
     next[section].push(item);
+    if (section === "done") {
+      doneTaskIds.add(item.taskId);
+    }
   }
 
   return next;
+}
+
+function mergeQueueStatusItem(queueItem: TaskQueueItem, statusItem: TaskQueueItem): TaskQueueItem {
+  return {
+    ...queueItem,
+    source: statusItem.source,
+    taskId: statusItem.taskId,
+    title: statusItem.title === statusItem.taskId ? queueItem.title : statusItem.title,
+    phase: statusItem.phase === "unknown" ? queueItem.phase : statusItem.phase,
+    status: statusItem.phase === "unknown" ? queueItem.status : statusItem.status,
+    priority: statusItem.priority ?? queueItem.priority,
+    dependsOn: statusItem.dependsOn.length ? statusItem.dependsOn : queueItem.dependsOn,
+  };
+}
+
+function queueSectionForTask(item: TaskQueueItem, doneTaskIds: Set<string>): QueueSection {
+  const phase = item.phase.trim().toLowerCase();
+  const status = item.status.trim().toLowerCase();
+  if (phase === "done" || status === "done") return "done";
+  if (phase === "backlog" || status === "backlog" || phase === "todo" || phase === "not_started") return "backlog";
+  if (item.dependsOn.some((taskId) => !doneTaskIds.has(taskId))) return "backlog";
+  return isActiveTaskPhase(phase) ? "active" : "backlog";
+}
+
+function isActiveTaskPhase(phase: string): boolean {
+  return [
+    "intake",
+    "spec",
+    "design",
+    "design_review",
+    "design_revision",
+    "contract",
+    "coding",
+    "implementation",
+    "code_review",
+    "code_revision",
+    "verification",
+    "docs_update",
+    "blocked",
+  ].includes(phase);
 }
 
 async function readTaskDirectoryItems(
@@ -352,7 +408,7 @@ function queueItemFromStatusMarkdown(directoryName: string, statusMarkdown: stri
     taskId,
     title,
     phase,
-    status: phase === "done" ? "done" : "task-dir",
+    status: phase === "done" ? "done" : phase,
     priority: Number.isFinite(priority) ? priority : undefined,
     dependsOn: readDependsOn(readStatusField(statusMarkdown, "Depends On")),
     source: "tasks-directory",
