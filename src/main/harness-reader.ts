@@ -521,8 +521,8 @@ function readRecentDecisions(state: unknown): RecentDecision[] {
   if (!isRecord(state) || !Array.isArray(state.recentDecisions)) return [];
   return state.recentDecisions.flatMap((item) => {
     if (!isRecord(item)) return [];
-    if (typeof item.date !== "string" || typeof item.decision !== "string" || typeof item.source !== "string") return [];
-    return [{ date: item.date, decision: item.decision, source: item.source }];
+    if (typeof item.date !== "string" || typeof item.decision !== "string") return [];
+    return [{ date: item.date, decision: item.decision, source: typeof item.source === "string" ? item.source : "" }];
   });
 }
 

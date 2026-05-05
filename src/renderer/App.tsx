@@ -1760,7 +1760,7 @@ function DecisionItems({ decisions, limit }: { decisions: ProjectDetail["recentD
     <div className="decision-list">
       {visible.map((decision) => (
         <div className="decision-item" key={`${decision.date}-${decision.source}-${decision.decision}`}>
-          <div className="decision-meta">{decision.source}</div>
+          {decision.source ? <div className="decision-meta">{decision.source}</div> : null}
           <div>{decision.decision}</div>
           <div className="history-time" title={formatHistoryTime(decision.date)}>
             {formatRelativeTime(decision.date)}

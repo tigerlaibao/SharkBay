@@ -30,6 +30,32 @@ describe("harness reader", () => {
     expect(detail.runner.status).toBe("unknown");
   });
 
+  it("keeps recent decisions when source metadata is omitted", async () => {
+    const root = await makeTempRoot("reader-decisions");
+    const repo = await createHarnessFixture(root, "DecisionRepo");
+    await writeJson(path.join(repo, ".agent", "state.json"), {
+      schemaVersion: 1,
+      updatedAt: "2026-05-05",
+      project: {},
+      currentTask: { taskId: "t-001-fixture", phase: "done", nextAction: "Done.", blockedBy: [] },
+      recentDecisions: [
+        {
+          date: "2026-05-05",
+          decision: "Keep compact character filters.",
+        },
+      ],
+    });
+
+    const detail = await readProjectDetail(repo, "manifest");
+    expect(detail.recentDecisions).toEqual([
+      {
+        date: "2026-05-05",
+        decision: "Keep compact character filters.",
+        source: "",
+      },
+    ]);
+  });
+
   it("normalizes section-specific queue shorthand and adds task directory fallback rows", async () => {
     const root = await makeTempRoot("reader-queue-shorthand");
     const repo = await createHarnessFixture(root, "QueueShorthandRepo");
