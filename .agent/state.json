@@ -19,7 +19,7 @@
     "testUrl": "unknown"
   },
   "currentTask": {
-    "taskId": "t-011-runner-lifecycle-heartbeat",
+    "taskId": "t-013-task-detail-drilldown",
     "phase": "done",
     "nextAction": "Ready for the next task.",
     "blockedBy": []
@@ -399,6 +399,16 @@
       "date": "2026-05-05T21:55:00+08:00",
       "decision": "Completed t-011-runner-lifecycle-heartbeat with separate runner lifecycle metadata, Needs Action semantics, and protocol guidance.",
       "source": "tasks/t-011-runner-lifecycle-heartbeat/status.md"
+    },
+    {
+      "date": "2026-05-05T22:49:00+08:00",
+      "decision": "Fixed task list visibility by matching SharkBay's queue reader to section-specific harness queue rules and adding read-only task directory fallback rows.",
+      "source": "tasks/t-012-task-directory-queue-fallback/status.md"
+    },
+    {
+      "date": "2026-05-05T23:00:00+08:00",
+      "decision": "Moved task artifacts out of the default project overview and added a full-column task drilldown from the Tasks list.",
+      "source": "tasks/t-013-task-detail-drilldown/status.md"
     }
   ],
   "openQuestions": []

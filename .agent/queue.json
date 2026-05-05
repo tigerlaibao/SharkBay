@@ -122,6 +122,28 @@
       ],
       "status": "done",
       "completedAt": "2026-05-05"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-012-task-directory-queue-fallback",
+      "title": "Show task directories when queue metadata is incomplete",
+      "phase": "done",
+      "dependsOn": [
+        "t-011-runner-lifecycle-heartbeat"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-05"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-013-task-detail-drilldown",
+      "title": "Task detail drilldown in project sidebar",
+      "phase": "done",
+      "dependsOn": [
+        "t-012-task-directory-queue-fallback"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-05"
     }
   ]
 }

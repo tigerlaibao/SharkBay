@@ -20,7 +20,7 @@ import type {
 import { agentHandoffReason, displayGateStatus, preferredInitialCandidate, projectNeedsUserAction, projectToCandidate, resolveSelectedCandidate, userActionReason } from "./workflow";
 
 type View = "dashboard" | "settings";
-type DetailMode = "overview" | "settings" | "decisions" | "git";
+type DetailMode = "overview" | "settings" | "decisions" | "git" | "task";
 
 type Toast = {
   tone: "info" | "error" | "success";
@@ -1134,6 +1134,7 @@ function ProjectDetailPane({
   onDetailRefresh: (project?: ProjectSummary | null) => Promise<void>;
 }) {
   const [detailMode, setDetailMode] = useState<DetailMode>("overview");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const resolved = detail?.id === project.id ? detail : project;
   const detailLike = resolved as ProjectDetail;
   const hasDecisions = Boolean(detailLike.recentDecisions?.length);
@@ -1146,6 +1147,7 @@ function ProjectDetailPane({
 
   useEffect(() => {
     setDetailMode("overview");
+    setSelectedTaskId(null);
   }, [project.id]);
 
   if (detailMode === "settings") {
@@ -1185,6 +1187,19 @@ function ProjectDetailPane({
     );
   }
 
+  if (detailMode === "task" && selectedTaskId) {
+    return (
+      <TaskDetailPage
+        detail={detailLike}
+        taskId={selectedTaskId}
+        onBack={() => {
+          setDetailMode("overview");
+          setSelectedTaskId(null);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="detail-layout">
       <div className="detail-header">
@@ -1206,8 +1221,13 @@ function ProjectDetailPane({
       </div>
 
       {hasActiveTask && promptReason ? <PromptPanel detail={detailLike} reason={promptReason} setToast={setToast} /> : null}
-      <ArtifactViewer detail={detailLike} />
-      <QueueTabs detail={detailLike} />
+      <QueueTabs
+        detail={detailLike}
+        onSelectTask={(taskId) => {
+          setSelectedTaskId(taskId);
+          setDetailMode("task");
+        }}
+      />
 
       {hasDecisions || hasGitHistory ? (
         <div className="history-grid">
@@ -1450,7 +1470,7 @@ function UrlEditor({
   );
 }
 
-function QueueTabs({ detail }: { detail: ProjectDetail }) {
+function QueueTabs({ detail, onSelectTask }: { detail: ProjectDetail; onSelectTask: (taskId: string) => void }) {
   const activeTaskId = hasMeaningfulActiveTask(detail.activeTask) ? detail.activeTask.taskId : null;
   const seen = new Set<string>();
   const items = (["active", "backlog", "done"] as const)
@@ -1493,14 +1513,19 @@ function QueueTabs({ detail }: { detail: ProjectDetail }) {
       </div>
       <div className="queue-list">
         {sortedItems.map((item) => (
-          <QueueItem isCurrent={item.taskId === activeTaskId} item={item} key={`${item.taskId}-${item.phase ?? item.status ?? "task"}`} />
+          <QueueItem
+            isCurrent={item.taskId === activeTaskId}
+            item={item}
+            key={`${item.taskId}-${item.phase ?? item.status ?? "task"}`}
+            onSelect={() => onSelectTask(item.taskId)}
+          />
         ))}
       </div>
     </section>
   );
 }
 
-function QueueItem({ item, isCurrent }: { item: TaskQueueItem; isCurrent: boolean }) {
+function QueueItem({ item, isCurrent, onSelect }: { item: TaskQueueItem; isCurrent: boolean; onSelect: () => void }) {
   const status = !isEmptyValue(item.status) ? item.status : null;
   const phase = !isEmptyValue(item.phase) ? item.phase : status;
   const title = !isEmptyValue(item.title) ? item.title : null;
@@ -1510,7 +1535,7 @@ function QueueItem({ item, isCurrent }: { item: TaskQueueItem; isCurrent: boolea
   ].filter(Boolean);
 
   return (
-    <div className={cx("queue-item", priority && "has-priority", isCurrent && "is-current")}>
+    <button className={cx("queue-item", priority && "has-priority", isCurrent && "is-current")} type="button" onClick={onSelect}>
       {priority ? <span className="queue-priority">{priority}</span> : null}
       <span>
         <strong>{item.taskId}</strong>
@@ -1518,7 +1543,7 @@ function QueueItem({ item, isCurrent }: { item: TaskQueueItem; isCurrent: boolea
         {meta.length ? <small>{meta.join(" / ")}</small> : null}
       </span>
       {phase ? <span className={cx("phase-pill", phaseClass(phase))}>{phase}</span> : null}
-    </div>
+    </button>
   );
 }
 
@@ -1582,34 +1607,84 @@ function PromptPanel({ detail, reason, setToast }: { detail: ProjectDetail; reas
   );
 }
 
-function taskPanelTitle(detail: ProjectDetail): string {
-  const task = detail.activeTask;
-  if (!hasMeaningfulActiveTask(task)) {
-    return "Task";
-  }
-
-  const shortId = task.taskId.match(/^t-(\d+)/i)?.[1];
-  const displayId = shortId ? `T${shortId}` : task.taskId;
-  return !isEmptyValue(task.title) ? `${displayId}: ${task.title}` : displayId;
+function taskPageTitle(item: TaskQueueItem | null, taskId: string): string {
+  const shortId = taskId.match(/^t-(\d+)/i)?.[1];
+  const displayId = shortId ? `T${shortId}` : taskId;
+  return item && !isEmptyValue(item.title) ? `${displayId}: ${item.title}` : displayId;
 }
 
-function ArtifactViewer({ detail }: { detail: ProjectDetail }) {
-  const artifacts = detail.currentTask ?? null;
-  const activeKey = artifactOrder.find((key) => Boolean(artifacts?.[key]?.trim()));
-  const current = activeKey ? artifacts?.[activeKey] || "" : "";
+function findQueueItem(detail: ProjectDetail, taskId: string): TaskQueueItem | null {
+  return (["active", "backlog", "done"] as const)
+    .flatMap((section) => detail.queue?.[section] ?? [])
+    .find((item) => item.taskId === taskId) ?? null;
+}
 
-  if (!activeKey) {
-    return null;
+function artifactsForTask(detail: ProjectDetail, taskId: string): TaskArtifacts | null {
+  if (detail.taskArtifacts?.[taskId]) {
+    return detail.taskArtifacts[taskId] ?? null;
   }
 
+  if (detail.activeTask?.taskId === taskId) {
+    return detail.currentTask ?? null;
+  }
+
+  return null;
+}
+
+function TaskDetailPage({ detail, taskId, onBack }: { detail: ProjectDetail; taskId: string; onBack: () => void }) {
+  const task = findQueueItem(detail, taskId);
+  const artifacts = artifactsForTask(detail, taskId);
+  const availableKeys = artifactOrder.filter((key) => Boolean(artifacts?.[key]?.trim()));
+  const [selectedKey, setSelectedKey] = useState<ArtifactKey | null>(availableKeys[0] ?? null);
+
+  useEffect(() => {
+    setSelectedKey(availableKeys[0] ?? null);
+  }, [taskId]);
+
+  const activeKey = selectedKey && availableKeys.includes(selectedKey) ? selectedKey : availableKeys[0] ?? null;
+  const content = activeKey ? artifacts?.[activeKey] || "" : "";
+
   return (
-    <section className="subpanel artifact-panel">
-      <div className="panel-title-row">
-        <h4>{taskPanelTitle(detail)}</h4>
+    <div className="detail-layout task-detail-page">
+      <div className="detail-header">
+        <button aria-label="Back to tasks" className="icon-button" title="Back to tasks" type="button" onClick={onBack}>
+          <ArrowLeftIcon />
+        </button>
+        <div>
+          <h3>{taskPageTitle(task, taskId)}</h3>
+          <div className="path-line">{detail.name}</div>
+        </div>
       </div>
-      <pre className="artifact-view">{current}</pre>
-    </section>
+
+      <section className="subpanel artifact-panel">
+        {availableKeys.length > 1 ? (
+          <div className="tab-row wrap">
+            {availableKeys.map((key) => (
+              <button className={cx("tab-button", activeKey === key && "is-active")} key={key} type="button" onClick={() => setSelectedKey(key)}>
+                {artifactLabel(key)}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {content ? <pre className="artifact-view full-height">{content}</pre> : <EmptyState title="No task detail found" body="This task has no readable task artifact files yet." />}
+      </section>
+    </div>
   );
+}
+
+function artifactLabel(key: ArtifactKey): string {
+  const labels: Record<ArtifactKey, string> = {
+    statusMarkdown: "Status",
+    contractMarkdown: "Contract",
+    implementationMarkdown: "Implementation",
+    verificationMarkdown: "Verification",
+    codeReviewMarkdown: "Code Review",
+    designMarkdown: "Design",
+    designReviewMarkdown: "Design Review",
+    specMarkdown: "Spec",
+    decisionsMarkdown: "Decisions",
+  };
+  return labels[key];
 }
 
 function HistoryPage({

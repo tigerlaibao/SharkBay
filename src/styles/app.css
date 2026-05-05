@@ -906,11 +906,16 @@ body.is-resizing-columns * {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
+  width: 100%;
   min-height: 38px;
   padding: 6px 7px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   background: #fffdfa;
   border: 1px solid #ebe7de;
   border-radius: 6px;
+  cursor: pointer;
 }
 
 .queue-item.has-priority {
@@ -921,6 +926,12 @@ body.is-resizing-columns * {
   background: #edf6f3;
   border-color: #8db8b0;
   box-shadow: inset 3px 0 0 #2d5860;
+}
+
+.queue-item:hover,
+.queue-item:focus-visible {
+  border-color: #b8c7c4;
+  outline: none;
 }
 
 .queue-priority {
@@ -994,6 +1005,20 @@ body.is-resizing-columns * {
   padding: 10px;
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   font-size: 12px;
+}
+
+.task-detail-page {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.task-detail-page .artifact-panel {
+  align-content: start;
+  min-height: 0;
+}
+
+.artifact-view.full-height {
+  max-height: none;
+  min-height: 360px;
 }
 
 .split-row {

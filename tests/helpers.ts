@@ -19,6 +19,7 @@ export const workflowDetailSurfaces = [
   "overview",
   "queue",
   "current-task-artifacts",
+  "task-artifacts",
   "recent-decisions",
   "harness-errors",
   "runner-lifecycle",
@@ -233,6 +234,10 @@ export function missingWorkflowDetailSurfaces(detail: ProjectDetail): string[] {
 
   if (!detail.currentTask || !workflowArtifactKeys.every((key) => hasOwn(detail.currentTask as TaskArtifacts, key))) {
     missing.push("current-task-artifacts");
+  }
+
+  if (!detail.taskArtifacts || !Object.values(detail.queue ?? {}).flat().every((item) => detail.taskArtifacts[item.taskId])) {
+    missing.push("task-artifacts");
   }
 
   if (!Array.isArray(detail.recentDecisions)) {

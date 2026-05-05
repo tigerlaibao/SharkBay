@@ -25,6 +25,8 @@
 | `t-009-human-intervention-policy` | Define human intervention signals | 2026-05-05 |
 | `t-010-agent-onboarding-instructions` | Ensure setup projects instruct agents to follow Ripple harness | 2026-05-05 |
 | `t-011-runner-lifecycle-heartbeat` | Separate runner lifecycle from harness phase | 2026-05-05 |
+| `t-012-task-directory-queue-fallback` | Show task directories when queue metadata is incomplete | 2026-05-05 |
+| `t-013-task-detail-drilldown` | Task detail drilldown in project sidebar | 2026-05-05 |
 
 ## Rules
 

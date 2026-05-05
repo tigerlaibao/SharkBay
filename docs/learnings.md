@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Queue Sections Have Different Shapes
+
+**Problem**: SharkBay showed only one task for AIGF even though `.agent/queue.json` contained backlog and done entries and `tasks/` had task folders.
+
+**Cause**: The reader treated every queue section as if it used the Active task shape with `phase` and `status`. The harness queue rules allow Backlog and Done to use different fields, such as `notes` and `completed`.
+
+**Solution**: Normalize queue entries by section: Active requires explicit workflow state, Backlog defaults to `backlog`, Done defaults to `done`, and safe task directories are added as read-only fallback rows when the queue omits them.
+
+**Source**: `tasks/t-012-task-directory-queue-fallback/implementation.md`, `src/main/harness-reader.ts`, `src/shared/schema.ts`.
+
+---
+
 ### Task Phase Is Not Runner State
 
 **Problem**: SharkBay showed handoff or Needs Action prompts by inferring whether an agent was working from task phases like `spec`, `design_review`, or `coding`.

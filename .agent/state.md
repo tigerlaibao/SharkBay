@@ -18,7 +18,7 @@
 
 ## Current Task
 
-- Task ID: `t-011-runner-lifecycle-heartbeat`
+- Task ID: `t-013-task-detail-drilldown`
 - Phase: done
 - Next action: Ready for the next task.
 - Blocked by: none
@@ -102,6 +102,8 @@
 | 2026-05-05T21:51:00+08:00 | Code review passed for `t-011-runner-lifecycle-heartbeat` after implementing runner metadata reading, handoff semantics, and protocol docs. | `tasks/t-011-runner-lifecycle-heartbeat/code-review.md` |
 | 2026-05-05T21:53:00+08:00 | Verification passed for `t-011-runner-lifecycle-heartbeat`; runner lifecycle is now read from cooperative metadata instead of inferred from task phase. | `tasks/t-011-runner-lifecycle-heartbeat/verification.md` |
 | 2026-05-05T21:55:00+08:00 | Completed `t-011-runner-lifecycle-heartbeat` with separate runner lifecycle metadata, Needs Action semantics, and protocol guidance. | `tasks/t-011-runner-lifecycle-heartbeat/status.md` |
+| 2026-05-05T22:49:00+08:00 | Fixed task list visibility by matching SharkBay's queue reader to section-specific harness queue rules and adding read-only task directory fallback rows. | `tasks/t-012-task-directory-queue-fallback/status.md` |
+| 2026-05-05T23:00:00+08:00 | Moved task artifacts out of the default project overview and added a full-column task drilldown from the Tasks list. | `tasks/t-013-task-detail-drilldown/status.md` |
 
 ## Open Questions
 

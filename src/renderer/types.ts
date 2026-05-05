@@ -155,6 +155,7 @@ export type ProjectDetail = ProjectSummary & {
     done?: TaskQueueItem[];
   };
   currentTask?: TaskArtifacts | null;
+  taskArtifacts?: Record<string, TaskArtifacts>;
   recentDecisions?: RecentDecision[];
   gitHistory?: GitEvent[];
   development?: DevelopmentMetadata | null;

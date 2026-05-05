@@ -3,7 +3,7 @@ import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
-import { createHarnessFixture, makeTempRoot, writeJson } from "./helpers.js";
+import { createHarnessFixture, makeTempRoot, writeJson, writeText } from "./helpers.js";
 import { readProjectDetail } from "../src/main/harness-reader.js";
 
 const execFileAsync = promisify(execFile);
@@ -22,11 +22,69 @@ describe("harness reader", () => {
     expect(detail.deploymentUrl).toBe("https://state.example");
     expect(detail.revisions.state).toMatch(/^sha256:/);
     expect(detail.currentTask?.statusMarkdown).toContain("# Status");
+    expect(detail.taskArtifacts["t-001-fixture"]?.statusMarkdown).toContain("# Status");
     expect(detail.recentDecisions).toHaveLength(1);
     expect(detail.development?.stack.frontend).toEqual(["React", "TypeScript"]);
     expect(detail.development?.commands.dev).toEqual(["npm run dev"]);
     expect(detail.development?.endpoints.local[0]?.ports).toEqual([5173]);
     expect(detail.runner.status).toBe("unknown");
+  });
+
+  it("normalizes section-specific queue shorthand and adds task directory fallback rows", async () => {
+    const root = await makeTempRoot("reader-queue-shorthand");
+    const repo = await createHarnessFixture(root, "QueueShorthandRepo");
+    await writeJson(path.join(repo, ".agent", "queue.json"), {
+      schemaVersion: 1,
+      updatedAt: "2026-05-05",
+      active: [],
+      backlog: [
+        {
+          priority: 2,
+          taskId: "t-006-interactive-product-finder",
+          title: "Interactive product finder",
+          dependsOn: ["t-005-community-interaction-ui"],
+          notes: "Plan the guided recommendation flow.",
+        },
+      ],
+      done: [
+        {
+          taskId: "t-005-community-interaction-ui",
+          title: "Community interaction UI",
+          completed: "2026-05-05",
+        },
+      ],
+    });
+    await writeJson(path.join(repo, ".agent", "state.json"), {
+      schemaVersion: 1,
+      updatedAt: "2026-05-05",
+      project: {},
+      currentTask: { taskId: "t-005-community-interaction-ui", phase: "done", nextAction: "Done.", blockedBy: [] },
+      recentDecisions: [],
+    });
+    await writeText(
+      path.join(repo, "tasks", "t-007-task-dir-only", "status.md"),
+      [
+        "# Task Status",
+        "",
+        "| Field | Value |",
+        "| --- | --- |",
+        "| Task ID | `t-007-task-dir-only` |",
+        "| Title | Task directory only |",
+        "| Priority | 3 |",
+        "| Phase | spec |",
+        "| Depends On | `t-006-interactive-product-finder` |",
+      ].join("\n"),
+    );
+
+    const detail = await readProjectDetail(repo, "manifest");
+    expect(detail.queue.backlog.map((item) => item.taskId)).toContain("t-006-interactive-product-finder");
+    expect(detail.queue.backlog.map((item) => item.taskId)).toContain("t-007-task-dir-only");
+    expect(detail.queue.done.map((item) => item.taskId)).toContain("t-005-community-interaction-ui");
+    expect(detail.queue.backlog.find((item) => item.taskId === "t-006-interactive-product-finder")?.phase).toBe("backlog");
+    expect(detail.queue.done.find((item) => item.taskId === "t-005-community-interaction-ui")?.status).toBe("done");
+    expect(detail.queue.backlog.find((item) => item.taskId === "t-007-task-dir-only")?.source).toBe("tasks-directory");
+    expect(detail.activeTask?.title).toBe("Community interaction UI");
+    expect(detail.taskArtifacts["t-007-task-dir-only"]?.statusMarkdown).toContain("# Task Status");
   });
 
   it("reads recent git history from the repository reflog", async () => {
@@ -214,6 +272,7 @@ describe("harness reader", () => {
       decisionsMarkdown: null,
       implementationMarkdown: null,
     });
+    expect(unsafeTaskDetail.taskArtifacts["../outside"]).toBeUndefined();
     expect(unsafeTaskDetail.errors.some((error) => /unsafe path/.test(error.message))).toBe(true);
   });
 });

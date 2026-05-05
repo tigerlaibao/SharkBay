@@ -22,7 +22,7 @@ import { asQueueItem, emptyRunnerSummary, isRecord, normalizeDevelopmentMetadata
 import { getRuntimeConfigPath, loadAppConfig } from "./config.js";
 import { readGitHistory, readGitMetadata } from "./git.js";
 import { readJsonFile } from "./json-file.js";
-import { resolveReadableHarnessJsonFile, resolveReadableRepoFile, resolveRepoPath } from "./path-safety.js";
+import { isPathInside, resolveReadableHarnessJsonFile, resolveReadableRepoFile, resolveRepoPath } from "./path-safety.js";
 
 const artifactFiles: Record<keyof TaskArtifacts, string> = {
   statusMarkdown: "status.md",
@@ -41,6 +41,7 @@ export async function readProjectSummary(repoPath: string, detection: DetectionM
   const {
     queue: _queue,
     currentTask: _currentTask,
+    taskArtifacts: _taskArtifacts,
     recentDecisions: _decisions,
     gitHistory: _gitHistory,
     development: _development,
@@ -64,8 +65,11 @@ export async function readProjectDetail(
     : (await loadAppConfig(getRuntimeConfigPath(first))).configuredRoots;
   const errors: HarnessError[] = [];
   let repoPath: string;
+  let containingRoot: string;
   try {
-    repoPath = (await resolveRepoPath(rawRepoPath, configuredRoots)).repoPath;
+    const safeRepo = await resolveRepoPath(rawRepoPath, configuredRoots);
+    repoPath = safeRepo.repoPath;
+    containingRoot = safeRepo.containingRoot;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return unsafeProjectDetail(rawRepoPath, detection, message);
@@ -80,11 +84,13 @@ export async function readProjectDetail(
   const runner = await readRunnerMetadata(repoPath, configuredRoots, errors);
 
   const queue = normalizeQueue(queueJson.data);
-  const activeTask = normalizeActiveTask(queue.active[0], state.data);
+  const activeTask = normalizeActiveTask(queue, state.data);
+  const visibleQueue = options.includeArtifacts === false ? queue : await mergeTaskDirectoryQueue(repoPath, containingRoot, configuredRoots, queue, errors);
   const urls = readUrls(state.ok, state.data, manifest.data);
   const name = readProjectName(manifest.data, repoPath);
   const repoUrl = readRepoUrl(state.data) || readRepoUrl(manifest.data) || git.githubUrl;
   const currentTask = options.includeArtifacts === false || !activeTask ? null : await readTaskArtifacts(repoPath, configuredRoots, activeTask.taskId, errors);
+  const taskArtifacts = options.includeArtifacts === false ? {} : await readVisibleTaskArtifacts(repoPath, configuredRoots, visibleQueue, errors);
   const recentDecisions = readRecentDecisions(state.data);
 
   return {
@@ -101,8 +107,9 @@ export async function readProjectDetail(
     testUrl: urls.testUrl,
     deploymentUrl: urls.deploymentUrl,
     errors,
-    queue,
+    queue: visibleQueue,
     currentTask,
+    taskArtifacts,
     recentDecisions,
     gitHistory,
     development,
@@ -112,6 +119,17 @@ export async function readProjectDetail(
       queue: queueJson.revision,
     },
   };
+}
+
+async function readVisibleTaskArtifacts(
+  repoPath: string,
+  configuredRoots: string[],
+  queue: Record<QueueSection, TaskQueueItem[]>,
+  errors: HarnessError[],
+): Promise<Record<string, TaskArtifacts>> {
+  const taskIds = [...new Set(Object.values(queue).flat().map((item) => item.taskId).filter((taskId) => Boolean(taskId.trim())))];
+  const entries = await Promise.all(taskIds.map(async (taskId) => [taskId, await readTaskArtifacts(repoPath, configuredRoots, taskId, errors)] as const));
+  return Object.fromEntries(entries);
 }
 
 async function readRunnerMetadata(repoPath: string, configuredRoots: string[], errors: HarnessError[]): Promise<RunnerSummary> {
@@ -230,21 +248,140 @@ function normalizeQueue(data: unknown): Record<QueueSection, TaskQueueItem[]> {
   const empty = { active: [], backlog: [], done: [] };
   if (!isRecord(data)) return empty;
   return {
-    active: readQueueSection(data.active),
-    backlog: readQueueSection(data.backlog),
-    done: readQueueSection(data.done),
+    active: readQueueSection(data.active, "active"),
+    backlog: readQueueSection(data.backlog, "backlog"),
+    done: readQueueSection(data.done, "done"),
   };
 }
 
-function readQueueSection(value: unknown): TaskQueueItem[] {
+function readQueueSection(value: unknown, section: QueueSection): TaskQueueItem[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
-    const queueItem = asQueueItem(item);
+    const queueItem = asQueueItem(item, defaultQueueSectionValues(section));
     return queueItem ? [queueItem] : [];
   });
 }
 
-function normalizeActiveTask(queueTask: TaskQueueItem | undefined, state: unknown): ActiveTaskSummary | null {
+function defaultQueueSectionValues(section: QueueSection): Partial<Pick<TaskQueueItem, "phase" | "status">> {
+  if (section === "backlog") return { phase: "backlog", status: "backlog" };
+  if (section === "done") return { phase: "done", status: "done" };
+  return {};
+}
+
+async function mergeTaskDirectoryQueue(
+  repoPath: string,
+  containingRoot: string,
+  configuredRoots: string[],
+  queue: Record<QueueSection, TaskQueueItem[]>,
+  errors: HarnessError[],
+): Promise<Record<QueueSection, TaskQueueItem[]>> {
+  const discovered = await readTaskDirectoryItems(repoPath, containingRoot, configuredRoots, errors);
+  if (!discovered.length) return queue;
+
+  const next: Record<QueueSection, TaskQueueItem[]> = {
+    active: [...queue.active],
+    backlog: [...queue.backlog],
+    done: [...queue.done],
+  };
+  const seen = new Set(Object.values(next).flat().map((item) => item.taskId));
+
+  for (const item of discovered) {
+    if (seen.has(item.taskId)) continue;
+    seen.add(item.taskId);
+    const section = item.phase === "done" ? "done" : item.phase === "blocked" ? "active" : "backlog";
+    next[section].push(item);
+  }
+
+  return next;
+}
+
+async function readTaskDirectoryItems(
+  repoPath: string,
+  containingRoot: string,
+  configuredRoots: string[],
+  errors: HarnessError[],
+): Promise<TaskQueueItem[]> {
+  const tasksPath = path.join(repoPath, "tasks");
+  let entries: import("node:fs").Dirent[];
+  try {
+    const stat = await fs.lstat(tasksPath);
+    if (!stat.isDirectory() || stat.isSymbolicLink()) {
+      errors.push({ file: tasksPath, message: "Tasks directory is not a readable directory" });
+      return [];
+    }
+    const realTasksPath = await fs.realpath(tasksPath);
+    if (!isPathInside(repoPath, realTasksPath) || !isPathInside(containingRoot, realTasksPath)) {
+      errors.push({ file: tasksPath, message: "Tasks directory resolves outside the allowed boundary" });
+      return [];
+    }
+    entries = await fs.readdir(realTasksPath, { withFileTypes: true });
+  } catch (error) {
+    if (isMissingPathError(error)) return [];
+    errors.push({ file: tasksPath, message: error instanceof Error ? error.message : String(error) });
+    return [];
+  }
+
+  const items = await Promise.all(
+    entries
+      .filter((entry) => entry.isDirectory() && !entry.isSymbolicLink() && !entry.name.startsWith("_") && /^[A-Za-z0-9._-]+$/.test(entry.name))
+      .map(async (entry) => {
+        const statusPath = path.join("tasks", entry.name, "status.md");
+        let safePath: string;
+        try {
+          safePath = await resolveReadableRepoFile(repoPath, configuredRoots, statusPath);
+        } catch (error) {
+          errors.push({ file: path.join(repoPath, statusPath), message: error instanceof Error ? error.message : String(error) });
+          return null;
+        }
+        const statusMarkdown = await fs.readFile(safePath, "utf8").catch(() => null);
+        if (!statusMarkdown) return null;
+        return queueItemFromStatusMarkdown(entry.name, statusMarkdown);
+      }),
+  );
+
+  return items.filter((item): item is TaskQueueItem => Boolean(item));
+}
+
+function queueItemFromStatusMarkdown(directoryName: string, statusMarkdown: string): TaskQueueItem {
+  const taskId = readStatusField(statusMarkdown, "Task ID") || directoryName;
+  const title = readStatusField(statusMarkdown, "Title") || taskId;
+  const phase = readStatusField(statusMarkdown, "Phase") || "unknown";
+  const priorityValue = readStatusField(statusMarkdown, "Priority");
+  const priority = priorityValue ? Number(priorityValue) : undefined;
+  return {
+    taskId,
+    title,
+    phase,
+    status: phase === "done" ? "done" : "task-dir",
+    priority: Number.isFinite(priority) ? priority : undefined,
+    dependsOn: readDependsOn(readStatusField(statusMarkdown, "Depends On")),
+    source: "tasks-directory",
+  };
+}
+
+function readStatusField(markdown: string, field: string): string | null {
+  const target = field.toLowerCase();
+  for (const line of markdown.split(/\r?\n/)) {
+    const cells = line.split("|").slice(1, -1).map((cell) => cell.trim());
+    const [name, rawValue] = cells;
+    if (!name || rawValue === undefined || name.toLowerCase() !== target) continue;
+    const value = rawValue.replace(/`/g, "").trim();
+    if (!value || value.toLowerCase() === "none") return null;
+    return value;
+  }
+  return null;
+}
+
+function readDependsOn(value: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split(/[,\s]+/)
+    .map((item) => item.replace(/`/g, "").trim())
+    .filter((item) => item && item.toLowerCase() !== "none");
+}
+
+function normalizeActiveTask(queue: Record<QueueSection, TaskQueueItem[]>, state: unknown): ActiveTaskSummary | null {
+  const queueTask = queue.active[0];
   if (queueTask) {
     return {
       taskId: queueTask.taskId,
@@ -258,15 +395,19 @@ function normalizeActiveTask(queueTask: TaskQueueItem | undefined, state: unknow
     };
   }
   if (isRecord(state) && isRecord(state.currentTask) && typeof state.currentTask.taskId === "string") {
+    const currentTask = state.currentTask;
+    const taskId = String(currentTask.taskId);
+    const matchingQueueTask = Object.values(queue).flat().find((item) => item.taskId === taskId);
+    const phase = typeof currentTask.phase === "string" ? currentTask.phase : matchingQueueTask?.phase ?? "unknown";
     return {
-      taskId: state.currentTask.taskId,
-      title: state.currentTask.taskId,
-      phase: typeof state.currentTask.phase === "string" ? state.currentTask.phase : "unknown",
-      status: typeof state.currentTask.status === "string" ? state.currentTask.status : null,
-      priority: null,
-      gateStatus: "unknown",
-      requiresUserAction: readRequiresUserAction(state.currentTask),
-      userActionReason: readUserActionReason(state.currentTask),
+      taskId,
+      title: matchingQueueTask?.title ?? taskId,
+      phase,
+      status: typeof currentTask.status === "string" ? currentTask.status : matchingQueueTask?.status ?? null,
+      priority: typeof matchingQueueTask?.priority === "number" ? matchingQueueTask.priority : null,
+      gateStatus: matchingQueueTask ? readGateStatus(matchingQueueTask) : "unknown",
+      requiresUserAction: readRequiresUserAction(currentTask),
+      userActionReason: readUserActionReason(currentTask),
     };
   }
   return null;
@@ -346,9 +487,14 @@ function unsafeProjectDetail(repoPath: string, detection: DetectionMode, message
     errors: [{ file: repoPath, message }],
     queue: { active: [], backlog: [], done: [] },
     currentTask: null,
+    taskArtifacts: {},
     recentDecisions: [],
     gitHistory: [],
     development: null,
     revisions: { manifest: null, state: null, queue: null },
   };
+}
+
+function isMissingPathError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === "ENOENT";
 }

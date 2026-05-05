@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-User-centered project workbench redesign, read-only root child discovery, autonomous UX polish, confirmation-gated Ripple setup, project-authored developer metadata, human intervention signals, setup-time agent onboarding instructions, and runner lifecycle separation are complete.
+User-centered project workbench redesign, read-only root child discovery, autonomous UX polish, confirmation-gated Ripple setup, project-authored developer metadata, human intervention signals, setup-time agent onboarding instructions, runner lifecycle separation, robust queue/task visibility, and task detail drilldown are complete.
 
 ## Task List
 
@@ -19,6 +19,8 @@ User-centered project workbench redesign, read-only root child discovery, autono
 | `t-009-human-intervention-policy` | done | Define human intervention signals | `t-008-project-authored-url-metadata` | Needs Action now shows only real human intervention, not dirty or automatic phases |
 | `t-010-agent-onboarding-instructions` | done | Ensure setup projects instruct agents to follow Ripple harness | `t-009-human-intervention-policy` | Bundled setup now installs `AGENTS.md`; existing `AGENTS.md` collisions preserve local files |
 | `t-011-runner-lifecycle-heartbeat` | done | Separate runner lifecycle from harness phase | `t-010-agent-onboarding-instructions` | `.agent/runner.json` lease/heartbeat state keeps physical runner lifecycle separate from task phase |
+| `t-012-task-directory-queue-fallback` | done | Show task directories when queue metadata is incomplete | `t-011-runner-lifecycle-heartbeat` | Queue reader now honors section-specific backlog/done shapes and adds read-only task directory fallback rows |
+| `t-013-task-detail-drilldown` | done | Task detail drilldown in project sidebar | `t-012-task-directory-queue-fallback` | Project overview now hides the large task artifact preview and opens task details from the task list |
 
 ## Completed Work
 
@@ -35,6 +37,8 @@ User-centered project workbench redesign, read-only root child discovery, autono
 | `t-009-human-intervention-policy` | 2026-05-05 | `npm run typecheck`, renderer workflow tests, `npm test`, `npm run build`, JSON parse check, UI check, and `git diff --check` passed |
 | `t-010-agent-onboarding-instructions` | 2026-05-05 | `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, `git diff --check`, JSON parse check, and dev-server smoke evidence passed; `npm run dev` was blocked by occupied port `5173` |
 | `t-011-runner-lifecycle-heartbeat` | 2026-05-05 | `npm run typecheck`, `npm run lint`, focused runner tests, `npm test`, `npm run build`, `git diff --check`, and existing dev-server smoke evidence passed; `npm run dev` was blocked by occupied port `5173` |
+| `t-012-task-directory-queue-fallback` | 2026-05-05 | `npm run typecheck`, focused harness reader tests, `npm test`, `npm run build`, and AIGF reader probe passed |
+| `t-013-task-detail-drilldown` | 2026-05-05 | `npm run typecheck`, `npm test`, `npm run build`, `git diff --check`, and Vite HTTP smoke on port `5175` passed |
 
 ## Task Detail Template
 
@@ -69,4 +73,6 @@ t-001-sharkbay-mvp-spec (done)
                 -> t-009-human-intervention-policy (done)
                   -> t-010-agent-onboarding-instructions (done)
                     -> t-011-runner-lifecycle-heartbeat (done)
+                      -> t-012-task-directory-queue-fallback (done)
+                        -> t-013-task-detail-drilldown (done)
 ```

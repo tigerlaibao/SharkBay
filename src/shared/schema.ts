@@ -228,9 +228,19 @@ export function validateTaskItem(item: unknown, label = "task", errors: string[]
     errors.push(`${label} must be an object`);
     return { ok: false, errors };
   }
-  for (const key of ["taskId", "title", "phase", "status"]) {
+  for (const key of ["taskId", "title"]) {
     if (typeof item[key] !== "string") {
       errors.push(`${label}.${key} must be a string`);
+    }
+  }
+  const sectionShorthand =
+    (label.includes("backlog[") && typeof item.priority === "number") ||
+    (label.includes("done[") && (typeof item.completed === "string" || typeof item.completedAt === "string"));
+  if (!sectionShorthand) {
+    for (const key of ["phase", "status"]) {
+      if (typeof item[key] !== "string") {
+        errors.push(`${label}.${key} must be a string`);
+      }
     }
   }
   if (item.priority !== undefined && typeof item.priority !== "number") {
@@ -242,12 +252,12 @@ export function validateTaskItem(item: unknown, label = "task", errors: string[]
   return { ok: errors.length === 0, errors };
 }
 
-export function asQueueItem(value: unknown): TaskQueueItem | null {
+export function asQueueItem(value: unknown, defaults: Partial<Pick<TaskQueueItem, "phase" | "status">> = {}): TaskQueueItem | null {
   if (!isRecord(value)) return null;
   const taskId = typeof value.taskId === "string" ? value.taskId : null;
   const title = typeof value.title === "string" ? value.title : null;
-  const phase = typeof value.phase === "string" ? value.phase : null;
-  const status = typeof value.status === "string" ? value.status : null;
+  const phase = typeof value.phase === "string" ? value.phase : defaults.phase ?? null;
+  const status = typeof value.status === "string" ? value.status : defaults.status ?? null;
   if (!taskId || !title || !phase || !status) return null;
 
   return {

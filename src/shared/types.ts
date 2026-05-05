@@ -189,6 +189,7 @@ export type RevisionMap = {
 export type ProjectDetail = ProjectSummary & {
   queue: Record<QueueSection, TaskQueueItem[]>;
   currentTask: TaskArtifacts | null;
+  taskArtifacts: Record<string, TaskArtifacts>;
   recentDecisions: RecentDecision[];
   gitHistory: GitEvent[];
   development: DevelopmentMetadata | null;

@@ -19,6 +19,7 @@ describe("renderer workflow contracts", () => {
       "overview",
       "queue",
       "current-task-artifacts",
+      "task-artifacts",
       "recent-decisions",
       "harness-errors",
       "runner-lifecycle",
