@@ -50,6 +50,7 @@ Key terms:
 | P1 | URL tracking | Store local, test, and deployment URLs | URLs appear in project dashboard and detail view |
 | P1 | Ordinary folder discovery | Show all direct child folders under scan roots | User can see projects that are not managed yet and start one-click Ripple setup |
 | P1 | Project terminal | Open terminal tabs rooted at selected project directories | Selecting any managed or not-setup project opens a shell rooted at that project path |
+| P1 | Harness template sync | Detect when installed Ripple control files drift from SharkBay's tracked `templates/harness/` source | Managed project scan results include current/stale/missing harness template status and stale file names |
 | P2 | Direct Codex invocation | Advance tasks from the UI through Codex CLI/MCP | Requires explicit user approval and visible logs |
 
 ## 5. Non-Goals
@@ -65,6 +66,7 @@ Key terms:
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | Markdown parsing is brittle | Dashboard may misread state | Use JSON mirrors as primary machine-readable state |
+| Harness template refresh overwrites project memory | Managed project state/history could be corrupted | Sync only version-owned control files; never overwrite project-owned queue, state, docs, or tasks |
 | Direct agent invocation is risky | Unintended file edits or long-running commands | Start with prompt generation; add execution later behind approval |
 | Local filesystem access differs by platform | Scanning may fail | Start on macOS/local paths; isolate filesystem access behind a service |
 | Scope expands into a full project management suite | MVP slows down | Keep v0 focused on local managed projects and task lifecycle visibility |

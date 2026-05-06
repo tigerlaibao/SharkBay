@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { CreateHarnessRepoInput, CreateHarnessRepoResult, IpcRuntimeLike } from "../shared/types.js";
 import { getRuntimeConfigPath, loadAppConfig } from "./config.js";
+import { harnessTemplateSyncMetadataPath, writeCurrentTemplateSyncMetadata } from "./harness-template-sync.js";
 import { assertCreateTargetInsideConfiguredRoots } from "./path-safety.js";
 
 export function createHarnessRepo(input: CreateHarnessRepoInput): Promise<CreateHarnessRepoResult>;
@@ -45,7 +46,8 @@ export async function createHarnessRepo(
 
     const variables = templateVariables(input);
     const files = await copyTemplateTree(templateDir, targetDir, variables);
-    return { ok: true, path: targetDir, files };
+    await writeCurrentTemplateSyncMetadata(targetDir, templateDir);
+    return { ok: true, path: targetDir, files: [...files, harnessTemplateSyncMetadataPath].sort() };
   } catch (error) {
     if (error instanceof FileCollisionError) {
       return { ok: false, reason: "file-collision", message: error.message };

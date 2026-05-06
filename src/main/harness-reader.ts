@@ -21,6 +21,7 @@ import type {
 import { asQueueItem, emptyRunnerSummary, isRecord, normalizeDevelopmentMetadata, normalizeRunnerMetadata, normalizeUrlFields, validateDevelopmentJson, validateRunnerJson } from "../shared/schema.js";
 import { getRuntimeConfigPath, loadAppConfig } from "./config.js";
 import { readGitHistory, readGitMetadata } from "./git.js";
+import { checkHarnessTemplateSync } from "./harness-template-sync.js";
 import { readJsonFile } from "./json-file.js";
 import { isPathInside, resolveReadableHarnessJsonFile, resolveReadableRepoFile, resolveRepoPath } from "./path-safety.js";
 
@@ -36,8 +37,8 @@ const artifactFiles: Record<keyof TaskArtifacts, string> = {
   implementationMarkdown: "implementation.md",
 };
 
-export async function readProjectSummary(repoPath: string, detection: DetectionMode, configuredRoots?: string[]): Promise<ProjectSummary> {
-  const detail = await readProjectDetail(repoPath, detection, { includeArtifacts: false, configuredRoots });
+export async function readProjectSummary(repoPath: string, detection: DetectionMode, configuredRoots?: string[], templateDir?: string): Promise<ProjectSummary> {
+  const detail = await readProjectDetail(repoPath, detection, { includeArtifacts: false, configuredRoots, templateDir });
   const {
     queue: _queue,
     currentTask: _currentTask,
@@ -51,12 +52,12 @@ export async function readProjectSummary(repoPath: string, detection: DetectionM
   return summary;
 }
 
-export function readProjectDetail(repoPath: string, detection: DetectionMode, options?: { includeArtifacts?: boolean; configuredRoots?: string[] }): Promise<ProjectDetail>;
+export function readProjectDetail(repoPath: string, detection: DetectionMode, options?: { includeArtifacts?: boolean; configuredRoots?: string[]; templateDir?: string }): Promise<ProjectDetail>;
 export function readProjectDetail(runtime: IpcRuntimeLike, input: ProjectDetailInput): Promise<ProjectDetail>;
 export async function readProjectDetail(
   first: string | IpcRuntimeLike,
   second: DetectionMode | ProjectDetailInput,
-  options: { includeArtifacts?: boolean; configuredRoots?: string[] } = {},
+  options: { includeArtifacts?: boolean; configuredRoots?: string[]; templateDir?: string } = {},
 ): Promise<ProjectDetail> {
   const rawRepoPath = typeof first === "string" ? first : repoPathFromInput(second);
   const detection = typeof second === "string" ? second : second.detection ?? "manifest";
@@ -90,6 +91,7 @@ export async function readProjectDetail(
   const urls = readUrls(state.ok, state.data, manifest.data);
   const name = readProjectName(manifest.data, repoPath);
   const repoUrl = readRepoUrl(state.data) || readRepoUrl(manifest.data) || git.githubUrl;
+  const harnessTemplate = await readHarnessTemplateSummary(repoPath, configuredRoots, options.templateDir, errors);
   const currentTask = options.includeArtifacts === false || !activeTask ? null : await readTaskArtifacts(repoPath, configuredRoots, activeTask.taskId, errors);
   const taskArtifacts = options.includeArtifacts === false ? {} : await readVisibleTaskArtifacts(repoPath, configuredRoots, visibleQueue, errors);
   const recentDecisions = readRecentDecisions(state.data);
@@ -108,6 +110,7 @@ export async function readProjectDetail(
     testUrl: urls.testUrl,
     deploymentUrl: urls.deploymentUrl,
     errors,
+    harnessTemplate,
     queue: visibleQueue,
     currentTask,
     taskArtifacts,
@@ -119,6 +122,27 @@ export async function readProjectDetail(
       state: state.revision,
       queue: queueJson.revision,
     },
+  };
+}
+
+async function readHarnessTemplateSummary(
+  repoPath: string,
+  configuredRoots: string[],
+  templateDir: string | undefined,
+  errors: HarnessError[],
+): Promise<ProjectSummary["harnessTemplate"]> {
+  const result = await checkHarnessTemplateSync({ repoPath, configuredRoots, templateDir });
+  if (!result.ok) {
+    errors.push({ file: repoPath, message: `Harness template sync check failed: ${result.message}` });
+    return null;
+  }
+
+  return {
+    status: result.status,
+    currentVersion: result.currentVersion,
+    installedVersion: result.installedVersion,
+    staleFiles: result.files.filter((file) => file.status === "stale").map((file) => file.path),
+    missingFiles: result.files.filter((file) => file.status === "missing").map((file) => file.path),
   };
 }
 
@@ -593,6 +617,7 @@ function unsafeProjectDetail(repoPath: string, detection: DetectionMode, message
     testUrl: null,
     deploymentUrl: null,
     errors: [{ file: repoPath, message }],
+    harnessTemplate: null,
     queue: { active: [], backlog: [], done: [] },
     currentTask: null,
     taskArtifacts: {},

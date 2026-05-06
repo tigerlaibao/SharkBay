@@ -99,6 +99,14 @@ export type HarnessError = {
   message: string;
 };
 
+export type HarnessTemplateSyncSummary = {
+  status: HarnessTemplateSyncStatus;
+  currentVersion: string;
+  installedVersion: string | null;
+  staleFiles: string[];
+  missingFiles: string[];
+};
+
 export type ProjectSummary = {
   id: string;
   name: string;
@@ -113,6 +121,7 @@ export type ProjectSummary = {
   testUrl: string | null;
   deploymentUrl: string | null;
   errors: HarnessError[];
+  harnessTemplate: HarnessTemplateSyncSummary | null;
 };
 
 export type ProjectCandidate = {
@@ -351,6 +360,67 @@ export type CreateHarnessRepoResult =
   | {
       ok: false;
       reason: "non-empty-target" | "existing-harness" | "file-collision" | "unsafe-path" | "template-missing" | "io-error";
+      message: string;
+    };
+
+export type HarnessTemplateOwnedFile = {
+  path: string;
+  sha256: string;
+};
+
+export type HarnessTemplateSyncMetadata = {
+  schemaVersion: 1;
+  source: "sharkbay/templates/harness";
+  version: string;
+  updatedAt: string;
+  versionOwnedFiles: HarnessTemplateOwnedFile[];
+};
+
+export type HarnessTemplateFileSyncStatus = "current" | "stale" | "missing";
+
+export type HarnessTemplateFileCheck = HarnessTemplateOwnedFile & {
+  status: HarnessTemplateFileSyncStatus;
+  installedSha256: string | null;
+};
+
+export type HarnessTemplateSyncStatus = "current" | "stale" | "missing" | "unknown";
+
+export type HarnessTemplateSyncCheckInput = {
+  repoPath: string;
+  configuredRoots?: string[];
+  templateDir?: string;
+};
+
+export type HarnessTemplateSyncCheckResult =
+  | {
+      ok: true;
+      repoPath: string;
+      status: HarnessTemplateSyncStatus;
+      currentVersion: string;
+      installedVersion: string | null;
+      metadataPath: string;
+      files: HarnessTemplateFileCheck[];
+    }
+  | {
+      ok: false;
+      reason: "unsafe-path" | "template-missing" | "io-error";
+      message: string;
+    };
+
+export type HarnessTemplateSyncUpdateInput = HarnessTemplateSyncCheckInput;
+
+export type HarnessTemplateSyncUpdateResult =
+  | {
+      ok: true;
+      repoPath: string;
+      status: "current";
+      version: string;
+      files: string[];
+      metadataPath: string;
+    }
+  | {
+      ok: false;
+      reason: "unsafe-path" | "template-missing" | "io-error";
       message: string;
     };
 

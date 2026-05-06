@@ -75,7 +75,64 @@ export type ProjectSummary = UrlFields & {
   runner?: RunnerSummary;
   gateStatus?: GateStatus;
   errors?: Array<string | { file?: string; message: string }>;
+  harnessTemplate?: HarnessTemplateSyncSummary | null;
 };
+
+export type HarnessTemplateSyncStatus = "current" | "stale" | "missing" | "unknown";
+
+export type HarnessTemplateSyncSummary = {
+  status: HarnessTemplateSyncStatus;
+  currentVersion: string;
+  installedVersion: string | null;
+  staleFiles: string[];
+  missingFiles: string[];
+};
+
+export type HarnessTemplateSyncCheckInput = {
+  repoPath: string;
+  configuredRoots?: string[];
+  templateDir?: string;
+};
+
+export type HarnessTemplateFileCheck = {
+  path: string;
+  sha256: string;
+  status: "current" | "stale" | "missing";
+  installedSha256: string | null;
+};
+
+export type HarnessTemplateSyncCheckResult =
+  | {
+      ok: true;
+      repoPath: string;
+      status: HarnessTemplateSyncStatus;
+      currentVersion: string;
+      installedVersion: string | null;
+      metadataPath: string;
+      files: HarnessTemplateFileCheck[];
+    }
+  | {
+      ok: false;
+      reason: "unsafe-path" | "template-missing" | "io-error";
+      message: string;
+    };
+
+export type HarnessTemplateSyncUpdateInput = HarnessTemplateSyncCheckInput;
+
+export type HarnessTemplateSyncUpdateResult =
+  | {
+      ok: true;
+      repoPath: string;
+      status: "current";
+      version: string;
+      files: string[];
+      metadataPath: string;
+    }
+  | {
+      ok: false;
+      reason: "unsafe-path" | "template-missing" | "io-error";
+      message: string;
+    };
 
 export type ProjectCandidate = {
   id: string;
@@ -308,6 +365,10 @@ export type SharkBayBridge = {
   };
   prompts?: {
     nextAction?: (input: NextActionPromptInput) => Promise<NextActionPromptResult | string>;
+  };
+  harness?: {
+    checkTemplateSync?: (input: HarnessTemplateSyncCheckInput) => Promise<HarnessTemplateSyncCheckResult>;
+    updateTemplateFiles?: (input: HarnessTemplateSyncUpdateInput) => Promise<HarnessTemplateSyncUpdateResult>;
   };
   terminal?: {
     create?: (input: TerminalCreateInput) => Promise<TerminalSession>;

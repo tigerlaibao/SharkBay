@@ -5,6 +5,7 @@ import {
   removeConfiguredRoot
 } from "../src/main/config.js";
 import { readProjectDetail } from "../src/main/harness-reader.js";
+import { checkHarnessTemplateSync, updateHarnessTemplateFiles } from "../src/main/harness-template-sync.js";
 import {
   updateHarnessManifest,
   updateHarnessQueue,
@@ -20,6 +21,10 @@ import type {
   CreateHarnessRepoInput,
   CreateHarnessRepoResult,
   HarnessJsonPatchInput,
+  HarnessTemplateSyncCheckInput,
+  HarnessTemplateSyncCheckResult,
+  HarnessTemplateSyncUpdateInput,
+  HarnessTemplateSyncUpdateResult,
   NextActionPromptInput,
   NextActionPromptResult,
   ProjectDetail,
@@ -54,6 +59,8 @@ export type SharkBayIpcServices = {
   updateHarnessState: (input: HarnessJsonPatchInput) => Promise<SafeWriteResult>;
   updateHarnessManifest: (input: HarnessJsonPatchInput) => Promise<SafeWriteResult>;
   updateHarnessQueue: (input: HarnessJsonPatchInput) => Promise<SafeWriteResult>;
+  checkHarnessTemplateSync: (input: HarnessTemplateSyncCheckInput) => Promise<HarnessTemplateSyncCheckResult>;
+  updateHarnessTemplateFiles: (input: HarnessTemplateSyncUpdateInput) => Promise<HarnessTemplateSyncUpdateResult>;
   createHarnessRepo: (input: CreateHarnessRepoInput) => Promise<CreateHarnessRepoResult>;
   nextActionPrompt: (input: NextActionPromptInput) => Promise<NextActionPromptResult>;
   createTerminal: (input: TerminalCreateInput) => Promise<TerminalSession>;
@@ -72,6 +79,8 @@ const channels = {
   updateHarnessState: "harness:updateState",
   updateHarnessManifest: "harness:updateManifest",
   updateHarnessQueue: "harness:updateQueue",
+  checkHarnessTemplateSync: "harness:checkTemplateSync",
+  updateHarnessTemplateFiles: "harness:updateTemplateFiles",
   createHarnessRepo: "projects:createHarnessRepo",
   nextActionPrompt: "prompts:nextAction",
   createTerminal: "terminal:create",
@@ -100,6 +109,14 @@ function createDefaultServices(runtime: IpcRuntime): SharkBayIpcServices {
     updateHarnessState: (input) => updateHarnessState(runtime, input),
     updateHarnessManifest: (input) => updateHarnessManifest(runtime, input),
     updateHarnessQueue: (input) => updateHarnessQueue(runtime, input),
+    checkHarnessTemplateSync: async (input) => {
+      const configuredRoots = (await getConfiguredRoots(runtime)).configuredRoots;
+      return checkHarnessTemplateSync({ ...input, configuredRoots, templateDir: runtime.templateRoot });
+    },
+    updateHarnessTemplateFiles: async (input) => {
+      const configuredRoots = (await getConfiguredRoots(runtime)).configuredRoots;
+      return updateHarnessTemplateFiles({ ...input, configuredRoots, templateDir: runtime.templateRoot });
+    },
     createHarnessRepo: (input) => createHarnessRepo(runtime, input),
     nextActionPrompt: (input) => generateNextActionPrompt(runtime, input),
     createTerminal: (input) => terminalManager.create(runtime, input),
@@ -161,6 +178,12 @@ export function registerIpcHandlers(
   );
   handle<HarnessJsonPatchInput, SafeWriteResult>(channels.updateHarnessQueue, (payload) =>
     services.updateHarnessQueue(payload)
+  );
+  handle<HarnessTemplateSyncCheckInput, HarnessTemplateSyncCheckResult>(channels.checkHarnessTemplateSync, (payload) =>
+    services.checkHarnessTemplateSync(payload)
+  );
+  handle<HarnessTemplateSyncUpdateInput, HarnessTemplateSyncUpdateResult>(channels.updateHarnessTemplateFiles, (payload) =>
+    services.updateHarnessTemplateFiles(payload)
   );
   handle<CreateHarnessRepoInput, CreateHarnessRepoResult>(channels.createHarnessRepo, (payload) =>
     services.createHarnessRepo(payload)

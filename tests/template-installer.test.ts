@@ -21,6 +21,7 @@ describe("template installer", () => {
     if (!result.ok) return;
     expect(result.files).toContain("AGENTS.md");
     expect(result.files).toContain(".gitignore");
+    expect(result.files).toContain(".agent/template-sync.json");
     expect(result.files).toContain(".agent/manifest.json");
     expect(result.files).toContain("docs/product.md");
     const agents = await fs.readFile(path.join(target, "AGENTS.md"), "utf8");
@@ -33,6 +34,7 @@ describe("template installer", () => {
     expect(protocol).toContain("checkpoint commits are required");
     expect(await fs.readFile(path.join(target, "tasks", "t-001-initial-task", "status.md"), "utf8")).toContain("must commit the installed harness files");
     expect(await fs.readFile(path.join(target, ".gitignore"), "utf8")).toContain(".agent/runner.json");
+    expect(await fs.readFile(path.join(target, ".agent", "template-sync.json"), "utf8")).toContain('"source": "sharkbay/templates/harness"');
     expect(await fs.readFile(path.join(target, ".agent", "manifest.json"), "utf8")).toContain('"name": "New Project"');
   });
 

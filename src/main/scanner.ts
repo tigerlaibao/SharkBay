@@ -22,6 +22,7 @@ const ignoredDirectories = new Set([
 
 export type ScanOptions = {
   maxDepth?: number;
+  templateDir?: string;
 };
 
 export async function scanConfiguredRoots(configuredRoots: string[], options: ScanOptions = {}): Promise<ScanProjectsResult> {
@@ -41,7 +42,7 @@ export async function scanConfiguredRoots(configuredRoots: string[], options: Sc
       if (!rawCandidates.has(candidate.path)) {
         rawCandidates.set(candidate.path, candidateFromPath(candidate.path, root.path));
       }
-      projects.set(candidate.path, await readProjectSummary(candidate.path, candidate.detection, [root.path]));
+      projects.set(candidate.path, await readProjectSummary(candidate.path, candidate.detection, [root.path], options.templateDir));
     }
   }
 
@@ -67,7 +68,7 @@ export async function scanConfiguredRoots(configuredRoots: string[], options: Sc
 
 export async function scanProjects(runtime: IpcRuntimeLike, input?: ProjectScanInput): Promise<ScanProjectsResult> {
   const configuredRoots = (await loadAppConfig(getRuntimeConfigPath(runtime))).configuredRoots;
-  return scanConfiguredRoots(configuredRoots, { maxDepth: input?.maxDepth });
+  return scanConfiguredRoots(configuredRoots, { maxDepth: input?.maxDepth, templateDir: runtime.templateRoot });
 }
 
 export async function findHarnessRepos(rootPath: string, maxDepth = 6): Promise<Array<{ path: string; detection: DetectionMode }>> {

@@ -23,6 +23,8 @@ Local SharkBay process
   |
   +--> Template installer
   |
+  +--> Harness template sync checker
+  |
   +--> Prompt generator
   |
   +--> Terminal session manager
@@ -71,6 +73,7 @@ Local filesystem repositories
 | Harness writer | Safely update allowlisted `.agent/*.json` fields | Trust renderer roots, overwrite whole files, follow symlinks outside configured roots |
 | Path safety | Canonicalize paths, enforce configured-root containment, reject symlink escapes | Use string-prefix checks as an authority boundary |
 | Template installer | Create new harness repos from templates | Overwrite existing files blindly |
+| Harness template sync | Compare/update version-owned Ripple control files from tracked `templates/harness/` | Overwrite project-owned identity, queue, state, docs, tasks, or runtime history |
 | Application menu | Expose macOS-native app actions such as Settings | Perform repository reads or writes directly |
 | Dashboard UI | Display project and task lifecycle state | Execute destructive repo operations |
 | Prompt generator | Produce next-action prompts for Codex | Pretend execution happened |
@@ -112,6 +115,15 @@ Existing managed repositories are writable only through narrow harness JSON patc
 - Supported files: `.agent/manifest.json`, `.agent/state.json`, `.agent/queue.json`.
 - Required protections: configured-root containment, symlink rejection, revision-token conflict detection, schema validation, unknown-field preservation, stable JSON serialization, and atomic writes.
 - URL source of truth: `.agent/state.json` under `project.localUrl`, `project.testUrl`, and `project.deploymentUrl`.
+
+Harness template sync has a separate allowlist for version-owned control files:
+
+- `AGENTS.md`
+- `.agent/protocol.md`
+- `.agent/quality-rules.md`
+- `.gitignore`
+
+The sync checker computes a content-hash version from those tracked template files, records new install metadata in `.agent/template-sync.json`, and exposes current/stale/missing status through project scan/detail data. It does not overwrite project-owned files such as `.agent/manifest.json`, `.agent/state.json`, `.agent/queue.*`, `.agent/development.json`, `docs/**`, or `tasks/**`.
 
 Create-repo writes only to an empty target inside configured roots and rejects non-empty targets, existing harness files, and symlink targets.
 

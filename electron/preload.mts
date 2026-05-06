@@ -5,6 +5,10 @@ import type {
   CreateHarnessRepoInput,
   CreateHarnessRepoResult,
   HarnessJsonPatchInput,
+  HarnessTemplateSyncCheckInput,
+  HarnessTemplateSyncCheckResult,
+  HarnessTemplateSyncUpdateInput,
+  HarnessTemplateSyncUpdateResult,
   NextActionPromptInput,
   NextActionPromptResult,
   ProjectDetail,
@@ -36,6 +40,8 @@ const channels = {
   updateHarnessState: "harness:updateState",
   updateHarnessManifest: "harness:updateManifest",
   updateHarnessQueue: "harness:updateQueue",
+  checkHarnessTemplateSync: "harness:checkTemplateSync",
+  updateHarnessTemplateFiles: "harness:updateTemplateFiles",
   createHarnessRepo: "projects:createHarnessRepo",
   nextActionPrompt: "prompts:nextAction",
   createTerminal: "terminal:create",
@@ -108,7 +114,11 @@ const sharkBayApi = {
     updateManifest: (input: HarnessJsonPatchInput) =>
       invoke<SafeWriteResult>(channels.updateHarnessManifest, input),
     updateQueue: (input: HarnessJsonPatchInput) =>
-      invoke<SafeWriteResult>(channels.updateHarnessQueue, input)
+      invoke<SafeWriteResult>(channels.updateHarnessQueue, input),
+    checkTemplateSync: (input: HarnessTemplateSyncCheckInput) =>
+      invoke<HarnessTemplateSyncCheckResult>(channels.checkHarnessTemplateSync, input),
+    updateTemplateFiles: (input: HarnessTemplateSyncUpdateInput) =>
+      invoke<HarnessTemplateSyncUpdateResult>(channels.updateHarnessTemplateFiles, input)
   },
   prompts: {
     nextAction: (input: NextActionPromptInput) =>
