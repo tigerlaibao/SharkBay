@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: README refreshed for current SharkBay workbench capabilities
+- Current focus: README refreshed and published to `origin/main`
 - Last controller run: 2026-05-06 completed `t-025-readme-publish`
 
 ## Repository Identity
@@ -20,13 +20,14 @@
 
 - Task ID: `t-025-readme-publish`
 - Phase: done
-- Next action: Push `main` to origin.
+- Next action: Ready for the next task.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-06T20:45:21+08:00 | Pushed README refresh commit `0941329` to `origin/main`. | `git push origin main` |
 | 2026-05-06T20:42:52+08:00 | Completed `t-025-readme-publish` with `README.md` refreshed for current SharkBay workbench capabilities and native terminal rebuild guidance. | `tasks/t-025-readme-publish/verification.md` |
 | 2026-05-06T20:41:15+08:00 | Open `t-025-readme-publish` to refresh `README.md` and push the current `main` branch to origin. | User request |
 | 2026-05-06T20:32:36+08:00 | Completed the `t-023-terminal-title-strategy` revision so `codex`, `claude`, and terminal monitor foreground apps keep process titles and OSC color responses no longer pollute tab titles. | `tasks/t-023-terminal-title-strategy/verification.md` |

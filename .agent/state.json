@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06T20:42:52+08:00",
+  "updatedAt": "2026-05-06T20:45:21+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "README refreshed for current SharkBay workbench capabilities.",
+    "currentFocus": "README refreshed and published to origin/main.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,15 @@
   "currentTask": {
     "taskId": "t-025-readme-publish",
     "phase": "done",
-    "nextAction": "Push main to origin.",
+    "nextAction": "Ready for the next task.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-06T20:45:21+08:00",
+      "decision": "Pushed README refresh commit 0941329 to origin/main.",
+      "source": "git push origin main"
+    },
     {
       "date": "2026-05-06T20:42:52+08:00",
       "decision": "Completed t-025-readme-publish with README.md refreshed for current SharkBay workbench capabilities and native terminal rebuild guidance.",

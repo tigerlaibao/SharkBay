@@ -62,7 +62,7 @@ User-centered project workbench redesign, read-only root child discovery, autono
 | `t-022-runner-task-registration` | 2026-05-06 | `npm run typecheck`, focused runner registration tests, `npm test` with 52 tests, `npm run build`, and `git diff --check` passed |
 | `t-023-terminal-title-strategy` | 2026-05-06 | `npm test -- tests/terminal.test.ts`, `npm run typecheck`, `npm test` with 54 tests, `npm run build`, and `git diff --check` passed; revision added OSC color response and interactive foreground app title regressions |
 | `t-024-project-aware-column-headings` | 2026-05-06 | `npm run typecheck`, `npm run build`, and `git diff --check` passed |
-| `t-025-readme-publish` | 2026-05-06 | `git diff --check`, harness JSON parse check, and focused README review passed; push verification runs after commit |
+| `t-025-readme-publish` | 2026-05-06 | `git diff --check`, harness JSON parse check, focused README review, and `git push origin main` passed |
 
 ## Task Detail Template
 
