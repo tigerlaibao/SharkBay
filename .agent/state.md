@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Right detail column card tabs for Tasks, Decisions, Git, and Info
-- Last controller run: 2026-05-06 right detail card tabs
+- Current focus: Right detail column card tabs for Tasks, Decisions, Git, and Info are complete
+- Last controller run: 2026-05-06 completed right detail card tabs
 
 ## Repository Identity
 
@@ -14,13 +14,13 @@
 - Default branch: main
 - Remote origin: `git@github.com:SharkUI/SharkBay.git`
 - GitHub repository: `git@github.com:SharkUI/SharkBay.git`
-- Dirty worktree: yes, local edits are present
+- Dirty worktree: no
 
 ## Current Task
 
 - Task ID: `t-020-right-detail-card-tabs`
-- Phase: coding
-- Next action: Implement right detail column card tabs and keep handoff inside Tasks.
+- Phase: done
+- Next action: Ready for the next task.
 - Blocked by: none
 
 ## Recent Decisions
@@ -108,6 +108,7 @@
 | 2026-05-06T16:53:27+08:00 | Removed the left project panel's search, phase, Dirty, Blocked, refresh, and Settings controls. | `tasks/t-018-macos-settings-menu/implementation.md` |
 | 2026-05-06T17:01:51+08:00 | Keep `DashboardView` mounted while Settings is open so terminal spaces, tabs, and xterm instances persist across Settings navigation. | `tasks/t-019-preserve-terminals-across-settings/implementation.md` |
 | 2026-05-06T18:50:09+08:00 | Open `t-020-right-detail-card-tabs` to convert the right detail column into card-style tabs for Tasks, Decisions, Git, and Info, with handoff remaining inside Tasks. | User request |
+| 2026-05-06T18:57:51+08:00 | Completed `t-020-right-detail-card-tabs` with card-style right detail tabs and Handoff scoped to Tasks. | `tasks/t-020-right-detail-card-tabs/verification.md` |
 
 ## Open Questions
 

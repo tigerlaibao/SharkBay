@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06T18:50:09+08:00",
+  "updatedAt": "2026-05-06T18:57:51+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -8,20 +8,20 @@
     "defaultBranch": "main",
     "remoteOrigin": "git@github.com:SharkUI/SharkBay.git",
     "githubUrl": "git@github.com:SharkUI/SharkBay.git",
-    "dirtyWorktree": true
+    "dirtyWorktree": false
   },
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Right detail column card tabs for Tasks, Decisions, Git, and Info.",
+    "currentFocus": "Right detail column card tabs for Tasks, Decisions, Git, and Info are complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
   },
   "currentTask": {
     "taskId": "t-020-right-detail-card-tabs",
-    "phase": "coding",
-    "nextAction": "Implement right detail column card tabs and keep handoff inside Tasks.",
+    "phase": "done",
+    "nextAction": "Ready for the next task.",
     "blockedBy": []
   },
   "recentDecisions": [
@@ -429,6 +429,11 @@
       "date": "2026-05-06T18:50:09+08:00",
       "decision": "Open t-020-right-detail-card-tabs to convert the right detail column into card-style tabs for Tasks, Decisions, Git, and Info, with handoff remaining inside Tasks.",
       "source": "user request"
+    },
+    {
+      "date": "2026-05-06T18:57:51+08:00",
+      "decision": "Completed t-020-right-detail-card-tabs with card-style right detail tabs and Handoff scoped to Tasks.",
+      "source": "tasks/t-020-right-detail-card-tabs/verification.md"
     }
   ],
   "openQuestions": []

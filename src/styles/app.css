@@ -732,12 +732,6 @@ body.is-resizing-columns * {
   display: none;
 }
 
-.detail-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .icon-button {
   display: grid;
   place-items: center;
@@ -787,6 +781,7 @@ body.is-resizing-columns * {
 }
 
 .project-info-card,
+.project-facts-card,
 .info-section {
   display: grid;
   gap: 7px;
@@ -823,23 +818,6 @@ body.is-resizing-columns * {
 .runtime-link:hover,
 .runtime-link:focus-visible {
   text-decoration: underline;
-}
-
-.project-settings-page {
-  gap: 14px;
-}
-
-.project-settings-page .detail-header {
-  justify-content: flex-start;
-  align-items: center;
-}
-
-.project-settings-page .url-editor {
-  align-content: start;
-  padding: 0;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
 }
 
 .url-editor {
@@ -900,6 +878,49 @@ body.is-resizing-columns * {
 .tab-button span {
   color: inherit;
   opacity: 0.75;
+}
+
+.detail-tab-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.detail-tab-card {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  min-height: 46px;
+  color: #405052;
+  background: #f8f7f3;
+  border: 1px solid #dedad1;
+  border-radius: 8px;
+  padding: 8px 6px;
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.detail-tab-card:hover,
+.detail-tab-card:focus-visible {
+  color: #244f58;
+  border-color: #b8cbc7;
+  outline: none;
+}
+
+.detail-tab-card.is-active {
+  color: #ffffff;
+  background: #405f66;
+  border-color: #405f66;
+  box-shadow: 0 1px 0 rgba(32, 49, 54, 0.08);
+}
+
+.detail-tab-panel {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
 }
 
 .artifact-panel {

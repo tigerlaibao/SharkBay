@@ -4,7 +4,6 @@
 
 | Priority | Task ID | Title | Phase | Depends On | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `t-020-right-detail-card-tabs` | Convert right detail column into card tabs | coding | `t-019-preserve-terminals-across-settings` | active |
 
 ## Backlog
 
@@ -34,6 +33,7 @@
 | `t-017-minimum-default-columns` | Initialize workbench columns at minimum widths | 2026-05-06 |
 | `t-018-macos-settings-menu` | Open Settings from the macOS app menu | 2026-05-06 |
 | `t-019-preserve-terminals-across-settings` | Preserve terminal spaces across Settings navigation | 2026-05-06 |
+| `t-020-right-detail-card-tabs` | Convert right detail column into card tabs | 2026-05-06 |
 
 ## Rules
 

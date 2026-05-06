@@ -1,7 +1,7 @@
 # T-020: Convert right detail column into card tabs
 
-- Status: active
-- Phase: coding
+- Status: done
+- Phase: done
 - Priority: 1
 - Depends on: `t-019-preserve-terminals-across-settings`
 - Created: 2026-05-06T18:50:09+08:00
@@ -32,6 +32,20 @@ Keep handoff/next-action prompt controls inside the Tasks tab.
 - 2026-05-06T18:50:09+08:00: Intake captured from user request.
 - 2026-05-06T18:50:09+08:00: Spec, design, design review, and contract completed because scope is narrow and dependency `t-019` is done.
 - 2026-05-06T18:50:09+08:00: Coding opened.
+- 2026-05-06T18:57:51+08:00: Implementation, code review, and verification passed; task marked done.
+
+## Verification Summary
+
+- `npm run typecheck`: passed.
+- `npm test`: passed with 51 tests.
+- `npm run build`: passed.
+- `git diff --check`: passed.
+- Dev-server HTTP smoke on `http://127.0.0.1:5174/`: returned `200 OK`.
+- Browser screenshot check could not run because `agent-browser` is unavailable.
+
+## Final Outcome
+
+The managed project right detail column now uses card-style tabs for Tasks, Decisions, Git, and Info. Handoff remains inside Tasks.
 
 ## Open Questions
 

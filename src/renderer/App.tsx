@@ -27,7 +27,8 @@ import type {
 import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, userActionReason } from "./workflow";
 
 type View = "dashboard" | "settings";
-type DetailMode = "overview" | "settings" | "decisions" | "git" | "task";
+type DetailMode = "overview" | "decisions" | "git" | "task";
+type DetailTab = "tasks" | "decisions" | "git" | "info";
 
 type Toast = {
   tone: "info" | "error" | "success";
@@ -75,6 +76,12 @@ const resizerColumnWidth = 12;
 const columnResizeStep = 40;
 const detailColumnStorageKey = "sharkbay.detailColumnWidth.v2";
 const projectColumnStorageKey = "sharkbay.projectColumnWidth.v2";
+const detailTabs: Array<{ id: DetailTab; label: string }> = [
+  { id: "tasks", label: "Tasks" },
+  { id: "decisions", label: "Decisions" },
+  { id: "git", label: "Git" },
+  { id: "info", label: "Info" },
+];
 
 const artifactOrder: ArtifactKey[] = [
   "statusMarkdown",
@@ -1582,12 +1589,10 @@ function ProjectDetailPane({
   onDetailRefresh: (project?: ProjectSummary | null) => Promise<void>;
 }) {
   const [detailMode, setDetailMode] = useState<DetailMode>("overview");
+  const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>("tasks");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const resolved = detail?.id === project.id ? detail : project;
   const detailLike = resolved as ProjectDetail;
-  const hasDecisions = Boolean(detailLike.recentDecisions?.length);
-  const hasGitHistory = Boolean(detailLike.gitHistory?.length || detailLike.currentBranch);
-  const hasDiagnostics = projectHasDiagnostics(detailLike);
   const actionReason = userActionReason(detailLike);
   const handoffReason = agentHandoffReason(detailLike);
   const promptReason = actionReason ?? handoffReason;
@@ -1595,21 +1600,9 @@ function ProjectDetailPane({
 
   useEffect(() => {
     setDetailMode("overview");
+    setActiveDetailTab("tasks");
     setSelectedTaskId(null);
   }, [project.id]);
-
-  if (detailMode === "settings") {
-    return (
-      <ProjectSettingsPage
-        configuredRoots={configuredRoots}
-        detail={detailLike}
-        project={project}
-        setToast={setToast}
-        onBack={() => setDetailMode("overview")}
-        onDetailRefresh={onDetailRefresh}
-      />
-    );
-  }
 
   if (detailMode === "decisions") {
     return (
@@ -1648,6 +1641,28 @@ function ProjectDetailPane({
     );
   }
 
+  function openDetailTab(tab: DetailTab) {
+    setActiveDetailTab(tab);
+    setDetailMode("overview");
+    setSelectedTaskId(null);
+  }
+
+  function openTask(taskId: string) {
+    setActiveDetailTab("tasks");
+    setSelectedTaskId(taskId);
+    setDetailMode("task");
+  }
+
+  function openDecisions() {
+    setActiveDetailTab("decisions");
+    setDetailMode("decisions");
+  }
+
+  function openGitHistory() {
+    setActiveDetailTab("git");
+    setDetailMode("git");
+  }
+
   return (
     <div className="detail-layout">
       <div className="detail-header">
@@ -1655,37 +1670,149 @@ function ProjectDetailPane({
           <h3>{resolved.name}</h3>
           <div className="path-line">{resolved.path}</div>
         </div>
-        <div className="detail-actions">
-          <button
-            aria-label="Project settings"
-            className="icon-button"
-            title="Project settings"
-            type="button"
-            onClick={() => setDetailMode("settings")}
-          >
-            <SettingsIcon />
-          </button>
-        </div>
       </div>
 
-      {promptReason && promptTask ? <PromptPanel detail={detailLike} reason={promptReason} task={promptTask} setToast={setToast} /> : null}
-      <QueueTabs
-        detail={detailLike}
-        onSelectTask={(taskId) => {
-          setSelectedTaskId(taskId);
-          setDetailMode("task");
-        }}
-      />
+      <div className="detail-tab-cards" role="tablist" aria-label="Project detail sections">
+        {detailTabs.map((tab) => (
+          <button
+            aria-selected={activeDetailTab === tab.id}
+            className={cx("detail-tab-card", activeDetailTab === tab.id && "is-active")}
+            key={tab.id}
+            role="tab"
+            type="button"
+            onClick={() => openDetailTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {hasDecisions || hasGitHistory ? (
-        <div className="history-grid">
-          <DecisionList decisions={detailLike.recentDecisions ?? []} onViewAll={() => setDetailMode("decisions")} />
-          <GitHistoryList currentBranch={detailLike.currentBranch} events={detailLike.gitHistory ?? []} onViewAll={() => setDetailMode("git")} />
-        </div>
-      ) : null}
-      <Diagnostics detail={detailLike} />
-      <ProjectInfoCard detail={detailLike} />
+      <div className="detail-tab-panel" role="tabpanel">
+        {activeDetailTab === "tasks" ? (
+          <TasksDetailTab
+            detail={detailLike}
+            promptReason={promptReason}
+            promptTask={promptTask}
+            setToast={setToast}
+            onSelectTask={openTask}
+          />
+        ) : null}
+        {activeDetailTab === "decisions" ? <DecisionsDetailTab detail={detailLike} onViewAll={openDecisions} /> : null}
+        {activeDetailTab === "git" ? <GitDetailTab detail={detailLike} onViewAll={openGitHistory} /> : null}
+        {activeDetailTab === "info" ? (
+          <InfoDetailTab
+            configuredRoots={configuredRoots}
+            detail={detailLike}
+            project={project}
+            setToast={setToast}
+            onDetailRefresh={onDetailRefresh}
+          />
+        ) : null}
+      </div>
     </div>
+  );
+}
+
+function TasksDetailTab({
+  detail,
+  promptReason,
+  promptTask,
+  setToast,
+  onSelectTask,
+}: {
+  detail: ProjectDetail;
+  promptReason: string | null;
+  promptTask: PromptTask | null;
+  setToast: (toast: Toast) => void;
+  onSelectTask: (taskId: string) => void;
+}) {
+  return (
+    <>
+      <CurrentTaskCard detail={detail} />
+      {promptReason && promptTask ? <PromptPanel detail={detail} reason={promptReason} task={promptTask} setToast={setToast} /> : null}
+      <QueueTabs detail={detail} onSelectTask={onSelectTask} />
+      <Diagnostics detail={detail} />
+    </>
+  );
+}
+
+function DecisionsDetailTab({ detail, onViewAll }: { detail: ProjectDetail; onViewAll: () => void }) {
+  return detail.recentDecisions?.length ? (
+    <DecisionList decisions={detail.recentDecisions} onViewAll={onViewAll} />
+  ) : (
+    <EmptyState title="No decisions" body="This project has no recorded decisions yet." />
+  );
+}
+
+function GitDetailTab({ detail, onViewAll }: { detail: ProjectDetail; onViewAll: () => void }) {
+  return detail.gitHistory?.length || detail.currentBranch ? (
+    <GitHistoryList currentBranch={detail.currentBranch} events={detail.gitHistory ?? []} onViewAll={onViewAll} />
+  ) : (
+    <EmptyState title="No git history" body="Restart SharkBay once to load Git history." />
+  );
+}
+
+function InfoDetailTab({
+  configuredRoots,
+  detail,
+  project,
+  setToast,
+  onDetailRefresh,
+}: {
+  configuredRoots: string[];
+  detail: ProjectDetail;
+  project: ProjectSummary;
+  setToast: (toast: Toast) => void;
+  onDetailRefresh: (project?: ProjectSummary | null) => Promise<void>;
+}) {
+  return (
+    <>
+      <ProjectFactsCard detail={detail} />
+      <UrlEditor configuredRoots={configuredRoots} detail={detail} setToast={setToast} onSaved={() => onDetailRefresh(project)} />
+      <ProjectInfoCard detail={detail} />
+    </>
+  );
+}
+
+function CurrentTaskCard({ detail }: { detail: ProjectDetail }) {
+  const task = hasMeaningfulActiveTask(detail.activeTask) ? detail.activeTask : null;
+  if (!task) {
+    return null;
+  }
+
+  return (
+    <section className="subpanel current-task-card">
+      <div className="panel-title-row compact-title-row">
+        <h4>Current Task</h4>
+        <span className={cx("phase-pill", phaseClass(task.phase))}>{task.phase}</span>
+      </div>
+      <strong>{task.taskId}</strong>
+      {task.title ? <p className="summary-text">{task.title}</p> : null}
+    </section>
+  );
+}
+
+function ProjectFactsCard({ detail }: { detail: ProjectDetail }) {
+  const worktree = detail.dirtyWorktree === null ? null : detail.dirtyWorktree ? "Dirty" : "Clean";
+  const facts = [
+    { label: "Path", value: detail.path },
+    { label: "Branch", value: detail.currentBranch },
+    { label: "Worktree", value: worktree, tone: detail.dirtyWorktree ? "warn" as const : undefined },
+    { label: "Detection", value: detail.detection === "protocol-fallback" ? "Protocol fallback" : "Manifest" },
+    { label: "Active", value: activeTaskTitle(detail) },
+  ].filter((fact): fact is { label: string; value: string; tone?: "warn" } => Boolean(fact.value));
+
+  return (
+    <section className="subpanel project-facts-card">
+      <div className="panel-title-row compact-title-row">
+        <h4>Repository</h4>
+      </div>
+      <div className="dense-grid">
+        {facts.map((fact) => (
+          <Fact key={fact.label} label={fact.label} tone={fact.tone} value={fact.value} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -1774,38 +1901,6 @@ function InfoChipGroup({ label, values }: { label: string; values: string[] }) {
           </span>
         ))}
       </div>
-    </div>
-  );
-}
-
-function ProjectSettingsPage({
-  configuredRoots,
-  detail,
-  project,
-  setToast,
-  onBack,
-  onDetailRefresh,
-}: {
-  configuredRoots: string[];
-  detail: ProjectDetail;
-  project: ProjectSummary;
-  setToast: (toast: Toast) => void;
-  onBack: () => void;
-  onDetailRefresh: (project?: ProjectSummary | null) => Promise<void>;
-}) {
-  return (
-    <div className="detail-layout project-settings-page">
-      <div className="detail-header">
-        <button aria-label="Back to project" className="icon-button" title="Back to project" type="button" onClick={onBack}>
-          <ArrowLeftIcon />
-        </button>
-        <div>
-          <h3>{detail.name}</h3>
-          <div className="path-line">{detail.path}</div>
-        </div>
-      </div>
-
-      <UrlEditor configuredRoots={configuredRoots} detail={detail} setToast={setToast} onSaved={() => onDetailRefresh(project)} />
     </div>
   );
 }
@@ -2346,15 +2441,6 @@ function Fact({ label, value, tone }: { label: string; value: string; tone?: "wa
 
 function StatusPill({ status }: { status: GateStatus }) {
   return <span className={cx("status-pill", `status-${status}`)}>{status}</span>;
-}
-
-function SettingsIcon() {
-  return (
-    <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16">
-      <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
-      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" />
-    </svg>
-  );
 }
 
 function ArrowLeftIcon() {
