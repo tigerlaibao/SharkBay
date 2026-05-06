@@ -332,6 +332,7 @@ body.is-resizing-columns * {
 .project-panel,
 .detail-panel,
 .terminal-panel {
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
 }

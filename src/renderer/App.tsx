@@ -806,7 +806,7 @@ function DashboardView({
 
   return (
     <div className="dashboard-grid" ref={gridRef} style={gridStyle}>
-      <section className="panel project-panel">
+      <section className="project-panel">
         {scanErrors.length ? (
           <div className="inline-errors">
             {scanErrors.map((error) => (
@@ -864,7 +864,7 @@ function DashboardView({
         onPointerDown={(event) => startColumnResize("detail", event)}
       />
 
-      <section className="panel detail-panel">
+      <section className="detail-panel">
         {selectedProject ? (
           <ProjectDetailPane
             detail={detail}
