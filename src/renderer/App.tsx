@@ -9,6 +9,7 @@ import type {
   CreateHarnessRepoInput,
   CreateHarnessRepoResult,
   GateStatus,
+  HarnessTemplateSyncUpdateResult,
   NextActionPromptResult,
   ProjectCandidate,
   ProjectDetail,
@@ -230,6 +231,14 @@ async function createHarnessRepo(input: CreateHarnessRepoInput): Promise<CreateH
     targetDir,
     targetPath: targetDir,
   });
+}
+
+async function updateHarnessTemplateFiles(project: ProjectSummary | ProjectDetail): Promise<HarnessTemplateSyncUpdateResult> {
+  const handler = getBridge().harness?.updateTemplateFiles;
+  if (!handler) {
+    throw new Error("Harness template sync is not exposed by the preload API.");
+  }
+  return handler({ repoPath: project.path });
 }
 
 async function createTerminal(cwd: string, title?: string): Promise<TerminalSession> {
@@ -861,6 +870,7 @@ function DashboardView({
             detail={detail}
             project={selectedProject}
             setToast={setToast}
+            onRefresh={onRefresh}
           />
         ) : selectedCandidate ? (
           <NotSetupPane
@@ -1431,6 +1441,8 @@ function ProjectTable({
           const phase = project ? phaseOf(project) : null;
           const gate = project ? gateOf(project) : null;
           const showGate = gate === "blocked";
+          const harnessStatus = project?.harnessTemplate?.status;
+          const showHarnessStatus = harnessStatus === "stale" || harnessStatus === "missing";
 
           return (
             <button className={cx("project-row", candidate.status === "not_setup" && "is-not-setup", selectedId === candidate.id && "is-selected")} key={candidate.id} onClick={() => onSelect(candidate.id)}>
@@ -1443,6 +1455,7 @@ function ProjectTable({
                 <span className="project-row-status">
                   {phase && phase !== "unknown" ? <span className={cx("phase-pill", phaseClass(phase))}>{phase}</span> : null}
                   {showGate && gate ? <StatusPill status={gate} /> : null}
+                  {showHarnessStatus ? <span className={cx("harness-pill", harnessStatus === "missing" && "is-missing")}>harness {harnessStatus}</span> : null}
                   {project.dirtyWorktree !== false ? (
                     <span className={cx("worktree-pill", project.dirtyWorktree && "is-dirty")}>
                       {project.dirtyWorktree === null ? "git unknown" : "dirty"}
@@ -1551,10 +1564,12 @@ function ProjectDetailPane({
   detail,
   project,
   setToast,
+  onRefresh,
 }: {
   detail: ProjectDetail | null;
   project: ProjectSummary;
   setToast: (toast: Toast) => void;
+  onRefresh: () => Promise<void>;
 }) {
   const [detailMode, setDetailMode] = useState<DetailMode>("overview");
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>("tasks");
@@ -1628,6 +1643,7 @@ function ProjectDetailPane({
 
   return (
     <div className="detail-layout">
+      <HarnessTemplateSyncPanel detail={detailLike} setToast={setToast} onRefresh={onRefresh} />
       <div className="detail-tab-cards" role="tablist" aria-label="Project detail sections">
         {detailTabs.map((tab) => (
           <button
@@ -1690,6 +1706,84 @@ function ProjectDetailPane({
         <InfoDetailTab detail={detailLike} />
       </div>
     </div>
+  );
+}
+
+function HarnessTemplateSyncPanel({
+  detail,
+  setToast,
+  onRefresh,
+}: {
+  detail: ProjectDetail;
+  setToast: (toast: Toast) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const template = detail.harnessTemplate;
+  const needsSync = template?.status === "stale" || template?.status === "missing";
+  const files = [...(template?.staleFiles ?? []), ...(template?.missingFiles ?? [])];
+
+  useEffect(() => {
+    setConfirming(false);
+    setSyncing(false);
+  }, [detail.id, template?.status, files.join("\n")]);
+
+  if (!needsSync || !template) {
+    return null;
+  }
+
+  async function syncFiles() {
+    setSyncing(true);
+    try {
+      const result = await updateHarnessTemplateFiles(detail);
+      if (!result.ok) {
+        throw new Error(result.message);
+      }
+      setConfirming(false);
+      setToast({ tone: "success", message: "Harness files synced." });
+      await onRefresh();
+    } catch (error) {
+      setToast({ tone: "error", message: asMessage(error) });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  return (
+    <section className={cx("subpanel", "harness-sync-card", template.status === "missing" && "is-missing")}>
+      <div className="panel-title-row">
+        <div>
+          <h4>Harness files {template.status === "missing" ? "missing" : "out of date"}</h4>
+          <p className="summary-text">Shared control files differ from SharkBay's current template.</p>
+        </div>
+        {!confirming ? (
+          <button className="button compact" disabled={syncing} type="button" onClick={() => setConfirming(true)}>
+            Sync
+          </button>
+        ) : null}
+      </div>
+      <div className="info-chip-row" aria-label="Harness files to sync">
+        {files.map((file) => (
+          <span className="info-chip mono-chip" key={file}>
+            {file}
+          </span>
+        ))}
+      </div>
+      {confirming ? (
+        <div className="confirm-panel">
+          <p className="summary-text">This updates the listed control files only. Project state, tasks, docs, and queues are not changed.</p>
+          <div className="button-row">
+            <button className="button secondary compact" disabled={syncing} type="button" onClick={() => setConfirming(false)}>
+              Cancel
+            </button>
+            <button className="button compact" disabled={syncing} type="button" onClick={() => void syncFiles()}>
+              {syncing ? "Syncing" : "Confirm sync"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
