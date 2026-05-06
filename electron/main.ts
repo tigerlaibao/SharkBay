@@ -60,6 +60,7 @@ function createMainWindow(): BrowserWindow {
     minWidth: 1180,
     minHeight: 680,
     title: "SharkBay",
+    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     show: false,
     backgroundColor: "#f7f8fa",
     webPreferences: {
