@@ -1,17 +1,17 @@
 # AGENTS.md
 
-This repository can use a local Codex-oriented engineering harness while it is being dogfooded in SharkBay. The public source tree does not track this repository's root `.agent/`, root `tasks/`, `docs/task.md`, or `docs/learnings.md` runtime/history files; those are local project state.
+This repository uses a Codex-oriented Ripple harness.
 
 ## Start Here
 
-Before starting any task, first check whether local harness files exist. If they do, read:
+Before starting any task, read:
 
 1. `.agent/manifest.json` - machine-readable repository identity
 2. `.agent/state.json` - machine-readable current state
 3. `.agent/queue.json` - machine-readable task queue
 4. `.agent/protocol.md` - controller workflow and phase rules
 5. `.agent/quality-rules.md` - review and verification gates
-6. `.agent/runner.json` - optional cooperative runner lifecycle and heartbeat
+6. `.agent/runner.json` - optional local runner lifecycle and heartbeat
 7. `.agent/queue.md` - human-readable active task queue
 8. `.agent/state.md` - human-readable repo-level state
 9. `docs/product.md` - product context
@@ -19,17 +19,11 @@ Before starting any task, first check whether local harness files exist. If they
 11. `docs/task.md` - human-readable task list
 12. `docs/learnings.md` - durable lessons from prior work
 
-If those local harness files are absent in a fresh clone, use the public project files instead:
-
-1. `README.md` - project overview and development commands
-2. `docs/product.md` - product context
-3. `docs/architecture.md` - technical structure and boundaries
-4. `docs/agents.md` - assistant guidance for this public repository
-5. `templates/harness/` - canonical Ripple harness template installed into managed projects
+For the active task, also read `tasks/<task-id>/status.md` and `tasks/<task-id>/contract.md` when the current phase has an implementation contract.
 
 ## Operating Rule
 
-Do not rely on chat memory as the source of truth. If the local harness exists and a decision, task state, test result, or review finding matters, write it to the appropriate local harness file. For ordinary public-repo maintenance without local harness state, keep durable user-facing decisions in public docs only when they are relevant to future users.
+Do not rely on chat memory as the source of truth. If a decision, task state, test result, review finding, or verification result matters, write it to the appropriate harness file.
 
 ## Behavioral Discipline
 
@@ -41,23 +35,42 @@ Do not rely on chat memory as the source of truth. If the local harness exists a
 
 ## Default Workflow
 
-When the user asks to continue or advance harness-managed work and local harness files exist:
+When asked to continue or advance work:
 
 1. Read `.agent/protocol.md`.
 2. Read `.agent/queue.json` and `.agent/queue.md`, then choose the highest-priority active task.
-3. Check dependency locks before advancing the task.
+3. Check dependency locks before advancing into coding.
 4. Read `tasks/<task-id>/status.md`.
 5. If the work is new or ad hoc, register it before claiming runner state: create `tasks/<task-id>/status.md`, add it to Active in `.agent/queue.json` and `.agent/queue.md`, and update `.agent/state.json` and `.agent/state.md` currentTask.
 6. Write or refresh `.agent/runner.json` with `status=running` only after `runner.taskId` is visible as the Active task.
-7. Execute the needed phase transitions autonomously while scope and stop conditions allow.
+7. Execute the next required phase transition without skipping gates.
 8. Write or update the phase artifact.
 9. Update `tasks/<task-id>/status.md`.
 10. Update `.agent/state.json` and `.agent/state.md` if repo-level state changed.
 11. Keep `.agent/queue.json` and `.agent/queue.md` in sync.
-12. Set `.agent/runner.json` to `waiting_for_human`, `blocked`, or `idle` when work stops.
-
-When local harness files are absent, do not recreate SharkBay's private work history automatically. Work directly from the user's request, public docs, and the codebase.
+12. Make a focused checkpoint commit for completed phase work when the repository is a git repo.
+13. Continue autonomously across phases until the task is done, blocked, or the protocol requires human intervention.
+14. Set `.agent/runner.json` to `waiting_for_human`, `blocked`, or `idle` when work stops.
 
 ## Quality Gate
 
-Design and code do not pass because they "look fine." When local harness gates exist, satisfy `.agent/quality-rules.md`; otherwise use the same standard directly: scope clarity, focused implementation, review for regressions, and concrete verification evidence.
+Design and code pass only when the relevant review and verification gates in `.agent/protocol.md`, the task contract, and the phase artifacts are satisfied. Verification must leave evidence: commands, exit codes, output excerpts, screenshots, traces, or validation scripts as appropriate.
+
+## Safety
+
+Stop and ask before destructive changes, significant scope expansion, architecture changes beyond the approved design, skipped required verification, secrets or credentials, billing, production data, merging, releasing, deploying, or publishing.
+
+Preserve existing project files. Do not overwrite or merge local instruction files such as `AGENTS.md` unless the user explicitly approves that work in scope.
+
+## Git Checkpoints
+
+If this is a git repository, do not leave completed harness initialization or phase work uncommitted.
+
+Commit after:
+
+- Initial harness setup files are created or first brought under agent control.
+- Each completed phase artifact or coherent implementation slice.
+- Review fixes before re-entering review.
+- Verification/docs updates when a task is marked done.
+
+Keep commits focused. Do not mix unrelated user changes into a harness checkpoint. If a checkpoint cannot be made, record the reason in `tasks/<task-id>/status.md` before stopping.
