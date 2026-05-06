@@ -111,6 +111,8 @@ describe("harness reader", () => {
     expect(detail.queue.backlog.find((item) => item.taskId === "t-007-task-dir-only")?.source).toBe("tasks-directory");
     expect(detail.activeTask?.title).toBe("Community interaction UI");
     expect(detail.taskArtifacts["t-007-task-dir-only"]?.statusMarkdown).toContain("# Task Status");
+    expect(Object.values(detail.taskArtifacts["t-006-interactive-product-finder"] ?? {}).every((content) => content === null)).toBe(true);
+    expect(detail.errors.some((error) => error.file.includes("t-006-interactive-product-finder"))).toBe(false);
   });
 
   it("reads recent git history from the repository reflog", async () => {

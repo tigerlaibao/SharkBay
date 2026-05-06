@@ -23,6 +23,9 @@ export type TaskQueueItem = {
   phase?: string;
   dependsOn?: string[];
   status?: string;
+  notes?: string;
+  completed?: string;
+  completedAt?: string;
 };
 
 export type ActiveTaskSummary = {

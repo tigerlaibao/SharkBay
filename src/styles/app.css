@@ -25,9 +25,7 @@ body {
   min-width: 1180px;
   min-height: 0;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)),
-    #f4f1eb;
+  background: #f4f1eb;
 }
 
 button,
@@ -340,7 +338,7 @@ body.is-resizing-columns * {
 
 .project-panel,
 .detail-panel {
-  background: #fff;
+  background: transparent;
   border-color: transparent;
   box-shadow: none;
 }
@@ -886,11 +884,17 @@ body.is-resizing-columns * {
 }
 
 .detail-tab-cards {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 12px;
   min-height: 32px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)),
+    #f4f1eb;
   border-bottom: 1px solid #e1ddd4;
 }
 
@@ -977,7 +981,7 @@ body.is-resizing-columns * {
 }
 
 .queue-item.has-priority {
-  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
 }
 
 .queue-item.is-current {
@@ -994,6 +998,7 @@ body.is-resizing-columns * {
 
 .queue-priority {
   display: grid;
+  justify-self: center;
   place-items: center;
   width: 24px;
   height: 24px;
@@ -1077,6 +1082,46 @@ body.is-resizing-columns * {
 .artifact-view.full-height {
   max-height: none;
   min-height: 360px;
+}
+
+.task-metadata-detail {
+  display: grid;
+  align-content: start;
+  min-height: 220px;
+  color: #263235;
+  background: #fffdfa;
+  border: 1px solid #ebe7de;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.metadata-list {
+  display: grid;
+  gap: 0;
+}
+
+.metadata-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0ece3;
+  font-size: 12px;
+}
+
+.metadata-row:last-child {
+  border-bottom: 0;
+}
+
+.metadata-row span {
+  color: #6f7779;
+}
+
+.metadata-row strong {
+  min-width: 0;
+  color: #263235;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .split-row {

@@ -2008,7 +2008,7 @@ function QueueItem({ item, isCurrent, onSelect }: { item: TaskQueueItem; isCurre
   const status = !isEmptyValue(item.status) ? item.status : null;
   const phase = !isEmptyValue(item.phase) ? item.phase : status;
   const title = !isEmptyValue(item.title) ? item.title : null;
-  const priority = item.priority && item.priority > 0 ? `P${item.priority}` : null;
+  const priority = typeof item.priority === "number" && item.priority >= 0 ? `P${item.priority}` : null;
   const meta = [
     item.dependsOn?.length ? `Depends on: ${item.dependsOn.join(", ")}` : null,
   ].filter(Boolean);
@@ -2098,6 +2098,35 @@ function findQueueItem(detail: ProjectDetail, taskId: string): TaskQueueItem | n
     .find((item) => item.taskId === taskId) ?? null;
 }
 
+function formatMetadataValue(value: unknown): string | null {
+  if (typeof value === "string") {
+    return isEmptyValue(value) ? null : value;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    const values = value.flatMap((item) => {
+      const formatted = formatMetadataValue(item);
+      return formatted ? [formatted] : [];
+    });
+    return values.length ? values.join(", ") : null;
+  }
+  return null;
+}
+
+function taskMetadataRows(item: TaskQueueItem | null): Array<{ label: string; value: string }> {
+  if (!item) return [];
+  return [
+    { label: "Phase", value: formatMetadataValue(item.phase) },
+    { label: "Status", value: formatMetadataValue(item.status) },
+    { label: "Priority", value: typeof item.priority === "number" && item.priority >= 0 ? `P${item.priority}` : null },
+    { label: "Depends On", value: formatMetadataValue(item.dependsOn) },
+    { label: "Notes", value: formatMetadataValue(item.notes) },
+    { label: "Completed", value: formatMetadataValue(item.completedAt) ?? formatMetadataValue(item.completed) },
+  ].filter((row): row is { label: string; value: string } => Boolean(row.value));
+}
+
 function artifactsForTask(detail: ProjectDetail, taskId: string): TaskArtifacts | null {
   if (detail.taskArtifacts?.[taskId]) {
     return detail.taskArtifacts[taskId] ?? null;
@@ -2114,6 +2143,7 @@ function TaskDetailPage({ detail, taskId, onBack }: { detail: ProjectDetail; tas
   const task = findQueueItem(detail, taskId);
   const artifacts = artifactsForTask(detail, taskId);
   const availableKeys = artifactOrder.filter((key) => Boolean(artifacts?.[key]?.trim()));
+  const metadataRows = taskMetadataRows(task);
   const [selectedKey, setSelectedKey] = useState<ArtifactKey | null>(availableKeys[0] ?? null);
 
   useEffect(() => {
@@ -2145,7 +2175,22 @@ function TaskDetailPage({ detail, taskId, onBack }: { detail: ProjectDetail; tas
             ))}
           </div>
         ) : null}
-        {content ? <pre className="artifact-view full-height">{content}</pre> : <EmptyState title="No task detail found" body="This task has no readable task artifact files yet." />}
+        {content ? (
+          <pre className="artifact-view full-height">{content}</pre>
+        ) : metadataRows.length ? (
+          <div className="task-metadata-detail">
+            <div className="metadata-list">
+              {metadataRows.map((row) => (
+                <div className="metadata-row" key={row.label}>
+                  <span>{row.label}</span>
+                  <strong>{row.value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <EmptyState title="No task detail found" body="This task has no readable task artifact files yet." />
+        )}
       </section>
     </div>
   );

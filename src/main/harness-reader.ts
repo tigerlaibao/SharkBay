@@ -582,7 +582,12 @@ async function readTaskArtifacts(repoPath: string, configuredRoots: string[], ta
         errors.push({ file: path.join(repoPath, relativePath), message: error instanceof Error ? error.message : String(error) });
         return [key, null] as const;
       }
-      const content = await fs.readFile(safePath, "utf8").catch(() => null);
+      const content = await fs.readFile(safePath, "utf8").catch((error) => {
+        if (!isMissingPathError(error)) {
+          errors.push({ file: safePath, message: error instanceof Error ? error.message : String(error) });
+        }
+        return null;
+      });
       return [key, content] as const;
     }),
   );
