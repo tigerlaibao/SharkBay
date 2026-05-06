@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06T18:57:51+08:00",
+  "updatedAt": "2026-05-06T19:51:41+08:00",
   "active": [],
   "backlog": [],
   "done": [
@@ -218,6 +218,17 @@
       "phase": "done",
       "dependsOn": [
         "t-019-preserve-terminals-across-settings"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-06"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-021-harness-behavioral-discipline",
+      "title": "Add behavioral discipline to Ripple harnesses",
+      "phase": "done",
+      "dependsOn": [
+        "t-020-right-detail-card-tabs"
       ],
       "status": "done",
       "completedAt": "2026-05-06"

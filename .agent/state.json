@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06T19:29:24+08:00",
+  "updatedAt": "2026-05-06T19:51:41+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,18 +13,28 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Right detail column card tabs are complete with flattened Decisions/Git lists, repository facts in Git, and Info limited to project-authored metadata.",
+    "currentFocus": "Behavioral Discipline harness updates are complete for SharkBay, future setup templates, and local AIBF/AIGF projects.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
   },
   "currentTask": {
-    "taskId": "t-020-right-detail-card-tabs",
+    "taskId": "t-021-harness-behavioral-discipline",
     "phase": "done",
     "nextAction": "Ready for the next task.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-06T19:51:41+08:00",
+      "decision": "Completed t-021-harness-behavioral-discipline with Behavioral Discipline rules applied to SharkBay, setup templates, AIBF, and AIGF.",
+      "source": "tasks/t-021-harness-behavioral-discipline/verification.md"
+    },
+    {
+      "date": "2026-05-06T19:44:38+08:00",
+      "decision": "Open t-021-harness-behavioral-discipline to add ambiguity, simplicity, traceability, and verification-mapping rules to SharkBay, templates, AIBF, and AIGF.",
+      "source": "user request"
+    },
     {
       "date": "2026-05-05",
       "decision": "Initialized SharkBay from the project seed in init.md.",

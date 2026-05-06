@@ -10,19 +10,28 @@ Before starting any task, read:
 2. `.agent/state.json` - machine-readable current state
 3. `.agent/queue.json` - machine-readable task queue
 4. `.agent/protocol.md` - controller workflow and phase rules
-5. `.agent/runner.json` - optional local runner lifecycle and heartbeat
-6. `.agent/queue.md` - human-readable active task queue
-7. `.agent/state.md` - human-readable repo-level state
-8. `docs/product.md` - product context
-9. `docs/architecture.md` - technical structure and boundaries
-10. `docs/task.md` - human-readable task list
-11. `docs/learnings.md` - durable lessons from prior work
+5. `.agent/quality-rules.md` - review and verification gates
+6. `.agent/runner.json` - optional local runner lifecycle and heartbeat
+7. `.agent/queue.md` - human-readable active task queue
+8. `.agent/state.md` - human-readable repo-level state
+9. `docs/product.md` - product context
+10. `docs/architecture.md` - technical structure and boundaries
+11. `docs/task.md` - human-readable task list
+12. `docs/learnings.md` - durable lessons from prior work
 
 For the active task, also read `tasks/<task-id>/status.md` and `tasks/<task-id>/contract.md` when the current phase has an implementation contract.
 
 ## Operating Rule
 
 Do not rely on chat memory as the source of truth. If a decision, task state, test result, review finding, or verification result matters, write it to the appropriate harness file.
+
+## Behavioral Discipline
+
+- If a request is materially ambiguous, record assumptions, tradeoffs, and blocking questions before implementation.
+- Prefer the simplest implementation that satisfies the task contract; add abstraction only when it removes real duplication or risk.
+- Keep every code or documentation change traceable to the user goal, task contract, review finding, or verification failure.
+- Map each done criterion to a concrete verification check before marking work complete.
+- Simplicity never overrides explicit safety, data integrity, IPC, filesystem, or credential boundaries.
 
 ## Default Workflow
 

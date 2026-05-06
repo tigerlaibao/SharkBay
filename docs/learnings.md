@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Behavioral Discipline Belongs In Gates
+
+**Problem**: Lightweight agent behavior guidance such as clarifying ambiguity, keeping diffs simple, and mapping goals to verification can be forgotten when it lives only in chat or an external instruction file.
+
+**Cause**: The harness already had phase gates and evidence rules, but the behavioral guidance was not explicitly attached to spec, contract, code review, and verification checkpoints.
+
+**Solution**: Put behavioral discipline directly into `AGENTS.md`, `.agent/protocol.md`, `.agent/quality-rules.md`, and setup templates so current and future projects inherit the same reviewable rules.
+
+**Source**: `tasks/t-021-harness-behavioral-discipline/implementation.md`, `.agent/protocol.md`, `templates/harness/.agent/protocol.md`.
+
+---
+
 ### Hide Tab Panels Instead Of Unmounting
 
 **Problem**: Switching right detail tabs could discard tab-local state such as a generated handoff prompt or unsaved URL edits.

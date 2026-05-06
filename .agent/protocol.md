@@ -108,6 +108,7 @@ Allowed when:
 - Scope is clear.
 - Non-goals are listed.
 - Acceptance criteria exist.
+- Material assumptions, tradeoffs, and blocking questions are recorded, or the task explicitly has none.
 
 ### design -> design_review
 
@@ -136,6 +137,7 @@ Allowed when:
 
 - All dependency tasks are `done`, unless the user explicitly overrides the dependency lock.
 - Done criteria are explicit.
+- Each done criterion is mapped to at least one verification method, or an explicit reason is recorded.
 - Files in scope are named.
 - Files out of scope are named.
 - Required checks are listed.
@@ -148,6 +150,7 @@ Allowed when:
 - Implementation notes are written.
 - User-visible behavior is summarized.
 - Known risks are listed.
+- Changes are traceable to the user goal, task contract, review finding, or verification failure.
 - Required automated checks from `contract.md` have run, or inability to run them is recorded with the exact error.
 
 ### code_review -> code_revision
@@ -385,3 +388,13 @@ Rules:
 - Prefer progressive disclosure for long, low-frequency, diagnostic, or reference content.
 - When optional content disappears, the remaining content should use the available space naturally instead of preserving dead layout slots.
 - Prefer removing an entity over explaining it when it does not create a new user action, decision, or understanding.
+
+## 16. Behavioral Discipline
+
+Use these rules as a lightweight guardrail across all phases:
+
+- Clarify material ambiguity before implementation. If the task can reasonably mean different things, record assumptions, tradeoffs, or blocking questions in the current phase artifact.
+- Prefer the simplest implementation that satisfies the task contract. Do not introduce a new abstraction, configuration layer, generalized framework, or broad refactor unless it removes real duplication, reduces real risk, or is already the local pattern.
+- Keep changes traceable. Every changed file should connect to the user goal, task contract, review finding, or verification failure; unrelated cleanup belongs in a separate task.
+- Bind goals to verification early. Contract done criteria should name the command, test, script, manual check, or evidence type that will prove each criterion.
+- Simplicity does not weaken safety. Required guards for filesystem containment, IPC trust boundaries, schema validation, data integrity, credentials, billing, production data, and destructive operations remain mandatory even when they add complexity.

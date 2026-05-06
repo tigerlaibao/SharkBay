@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Right detail column card tabs are complete with flattened Decisions/Git lists, repository facts in Git, and Info limited to project-authored metadata
-- Last controller run: 2026-05-06 simplified right detail tab content, moved repository facts to Git, and removed Track URLs from Info
+- Current focus: Behavioral Discipline harness updates are complete for SharkBay, future setup templates, AIBF, and AIGF
+- Last controller run: 2026-05-06 completed `t-021-harness-behavioral-discipline`
 
 ## Repository Identity
 
@@ -18,7 +18,7 @@
 
 ## Current Task
 
-- Task ID: `t-020-right-detail-card-tabs`
+- Task ID: `t-021-harness-behavioral-discipline`
 - Phase: done
 - Next action: Ready for the next task.
 - Blocked by: none
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-06T19:51:41+08:00 | Completed `t-021-harness-behavioral-discipline` with Behavioral Discipline rules applied to SharkBay, setup templates, AIBF, and AIGF. | `tasks/t-021-harness-behavioral-discipline/verification.md` |
+| 2026-05-06T19:44:38+08:00 | Open `t-021-harness-behavioral-discipline` to add ambiguity, simplicity, traceability, and verification-mapping rules to SharkBay, templates, AIBF, and AIGF. | User request |
 | 2026-05-05 | Initialized SharkBay from the project seed in `init.md`. | `init.md` |
 | 2026-05-05 | Orient SharkBay as a macOS local app rather than a browser-only web app. | User answer |
 | 2026-05-05 | Keep Codex edits scoped to the current project workspace; SharkBay will later manage only directories configured inside the app. | User answer |

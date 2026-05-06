@@ -18,6 +18,7 @@ Start with:
 - `.agent/queue.json` - machine-readable task queue
 - `.agent/runner.json` - optional cooperative runner lifecycle and heartbeat
 - `.agent/protocol.md` - controller workflow
+- `.agent/quality-rules.md` - review and verification gates
 - `.agent/queue.md` - human-readable task queue
 - `.agent/state.md` - human-readable repository state
 - `docs/product.md` - product requirements
@@ -75,3 +76,11 @@ If a command is unavailable, record the missing command and residual risk in `co
 - Keep runner lifecycle on disk while physically working: write `status=running`, refresh `heartbeatAt`, and set `waiting_for_human`, `blocked`, or `idle` when stopping.
 - Prefer small, reviewable changes.
 - Do not skip review or verification gates.
+
+## Behavioral Discipline
+
+- Clarify material ambiguity before implementation by recording assumptions, tradeoffs, or blocking questions.
+- Prefer the simplest implementation that satisfies the task contract.
+- Keep changes traceable to the user goal, task contract, review finding, or verification failure.
+- Map each done criterion to concrete verification evidence.
+- Do not weaken filesystem, IPC, schema, credential, billing, production-data, or destructive-action safeguards in the name of simplicity.
