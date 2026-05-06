@@ -480,6 +480,8 @@ body.is-resizing-columns * {
   color: #243034;
   font-size: 12px;
   font-weight: 680;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .fact.is-warn strong,
@@ -768,14 +770,7 @@ body.is-resizing-columns * {
   white-space: nowrap;
 }
 
-.dense-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.current-task-card,
-.project-settings-page {
+.current-task-card {
   display: grid;
   gap: 8px;
 }
@@ -820,24 +815,11 @@ body.is-resizing-columns * {
   text-decoration: underline;
 }
 
-.url-editor {
+.project-facts-list {
   display: grid;
-  align-content: start;
-  gap: 8px;
-  padding: 10px;
-  background: #f7f5ef;
-  border: 1px solid #dedad1;
-  border-radius: 8px;
-}
-
-.url-fields {
-  display: grid;
-  align-items: start;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
-.url-fields label,
 .root-form label {
   display: grid;
   gap: 4px;
@@ -1069,29 +1051,9 @@ body.is-resizing-columns * {
   gap: 10px;
 }
 
-.history-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 10px;
-}
-
 .compact-title-row {
   gap: 8px;
   margin-bottom: 8px;
-}
-
-.link-button {
-  color: #315e67;
-  background: transparent;
-  border: 0;
-  padding: 0;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.link-button:hover,
-.link-button:focus-visible {
-  text-decoration: underline;
 }
 
 .decision-item {
@@ -1421,8 +1383,6 @@ body.is-resizing-columns * {
     grid-template-columns: 1fr;
   }
 
-  .dense-grid,
-  .url-fields,
   .split-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

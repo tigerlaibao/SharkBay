@@ -15,10 +15,10 @@ The user should be able to switch between the tabs without changing the selected
 
 - The default tab should be Tasks.
 - The Handoff / next-action prompt flow must stay in Tasks.
-- Tasks must include the active task summary, task queue, diagnostics, and task drilldown entry points.
+- Tasks must include the task queue, diagnostics, task drilldown entry points, and handoff controls; the active task is represented by the first task-list row.
 - Decisions must show recent decisions and allow viewing full decision history in the right column.
 - Git must show git history and allow viewing full git history in the right column.
-- Info must show the project info/developer metadata, URL editing surface, and repository facts.
+- Info must show only project info/developer metadata; repository facts belong in Git and tracked URL controls are not shown in this tab.
 - Not-setup projects can keep their existing setup detail; this task only targets managed project detail.
 
 ## Non-Goals
@@ -32,6 +32,7 @@ The user should be able to switch between the tabs without changing the selected
 - Right managed-project detail has four visible card-style tabs labeled Tasks, Decisions, Git, and Info.
 - Handoff prompt generation is visible only under Tasks.
 - Decisions and Git content are no longer mixed into the default task overview.
-- Info contains project facts and URL controls.
+- Info contains project-authored metadata only.
+- Git contains repository facts and git history.
 - Existing task drilldown from task rows still works.
 - Required checks pass or any inability to run is recorded.

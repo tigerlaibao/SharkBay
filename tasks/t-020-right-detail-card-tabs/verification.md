@@ -139,3 +139,52 @@ Content-Type: text/html
 
 - `command -v agent-browser`: exit 1.
 - Browser Use Node REPL tool was not available in this session's callable tools.
+
+## Second Follow-up Repair Verification
+
+2026-05-06T19:29:24+08:00
+
+### `npm run typecheck`
+
+- Exit code: 0
+- Relevant output:
+
+```text
+> sharkbay@0.1.0 typecheck
+> tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.node.json --noEmit
+```
+
+### `npm test`
+
+- Exit code: 0
+- Relevant output:
+
+```text
+Test Files  10 passed (10)
+Tests  51 passed (51)
+```
+
+### `npm run build`
+
+- Exit code: 0
+- Relevant output:
+
+```text
+✓ 36 modules transformed.
+✓ built in 504ms
+```
+
+### `git diff --check`
+
+- Exit code: 0
+- Relevant output: no whitespace errors.
+
+### Desktop Visual Check
+
+- Tooling: Computer Use against running Electron app `SharkBay` at `127.0.0.1:5173/`.
+- Steps:
+  - Inspected Tasks and confirmed the separate `Current Task` panel is gone while the active `t-020-right-detail-card-tabs` row is first.
+  - Inspected Decisions and confirmed it renders the decision list directly with no `Recent Decisions` wrapper and no `View all`.
+  - Inspected Git and confirmed repository facts are shown above the git events with no `Git History` wrapper and no `View all`.
+  - Inspected Info and confirmed it shows only `Project Info`; repository facts and Track URLs are absent.
+- Result: passed.

@@ -4,25 +4,22 @@
 
 `ProjectDetailPane` will own a local tab state with `tasks` as the default. The tab strip will render as four card-like buttons at the top of the right column. Selecting a tab changes only the content under the tab strip.
 
-The existing `DetailMode` values for `decisions`, `git`, and `task` will continue to support full-column drilldowns. When a user opens "View all" from Decisions or Git, the existing history pages remain the active detail mode. When the user opens a task from Tasks, the existing task detail page remains the active detail mode.
+The existing `DetailMode` value for `task` will continue to support full-column task drilldown. Decisions and Git render their full lists directly inside their tabs, so they do not need separate full-history drilldowns.
 
 ## Content Mapping
 
 - Tasks:
-  - active task summary
   - task queue
   - diagnostics
   - handoff / next-action prompt panel
+  - active task as the first row in the task queue
 - Decisions:
-  - latest decisions card
-  - full decision history via existing `HistoryPage`
+  - full decision list directly in the tab
 - Git:
-  - latest git history card
-  - full git history via existing `HistoryPage`
+  - repository facts
+  - full git event list directly in the tab
 - Info:
   - project info/development metadata
-  - URL editor
-  - repository facts
 
 ## UI Notes
 

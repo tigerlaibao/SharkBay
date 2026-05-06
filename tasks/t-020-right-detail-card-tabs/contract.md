@@ -4,8 +4,9 @@
 
 - Managed project right detail column renders Tasks, Decisions, Git, and Info card-style tabs.
 - Tasks tab contains handoff / next-action prompt controls.
-- Decisions and Git tab content is separated from Tasks and retains full-history navigation.
-- Info tab contains project facts, development metadata, and URL controls.
+- Decisions and Git tab content is separated from Tasks and shows full lists directly.
+- Git tab contains repository facts.
+- Info tab contains project-authored development metadata only.
 - Task queue row drilldown still opens task artifact details.
 - Required checks pass and evidence is recorded.
 

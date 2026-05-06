@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Right detail column card tabs for Tasks, Decisions, Git, and Info are complete with state-preserving tab panels
-- Last controller run: 2026-05-06 repaired right detail card tab state preservation and accessibility
+- Current focus: Right detail column card tabs are complete with flattened Decisions/Git lists, repository facts in Git, and Info limited to project-authored metadata
+- Last controller run: 2026-05-06 simplified right detail tab content, moved repository facts to Git, and removed Track URLs from Info
 
 ## Repository Identity
 
@@ -110,6 +110,7 @@
 | 2026-05-06T18:50:09+08:00 | Open `t-020-right-detail-card-tabs` to convert the right detail column into card-style tabs for Tasks, Decisions, Git, and Info, with handoff remaining inside Tasks. | User request |
 | 2026-05-06T18:57:51+08:00 | Completed `t-020-right-detail-card-tabs` with card-style right detail tabs and Handoff scoped to Tasks. | `tasks/t-020-right-detail-card-tabs/verification.md` |
 | 2026-05-06T19:09:33+08:00 | Repaired right detail card tabs to preserve tab-local state across switches and added explicit tab accessibility links and keyboard navigation. | `tasks/t-020-right-detail-card-tabs/implementation.md` |
+| 2026-05-06T19:29:24+08:00 | Flattened right detail tab content: current task is the first task row, Decisions and Git show complete lists directly, repository facts moved to Git, and Info no longer shows Track URLs. | `tasks/t-020-right-detail-card-tabs/implementation.md` |
 
 ## Open Questions
 

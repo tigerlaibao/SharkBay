@@ -22,8 +22,8 @@ Keep handoff/next-action prompt controls inside the Tasks tab.
 ## Current Plan
 
 - Implement tab state in the right detail pane.
-- Move task queue, active task, diagnostics, and handoff prompt into Tasks.
-- Move decision history into Decisions, git history into Git, and project metadata/URLs into Info.
+- Move task queue, diagnostics, and handoff prompt into Tasks, with the active task represented by the first task-list row.
+- Move full decision history into Decisions, repository facts and full git history into Git, and project-authored development metadata into Info.
 - Keep task drilldown behavior reachable from Tasks.
 - Verify with typecheck, tests, build, diff check, and a dev-server smoke check when possible.
 
@@ -34,6 +34,7 @@ Keep handoff/next-action prompt controls inside the Tasks tab.
 - 2026-05-06T18:50:09+08:00: Coding opened.
 - 2026-05-06T18:57:51+08:00: Implementation, code review, and verification passed; task marked done.
 - 2026-05-06T19:09:33+08:00: Follow-up repair kept inactive tab panels mounted, added tab/panel ARIA links, added keyboard navigation, and re-verified.
+- 2026-05-06T19:29:24+08:00: Second follow-up flattened Tasks, Decisions, and Git tab content, moved repository facts into Git, removed Track URLs from Info, and re-verified.
 
 ## Verification Summary
 
@@ -43,11 +44,12 @@ Keep handoff/next-action prompt controls inside the Tasks tab.
 - `git diff --check`: passed.
 - Dev-server HTTP smoke on `http://127.0.0.1:5174/`: returned `200 OK`.
 - Follow-up desktop check in the running Electron app confirmed Tasks, Decisions, Git, Info, and return-to-Tasks tab switching.
+- Second follow-up desktop check in the running Electron app confirmed Tasks has no separate current-task card, Decisions and Git have no history wrapper or View all control, Git contains repository facts with wrapping values, and Info has no Track URLs.
 - Browser screenshot check could not run because `agent-browser` and the Browser Use Node REPL tool were unavailable.
 
 ## Final Outcome
 
-The managed project right detail column now uses card-style tabs for Tasks, Decisions, Git, and Info. Handoff remains inside Tasks. Tab-local state is preserved across tab switches, and the tab strip has explicit tab/panel accessibility links plus keyboard navigation.
+The managed project right detail column now uses card-style tabs for Tasks, Decisions, Git, and Info. Handoff remains inside Tasks, and the active task is the first task-list row. Decisions and Git show their full lists directly, Git owns repository facts, and Info shows only project-authored metadata. Tab-local state is preserved across tab switches, and the tab strip has explicit tab/panel accessibility links plus keyboard navigation.
 
 ## Open Questions
 

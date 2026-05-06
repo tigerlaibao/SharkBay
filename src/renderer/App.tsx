@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type { CSSProperties, FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal as XTerm } from "@xterm/xterm";
@@ -21,13 +21,11 @@ import type {
   TerminalExitEvent,
   TerminalSession,
   TaskQueueItem,
-  UpdateProjectUrlsInput,
-  UpdateProjectUrlsResult,
 } from "./types";
 import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, userActionReason } from "./workflow";
 
 type View = "dashboard" | "settings";
-type DetailMode = "overview" | "decisions" | "git" | "task";
+type DetailMode = "overview" | "task";
 type DetailTab = "tasks" | "decisions" | "git" | "info";
 
 type Toast = {
@@ -216,27 +214,6 @@ async function getProjectDetail(project: ProjectSummary): Promise<ProjectDetail>
   return handler({ projectId: project.id, repoPath: project.path });
 }
 
-async function updateProjectUrls(input: UpdateProjectUrlsInput): Promise<UpdateProjectUrlsResult> {
-  const bridge = getBridge();
-  const handler = bridge.projects?.updateUrls ?? bridge.updateProjectUrls;
-
-  if (!handler) {
-    throw new Error("URL editing is not exposed by the preload API.");
-  }
-
-  return handler({
-    ...input,
-    repoPath: input.repoPath ?? "",
-    configuredRoots: input.configuredRoots ?? [],
-    expectedRevision: input.expectedRevision ?? "",
-    urls: input.urls ?? {
-      localUrl: input.localUrl,
-      testUrl: input.testUrl,
-      deploymentUrl: input.deploymentUrl,
-    },
-  });
-}
-
 async function createHarnessRepo(input: CreateHarnessRepoInput): Promise<CreateHarnessRepoResult> {
   const bridge = getBridge();
   const handler = bridge.projects?.createHarnessRepo ?? bridge.createHarnessRepo;
@@ -374,11 +351,6 @@ function taskSequenceNumber(taskId: string): number {
 
 function phaseClass(value: string | null | undefined): string {
   return `phase-${(value || "unknown").toLowerCase().replace(/[^a-z0-9_-]/gi, "_")}`;
-}
-
-function trimToNull(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
 }
 
 function cx(...names: Array<string | false | null | undefined>): string {
@@ -642,7 +614,6 @@ export function App() {
               selectedProject={selectedProject}
               setSelectedId={setSelectedId}
               setToast={setToast}
-              onDetailRefresh={refreshDetail}
               onRefresh={refreshWorkspace}
             />
           </div>
@@ -692,7 +663,6 @@ function DashboardView({
   selectedProject,
   setSelectedId,
   setToast,
-  onDetailRefresh,
   onRefresh,
 }: {
   bridgeAvailable: boolean;
@@ -707,7 +677,6 @@ function DashboardView({
   selectedProject: ProjectSummary | null;
   setSelectedId: (value: string) => void;
   setToast: (toast: Toast) => void;
-  onDetailRefresh: (project?: ProjectSummary | null) => Promise<void>;
   onRefresh: () => Promise<void>;
 }) {
   const managedCandidates = filteredCandidates.filter((candidate) => candidate.status === "managed");
@@ -888,11 +857,9 @@ function DashboardView({
       <section className="panel detail-panel">
         {selectedProject ? (
           <ProjectDetailPane
-            configuredRoots={configuredRoots}
             detail={detail}
             project={selectedProject}
             setToast={setToast}
-            onDetailRefresh={onDetailRefresh}
           />
         ) : selectedCandidate ? (
           <NotSetupPane
@@ -1576,17 +1543,13 @@ function NotSetupPane({
 }
 
 function ProjectDetailPane({
-  configuredRoots,
   detail,
   project,
   setToast,
-  onDetailRefresh,
 }: {
-  configuredRoots: string[];
   detail: ProjectDetail | null;
   project: ProjectSummary;
   setToast: (toast: Toast) => void;
-  onDetailRefresh: (project?: ProjectSummary | null) => Promise<void>;
 }) {
   const [detailMode, setDetailMode] = useState<DetailMode>("overview");
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>("tasks");
@@ -1603,30 +1566,6 @@ function ProjectDetailPane({
     setActiveDetailTab("tasks");
     setSelectedTaskId(null);
   }, [project.id]);
-
-  if (detailMode === "decisions") {
-    return (
-      <HistoryPage
-        title="All Decisions"
-        subtitle={resolved.name}
-        onBack={() => setDetailMode("overview")}
-      >
-        <DecisionItems decisions={detailLike.recentDecisions ?? []} limit={null} />
-      </HistoryPage>
-    );
-  }
-
-  if (detailMode === "git") {
-    return (
-      <HistoryPage
-        title="Git History"
-        subtitle={resolved.name}
-        onBack={() => setDetailMode("overview")}
-      >
-        <GitHistoryItems events={detailLike.gitHistory ?? []} limit={null} />
-      </HistoryPage>
-    );
-  }
 
   if (detailMode === "task" && selectedTaskId) {
     return (
@@ -1682,16 +1621,6 @@ function ProjectDetailPane({
     setDetailMode("task");
   }
 
-  function openDecisions() {
-    setActiveDetailTab("decisions");
-    setDetailMode("decisions");
-  }
-
-  function openGitHistory() {
-    setActiveDetailTab("git");
-    setDetailMode("git");
-  }
-
   return (
     <div className="detail-layout">
       <div className="detail-header">
@@ -1742,7 +1671,7 @@ function ProjectDetailPane({
         id="project-detail-tabpanel-decisions"
         role="tabpanel"
       >
-        <DecisionsDetailTab detail={detailLike} onViewAll={openDecisions} />
+        <DecisionsDetailTab detail={detailLike} />
       </div>
       <div
         aria-labelledby="project-detail-tab-git"
@@ -1751,7 +1680,7 @@ function ProjectDetailPane({
         id="project-detail-tabpanel-git"
         role="tabpanel"
       >
-        <GitDetailTab detail={detailLike} onViewAll={openGitHistory} />
+        <GitDetailTab detail={detailLike} />
       </div>
       <div
         aria-labelledby="project-detail-tab-info"
@@ -1760,13 +1689,7 @@ function ProjectDetailPane({
         id="project-detail-tabpanel-info"
         role="tabpanel"
       >
-        <InfoDetailTab
-          configuredRoots={configuredRoots}
-          detail={detailLike}
-          project={project}
-          setToast={setToast}
-          onDetailRefresh={onDetailRefresh}
-        />
+        <InfoDetailTab detail={detailLike} />
       </div>
     </div>
   );
@@ -1787,7 +1710,6 @@ function TasksDetailTab({
 }) {
   return (
     <>
-      <CurrentTaskCard detail={detail} />
       {promptReason && promptTask ? <PromptPanel detail={detail} reason={promptReason} task={promptTask} setToast={setToast} /> : null}
       <QueueTabs detail={detail} onSelectTask={onSelectTask} />
       <Diagnostics detail={detail} />
@@ -1795,66 +1717,36 @@ function TasksDetailTab({
   );
 }
 
-function DecisionsDetailTab({ detail, onViewAll }: { detail: ProjectDetail; onViewAll: () => void }) {
+function DecisionsDetailTab({ detail }: { detail: ProjectDetail }) {
   return detail.recentDecisions?.length ? (
-    <DecisionList decisions={detail.recentDecisions} onViewAll={onViewAll} />
+    <DecisionItems decisions={detail.recentDecisions} limit={null} />
   ) : (
     <EmptyState title="No decisions" body="This project has no recorded decisions yet." />
   );
 }
 
-function GitDetailTab({ detail, onViewAll }: { detail: ProjectDetail; onViewAll: () => void }) {
-  return detail.gitHistory?.length || detail.currentBranch ? (
-    <GitHistoryList currentBranch={detail.currentBranch} events={detail.gitHistory ?? []} onViewAll={onViewAll} />
-  ) : (
-    <EmptyState title="No git history" body="Restart SharkBay once to load Git history." />
-  );
-}
-
-function InfoDetailTab({
-  configuredRoots,
-  detail,
-  project,
-  setToast,
-  onDetailRefresh,
-}: {
-  configuredRoots: string[];
-  detail: ProjectDetail;
-  project: ProjectSummary;
-  setToast: (toast: Toast) => void;
-  onDetailRefresh: (project?: ProjectSummary | null) => Promise<void>;
-}) {
+function GitDetailTab({ detail }: { detail: ProjectDetail }) {
   return (
     <>
       <ProjectFactsCard detail={detail} />
-      <UrlEditor configuredRoots={configuredRoots} detail={detail} setToast={setToast} onSaved={() => onDetailRefresh(project)} />
-      <ProjectInfoCard detail={detail} />
+      {detail.gitHistory?.length || detail.currentBranch ? (
+        <GitHistoryItems events={detail.gitHistory ?? []} limit={null} />
+      ) : (
+        <EmptyState title="No git history" body="Restart SharkBay once to load Git history." />
+      )}
     </>
   );
 }
 
-function CurrentTaskCard({ detail }: { detail: ProjectDetail }) {
-  const task = hasMeaningfulActiveTask(detail.activeTask) ? detail.activeTask : null;
-  if (!task) {
-    return null;
-  }
-
-  return (
-    <section className="subpanel current-task-card">
-      <div className="panel-title-row compact-title-row">
-        <h4>Current Task</h4>
-        <span className={cx("phase-pill", phaseClass(task.phase))}>{task.phase}</span>
-      </div>
-      <strong>{task.taskId}</strong>
-      {task.title ? <p className="summary-text">{task.title}</p> : null}
-    </section>
-  );
+function InfoDetailTab({ detail }: { detail: ProjectDetail }) {
+  return <ProjectInfoCard detail={detail} />;
 }
 
 function ProjectFactsCard({ detail }: { detail: ProjectDetail }) {
   const worktree = detail.dirtyWorktree === null ? null : detail.dirtyWorktree ? "Dirty" : "Clean";
   const facts = [
     { label: "Path", value: detail.path },
+    { label: "Repo URL", value: detail.repoUrl },
     { label: "Branch", value: detail.currentBranch },
     { label: "Worktree", value: worktree, tone: detail.dirtyWorktree ? "warn" as const : undefined },
     { label: "Detection", value: detail.detection === "protocol-fallback" ? "Protocol fallback" : "Manifest" },
@@ -1866,7 +1758,7 @@ function ProjectFactsCard({ detail }: { detail: ProjectDetail }) {
       <div className="panel-title-row compact-title-row">
         <h4>Repository</h4>
       </div>
-      <div className="dense-grid">
+      <div className="project-facts-list">
         {facts.map((fact) => (
           <Fact key={fact.label} label={fact.label} tone={fact.tone} value={fact.value} />
         ))}
@@ -1964,114 +1856,6 @@ function InfoChipGroup({ label, values }: { label: string; values: string[] }) {
   );
 }
 
-function UrlEditor({
-  configuredRoots,
-  detail,
-  setToast,
-  onSaved,
-}: {
-  configuredRoots: string[];
-  detail: ProjectDetail;
-  setToast: (toast: Toast) => void;
-  onSaved: () => Promise<void> | void;
-}) {
-  const [urls, setUrls] = useState({
-    localUrl: detail.localUrl ?? "",
-    testUrl: detail.testUrl ?? "",
-    deploymentUrl: detail.deploymentUrl ?? "",
-  });
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    setUrls({
-      localUrl: detail.localUrl ?? "",
-      testUrl: detail.testUrl ?? "",
-      deploymentUrl: detail.deploymentUrl ?? "",
-    });
-  }, [detail.id, detail.localUrl, detail.testUrl, detail.deploymentUrl]);
-
-  useEffect(() => {
-    setSaveState("idle");
-    setMessage("");
-  }, [detail.id]);
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setSaveState("saving");
-    setMessage("");
-
-    try {
-      const result = await updateProjectUrls({
-        projectId: detail.id,
-        repoPath: detail.path,
-        configuredRoots,
-        expectedRevision: detail.revisions?.state ?? null,
-        localUrl: trimToNull(urls.localUrl),
-        testUrl: trimToNull(urls.testUrl),
-        deploymentUrl: trimToNull(urls.deploymentUrl),
-      });
-
-      if (result.conflict || result.reason === "conflict") {
-        const conflictMessage = "Project links changed since this panel loaded. Refresh the project, then save again.";
-        setSaveState("conflict");
-        setMessage(conflictMessage);
-        setToast({ tone: "error", message: "Project links changed. Refresh before retrying." });
-        return;
-      }
-
-      if (result.ok === false || result.error) {
-        throw new Error(result.error ?? result.message ?? "URL update failed.");
-      }
-
-      setSaveState("saved");
-      setMessage("Saved. Project links are up to date.");
-      setToast({ tone: "success", message: "Project links saved." });
-      await onSaved();
-    } catch (error) {
-      setSaveState("error");
-      setMessage(asMessage(error));
-      setToast({ tone: "error", message: asMessage(error) });
-    } finally {
-      if (saveState === "saving") {
-        setSaveState("idle");
-      }
-    }
-  }
-
-  const disabled = detail.detection === "protocol-fallback" || !detail.revisions?.state;
-  const saving = saveState === "saving";
-
-  return (
-    <form className="url-editor" onSubmit={(event) => void submit(event)}>
-      <div className="panel-title-row">
-        <h4>Tracked URLs</h4>
-        <button className="button compact" disabled={saving || disabled} type="submit">
-          {saving ? "Saving" : "Save URLs"}
-        </button>
-      </div>
-      <div className="url-fields">
-        <label>
-          <span>Local</span>
-          <input className="input" disabled={disabled} value={urls.localUrl} onChange={(event) => setUrls({ ...urls, localUrl: event.target.value })} />
-        </label>
-        <label>
-          <span>Test</span>
-          <input className="input" disabled={disabled} value={urls.testUrl} onChange={(event) => setUrls({ ...urls, testUrl: event.target.value })} />
-        </label>
-        <label>
-          <span>Deploy</span>
-          <input className="input" disabled={disabled} value={urls.deploymentUrl} onChange={(event) => setUrls({ ...urls, deploymentUrl: event.target.value })} />
-        </label>
-      </div>
-      {disabled ? <div className="form-note">Project links can be edited after SharkBay loads a saved project snapshot.</div> : null}
-      {message ? (
-        <div className={cx("feedback-line", saveState === "saved" ? "is-success" : "is-error")}>{message}</div>
-      ) : null}
-    </form>
-  );
-}
-
 function QueueTabs({ detail, onSelectTask }: { detail: ProjectDetail; onSelectTask: (taskId: string) => void }) {
   const activeTaskId = hasMeaningfulActiveTask(detail.activeTask) ? detail.activeTask.taskId : null;
   const seen = new Set<string>();
@@ -2102,7 +1886,13 @@ function QueueTabs({ detail, onSelectTask }: { detail: ProjectDetail; onSelectTa
     });
   }
 
-  const sortedItems = items.sort(compareQueueItems);
+  const sortedItems = items.sort((a, b) => {
+    if (activeTaskId) {
+      if (a.taskId === activeTaskId && b.taskId !== activeTaskId) return -1;
+      if (b.taskId === activeTaskId && a.taskId !== activeTaskId) return 1;
+    }
+    return compareQueueItems(a, b);
+  });
 
   if (!sortedItems.length) {
     return null;
@@ -2284,53 +2074,6 @@ function artifactLabel(key: ArtifactKey): string {
   return labels[key];
 }
 
-function HistoryPage({
-  children,
-  onBack,
-  subtitle,
-  title,
-}: {
-  children: ReactNode;
-  onBack: () => void;
-  subtitle: string;
-  title: string;
-}) {
-  return (
-    <div className="detail-layout history-page">
-      <div className="detail-header">
-        <button aria-label="Back to project" className="icon-button" title="Back to project" type="button" onClick={onBack}>
-          <ArrowLeftIcon />
-        </button>
-        <div>
-          <h3>{title}</h3>
-          <div className="path-line">{subtitle}</div>
-        </div>
-      </div>
-      <section className="subpanel">{children}</section>
-    </div>
-  );
-}
-
-function DecisionList({ decisions, onViewAll }: { decisions: ProjectDetail["recentDecisions"]; onViewAll: () => void }) {
-  if (!decisions?.length) {
-    return null;
-  }
-
-  return (
-    <section className="subpanel">
-      <div className="panel-title-row compact-title-row">
-        <h4>Recent Decisions</h4>
-        {decisions.length > 5 ? (
-          <button className="link-button" type="button" onClick={onViewAll}>
-            View all
-          </button>
-        ) : null}
-      </div>
-      <DecisionItems decisions={decisions} limit={5} />
-    </section>
-  );
-}
-
 function DecisionItems({ decisions, limit }: { decisions: ProjectDetail["recentDecisions"]; limit: number | null }) {
   const sorted = [...(decisions ?? [])].reverse();
   const visible = limit === null ? sorted : sorted.slice(0, limit);
@@ -2347,34 +2090,6 @@ function DecisionItems({ decisions, limit }: { decisions: ProjectDetail["recentD
         </div>
       ))}
     </div>
-  );
-}
-
-function GitHistoryList({
-  currentBranch,
-  events,
-  onViewAll,
-}: {
-  currentBranch: string | null | undefined;
-  events: ProjectDetail["gitHistory"];
-  onViewAll: () => void;
-}) {
-  if (!events?.length && !currentBranch) {
-    return null;
-  }
-
-  return (
-    <section className="subpanel">
-      <div className="panel-title-row compact-title-row">
-        <h4>Git History</h4>
-        {(events?.length ?? 0) > 5 ? (
-          <button className="link-button" type="button" onClick={onViewAll}>
-            View all
-          </button>
-        ) : null}
-      </div>
-      <GitHistoryItems events={events ?? []} limit={5} />
-    </section>
   );
 }
 
@@ -2493,7 +2208,7 @@ function Fact({ label, value, tone }: { label: string; value: string; tone?: "wa
   return (
     <div className={cx("fact", tone === "warn" && "is-warn")}>
       <span>{label}</span>
-      <strong className="truncate">{value}</strong>
+      <strong>{value}</strong>
     </div>
   );
 }
