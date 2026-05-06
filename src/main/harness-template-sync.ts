@@ -17,7 +17,6 @@ export const versionOwnedHarnessTemplateFiles = [
   "AGENTS.md",
   ".agent/protocol.md",
   ".agent/quality-rules.md",
-  ".gitignore",
 ] as const;
 
 type VersionOwnedPath = (typeof versionOwnedHarnessTemplateFiles)[number];

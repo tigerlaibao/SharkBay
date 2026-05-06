@@ -30,9 +30,12 @@ describe("harness template sync", () => {
     expect(created.ok).toBe(true);
 
     const statePath = path.join(target, ".agent", "state.json");
+    const gitignorePath = path.join(target, ".gitignore");
     const productPath = path.join(target, "docs", "product.md");
     const originalState = await fs.readFile(statePath, "utf8");
+    const originalGitignore = "# Project ignore rules\ncustom-cache/\n";
     const originalProduct = await fs.readFile(productPath, "utf8");
+    await writeText(gitignorePath, originalGitignore);
     await writeText(path.join(target, "AGENTS.md"), "# Locally edited\n");
 
     const stale = await checkHarnessTemplateSync({ repoPath: target, configuredRoots: [root], templateDir });
@@ -46,7 +49,9 @@ describe("harness template sync", () => {
     if (!updated.ok) return;
     expect(updated.files).toContain("AGENTS.md");
     expect(updated.files).toContain(harnessTemplateSyncMetadataPath);
+    expect(updated.files).not.toContain(".gitignore");
     expect(await fs.readFile(statePath, "utf8")).toBe(originalState);
+    expect(await fs.readFile(gitignorePath, "utf8")).toBe(originalGitignore);
     expect(await fs.readFile(productPath, "utf8")).toBe(originalProduct);
 
     const current = await checkHarnessTemplateSync({ repoPath: target, configuredRoots: [root], templateDir });

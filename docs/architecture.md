@@ -121,9 +121,8 @@ Harness template sync has a separate allowlist for version-owned control files:
 - `AGENTS.md`
 - `.agent/protocol.md`
 - `.agent/quality-rules.md`
-- `.gitignore`
 
-The sync checker computes a content-hash version from those tracked template files, records new install metadata in `.agent/template-sync.json`, and exposes current/stale/missing status through project scan/detail data. It does not overwrite project-owned files such as `.agent/manifest.json`, `.agent/state.json`, `.agent/queue.*`, `.agent/development.json`, `docs/**`, or `tasks/**`.
+The sync checker computes a content-hash version from those tracked template files, records new install metadata in `.agent/template-sync.json`, and exposes current/stale/missing status through project scan/detail data. It does not overwrite project-owned files such as `.agent/manifest.json`, `.agent/state.json`, `.agent/queue.*`, `.agent/development.json`, `.gitignore`, `docs/**`, or `tasks/**`. The setup template may seed `.gitignore` for new projects, but template refresh does not own or rewrite project ignore rules.
 
 Create-repo writes only to an empty target inside configured roots and rejects non-empty targets, existing harness files, and symlink targets.
 
