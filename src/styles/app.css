@@ -923,6 +923,10 @@ body.is-resizing-columns * {
   min-width: 0;
 }
 
+.detail-tab-panel[hidden] {
+  display: none;
+}
+
 .artifact-panel {
   display: grid;
   gap: 14px;

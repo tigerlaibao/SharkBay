@@ -1647,6 +1647,35 @@ function ProjectDetailPane({
     setSelectedTaskId(null);
   }
 
+  function focusDetailTab(tab: DetailTab) {
+    window.requestAnimationFrame(() => document.getElementById(`project-detail-tab-${tab}`)?.focus());
+  }
+
+  function handleDetailTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, tab: DetailTab) {
+    const currentIndex = detailTabs.findIndex((item) => item.id === tab);
+    const lastIndex = detailTabs.length - 1;
+    const tabAt = (index: number): DetailTab => detailTabs[index]?.id ?? "tasks";
+    let nextTab: DetailTab | null = null;
+
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      nextTab = tabAt(currentIndex === lastIndex ? 0 : currentIndex + 1);
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      nextTab = tabAt(currentIndex <= 0 ? lastIndex : currentIndex - 1);
+    } else if (event.key === "Home") {
+      nextTab = tabAt(0);
+    } else if (event.key === "End") {
+      nextTab = tabAt(lastIndex);
+    }
+
+    if (!nextTab) {
+      return;
+    }
+
+    event.preventDefault();
+    openDetailTab(nextTab);
+    focusDetailTab(nextTab);
+  }
+
   function openTask(taskId: string) {
     setActiveDetailTab("tasks");
     setSelectedTaskId(taskId);
@@ -1675,11 +1704,15 @@ function ProjectDetailPane({
       <div className="detail-tab-cards" role="tablist" aria-label="Project detail sections">
         {detailTabs.map((tab) => (
           <button
+            aria-controls={`project-detail-tabpanel-${tab.id}`}
             aria-selected={activeDetailTab === tab.id}
             className={cx("detail-tab-card", activeDetailTab === tab.id && "is-active")}
+            id={`project-detail-tab-${tab.id}`}
             key={tab.id}
             role="tab"
+            tabIndex={activeDetailTab === tab.id ? 0 : -1}
             type="button"
+            onKeyDown={(event) => handleDetailTabKeyDown(event, tab.id)}
             onClick={() => openDetailTab(tab.id)}
           >
             {tab.label}
@@ -1687,27 +1720,53 @@ function ProjectDetailPane({
         ))}
       </div>
 
-      <div className="detail-tab-panel" role="tabpanel">
-        {activeDetailTab === "tasks" ? (
-          <TasksDetailTab
-            detail={detailLike}
-            promptReason={promptReason}
-            promptTask={promptTask}
-            setToast={setToast}
-            onSelectTask={openTask}
-          />
-        ) : null}
-        {activeDetailTab === "decisions" ? <DecisionsDetailTab detail={detailLike} onViewAll={openDecisions} /> : null}
-        {activeDetailTab === "git" ? <GitDetailTab detail={detailLike} onViewAll={openGitHistory} /> : null}
-        {activeDetailTab === "info" ? (
-          <InfoDetailTab
-            configuredRoots={configuredRoots}
-            detail={detailLike}
-            project={project}
-            setToast={setToast}
-            onDetailRefresh={onDetailRefresh}
-          />
-        ) : null}
+      <div
+        aria-labelledby="project-detail-tab-tasks"
+        className="detail-tab-panel"
+        hidden={activeDetailTab !== "tasks"}
+        id="project-detail-tabpanel-tasks"
+        role="tabpanel"
+      >
+        <TasksDetailTab
+          detail={detailLike}
+          promptReason={promptReason}
+          promptTask={promptTask}
+          setToast={setToast}
+          onSelectTask={openTask}
+        />
+      </div>
+      <div
+        aria-labelledby="project-detail-tab-decisions"
+        className="detail-tab-panel"
+        hidden={activeDetailTab !== "decisions"}
+        id="project-detail-tabpanel-decisions"
+        role="tabpanel"
+      >
+        <DecisionsDetailTab detail={detailLike} onViewAll={openDecisions} />
+      </div>
+      <div
+        aria-labelledby="project-detail-tab-git"
+        className="detail-tab-panel"
+        hidden={activeDetailTab !== "git"}
+        id="project-detail-tabpanel-git"
+        role="tabpanel"
+      >
+        <GitDetailTab detail={detailLike} onViewAll={openGitHistory} />
+      </div>
+      <div
+        aria-labelledby="project-detail-tab-info"
+        className="detail-tab-panel"
+        hidden={activeDetailTab !== "info"}
+        id="project-detail-tabpanel-info"
+        role="tabpanel"
+      >
+        <InfoDetailTab
+          configuredRoots={configuredRoots}
+          detail={detailLike}
+          project={project}
+          setToast={setToast}
+          onDetailRefresh={onDetailRefresh}
+        />
       </div>
     </div>
   );

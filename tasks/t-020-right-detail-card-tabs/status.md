@@ -33,6 +33,7 @@ Keep handoff/next-action prompt controls inside the Tasks tab.
 - 2026-05-06T18:50:09+08:00: Spec, design, design review, and contract completed because scope is narrow and dependency `t-019` is done.
 - 2026-05-06T18:50:09+08:00: Coding opened.
 - 2026-05-06T18:57:51+08:00: Implementation, code review, and verification passed; task marked done.
+- 2026-05-06T19:09:33+08:00: Follow-up repair kept inactive tab panels mounted, added tab/panel ARIA links, added keyboard navigation, and re-verified.
 
 ## Verification Summary
 
@@ -41,11 +42,12 @@ Keep handoff/next-action prompt controls inside the Tasks tab.
 - `npm run build`: passed.
 - `git diff --check`: passed.
 - Dev-server HTTP smoke on `http://127.0.0.1:5174/`: returned `200 OK`.
-- Browser screenshot check could not run because `agent-browser` is unavailable.
+- Follow-up desktop check in the running Electron app confirmed Tasks, Decisions, Git, Info, and return-to-Tasks tab switching.
+- Browser screenshot check could not run because `agent-browser` and the Browser Use Node REPL tool were unavailable.
 
 ## Final Outcome
 
-The managed project right detail column now uses card-style tabs for Tasks, Decisions, Git, and Info. Handoff remains inside Tasks.
+The managed project right detail column now uses card-style tabs for Tasks, Decisions, Git, and Info. Handoff remains inside Tasks. Tab-local state is preserved across tab switches, and the tab strip has explicit tab/panel accessibility links plus keyboard navigation.
 
 ## Open Questions
 

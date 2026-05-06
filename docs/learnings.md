@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Hide Tab Panels Instead Of Unmounting
+
+**Problem**: Switching right detail tabs could discard tab-local state such as a generated handoff prompt or unsaved URL edits.
+
+**Cause**: The first card-tab implementation conditionally rendered only the active tab panel, so inactive tab content unmounted on every switch.
+
+**Solution**: Keep all tab panels mounted and hide inactive panels with the `hidden` attribute plus a CSS rule. Wire tabs to panels with ARIA ids and keyboard navigation.
+
+**Source**: `tasks/t-020-right-detail-card-tabs/implementation.md`, `src/renderer/App.tsx`.
+
+---
+
 ### Hide Stateful Workspaces Instead Of Unmounting
 
 **Problem**: Opening Settings and returning to the workbench made previously opened terminal tabs disappear.
