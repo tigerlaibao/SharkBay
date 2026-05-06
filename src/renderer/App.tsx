@@ -596,6 +596,7 @@ export function App() {
 
   return (
     <div className="app-shell">
+      <div className="window-drag-strip" aria-hidden="true" />
       <main className="workspace">
         <div className="workspace-body">
           {toast ? (
