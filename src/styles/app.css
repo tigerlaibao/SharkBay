@@ -560,7 +560,6 @@ body.is-resizing-columns * {
 
 .project-section.is-not_setup {
   padding-top: 10px;
-  border-top: 1px solid #dedad1;
 }
 
 .project-section-title {
@@ -863,39 +862,50 @@ body.is-resizing-columns * {
 }
 
 .detail-tab-cards {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-height: 32px;
+  border-bottom: 1px solid #e1ddd4;
 }
 
 .detail-tab-card {
-  display: grid;
-  align-content: center;
+  position: relative;
   min-width: 0;
-  min-height: 46px;
-  color: #405052;
-  background: #f8f7f3;
-  border: 1px solid #dedad1;
-  border-radius: 8px;
-  padding: 8px 6px;
+  min-height: 31px;
+  color: #5f6c6e;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+  padding: 5px 1px 7px;
   font-size: 12px;
-  font-weight: 760;
+  font-weight: 800;
   letter-spacing: 0;
   text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .detail-tab-card:hover,
 .detail-tab-card:focus-visible {
   color: #244f58;
-  border-color: #b8cbc7;
+  background: transparent;
+  border-bottom-color: #bfd0cc;
   outline: none;
 }
 
+.detail-tab-card:focus-visible {
+  box-shadow: 0 2px 0 #244f58;
+}
+
 .detail-tab-card.is-active {
-  color: #ffffff;
-  background: #405f66;
-  border-color: #405f66;
-  box-shadow: 0 1px 0 rgba(32, 49, 54, 0.08);
+  color: #244f58;
+  background: transparent;
+  border-bottom-color: #244f58;
+  box-shadow: none;
 }
 
 .detail-tab-panel {
