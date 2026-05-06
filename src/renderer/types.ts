@@ -279,6 +279,10 @@ export type TerminalExitEvent = {
   signal: string | null;
 };
 
+export type TerminalUpdateEvent = {
+  session: TerminalSession;
+};
+
 export type SharkBayBridge = {
   app?: {
     onOpenSettings?: (callback: () => void) => () => void;
@@ -312,5 +316,6 @@ export type SharkBayBridge = {
     close?: (input: TerminalCloseInput) => Promise<TerminalSession>;
     onData?: (callback: (event: TerminalDataEvent) => void) => () => void;
     onExit?: (callback: (event: TerminalExitEvent) => void) => () => void;
+    onUpdate?: (callback: (event: TerminalUpdateEvent) => void) => () => void;
   };
 };

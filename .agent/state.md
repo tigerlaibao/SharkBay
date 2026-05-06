@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Runner work is visible only after task registration
-- Last controller run: 2026-05-06 completed `t-022-runner-task-registration`
+- Current focus: Runtime-derived terminal tab titles are complete
+- Last controller run: 2026-05-06 completed `t-023-terminal-title-strategy`
 
 ## Repository Identity
 
@@ -18,7 +18,7 @@
 
 ## Current Task
 
-- Task ID: `t-022-runner-task-registration`
+- Task ID: `t-023-terminal-title-strategy`
 - Phase: done
 - Next action: Ready for the next task.
 - Blocked by: none
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-06T20:16:12+08:00 | Completed `t-023-terminal-title-strategy` with terminal tabs deriving titles from project-relative cwd or foreground occupying commands. | `tasks/t-023-terminal-title-strategy/verification.md` |
+| 2026-05-06T20:09:07+08:00 | Open `t-023-terminal-title-strategy` to make terminal tabs show project-relative cwd by default and foreground occupying commands when more useful. | User request |
 | 2026-05-06T20:05:19+08:00 | Completed `t-022-runner-task-registration` with task-first runner protocol rules and SharkBay diagnostics for missing, inactive, or mismatched runner tasks. | `tasks/t-022-runner-task-registration/verification.md` |
 | 2026-05-06T19:58:01+08:00 | Open `t-022-runner-task-registration` to prevent runner-only work from staying invisible when task queue/state registration is missing. | User request |
 | 2026-05-06T19:51:41+08:00 | Completed `t-021-harness-behavioral-discipline` with Behavioral Discipline rules applied to SharkBay, setup templates, AIBF, and AIGF. | `tasks/t-021-harness-behavioral-discipline/verification.md` |

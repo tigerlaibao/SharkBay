@@ -2,7 +2,14 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { getRuntimeConfigPath } from "../src/main/config.js";
-import { resolveTerminalCwd, terminalCommand, terminalShellEnvironment, TerminalManager } from "../src/main/terminal.js";
+import {
+  applyTerminalInputData,
+  resolveTerminalCwd,
+  terminalCommand,
+  terminalDisplayTitle,
+  terminalShellEnvironment,
+  TerminalManager,
+} from "../src/main/terminal.js";
 import { createHarnessFixture, makeTempRoot, writeJson } from "./helpers.js";
 
 describe("terminal cwd validation", () => {
@@ -26,6 +33,55 @@ describe("terminal cwd validation", () => {
     });
 
     await expect(resolveTerminalCwd({ userDataPath }, repo)).resolves.toBe(await fs.realpath(repo));
+  });
+
+  it("derives titles from project-relative cwd and foreground commands", () => {
+    const root = path.join(path.sep, "Users", "shark", "Projects", "SharkBay");
+
+    expect(terminalDisplayTitle({
+      projectRoot: root,
+      currentCwd: root,
+      shell: "/bin/zsh",
+      foregroundProcess: "zsh",
+    })).toBe(".");
+    expect(terminalDisplayTitle({
+      projectRoot: root,
+      currentCwd: path.join(root, "src", "main"),
+      shell: "/bin/zsh",
+      foregroundProcess: "zsh",
+    })).toBe(path.join("src", "main"));
+    expect(terminalDisplayTitle({
+      projectRoot: root,
+      currentCwd: path.join(root, "src"),
+      shell: "/bin/zsh",
+      foregroundProcess: "node",
+      activeCommandLine: "pnpm dev:server",
+    })).toBe("pnpm dev:server");
+    expect(terminalDisplayTitle({
+      projectRoot: root,
+      currentCwd: root,
+      shell: "/bin/zsh",
+      foregroundProcess: "top",
+    })).toBe("top");
+  });
+
+  it("tracks submitted command lines from terminal input", () => {
+    expect(applyTerminalInputData("", "pnpm dev:server\r")).toEqual({
+      pendingInputLine: "",
+      submittedCommand: "pnpm dev:server",
+    });
+    expect(applyTerminalInputData("pnpm dev:serve", "r\n")).toEqual({
+      pendingInputLine: "",
+      submittedCommand: "pnpm dev:server",
+    });
+    expect(applyTerminalInputData("codexx", "\u007f\r")).toEqual({
+      pendingInputLine: "",
+      submittedCommand: "codex",
+    });
+    expect(applyTerminalInputData("claude", "\u0015top\r")).toEqual({
+      pendingInputLine: "",
+      submittedCommand: "top",
+    });
   });
 
   it("rejects directories outside configured roots", async () => {
@@ -58,7 +114,7 @@ describe("terminal cwd validation", () => {
 
     try {
       expect(session.cwd).toBe(await fs.realpath(repo));
-      expect(session.title).toBe("TerminalRepo");
+      expect(session.title).toBe(".");
       expect(session.status).toBe("running");
       expect(manager.list()).toHaveLength(1);
     } finally {

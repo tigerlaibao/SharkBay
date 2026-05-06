@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Terminal Titles Need Runtime State
+
+**Problem**: Terminal tabs named after the project did not help distinguish tabs once multiple shells were open for the same repository.
+
+**Cause**: The tab title was assigned only at session creation and never updated from shell cwd or foreground process state.
+
+**Solution**: Derive titles from runtime terminal state: project-relative cwd for idle shells, and foreground command/process titles for occupying apps. Push title changes through a dedicated terminal update event.
+
+**Source**: `tasks/t-023-terminal-title-strategy/implementation.md`, `src/main/terminal.ts`, `src/renderer/App.tsx`.
+
+---
+
 ### Runner Claims Need Registered Tasks
 
 **Problem**: An agent could be running for several minutes while SharkBay still showed no started task, or no visible task at all.

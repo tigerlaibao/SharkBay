@@ -35,6 +35,7 @@ import type {
   TerminalInput,
   TerminalResizeInput,
   TerminalSession,
+  TerminalUpdateEvent,
   UpdateProjectUrlsInput
 } from "../src/shared/types.js";
 
@@ -78,6 +79,7 @@ const channels = {
   resizeTerminal: "terminal:resize",
   closeTerminal: "terminal:close",
   terminalData: "terminal:data",
+  terminalUpdate: "terminal:update",
   terminalExit: "terminal:exit"
 } as const;
 
@@ -120,10 +122,16 @@ export function registerIpcHandlers(
   services: SharkBayIpcServices = createDefaultServices(runtime)
 ): void {
   terminalManager.removeAllListeners("data");
+  terminalManager.removeAllListeners("update");
   terminalManager.removeAllListeners("exit");
   terminalManager.on("data", (event) => {
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send(channels.terminalData, event);
+    });
+  });
+  terminalManager.on("update", (event: TerminalUpdateEvent) => {
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.webContents.send(channels.terminalUpdate, event);
     });
   });
   terminalManager.on("exit", (event) => {

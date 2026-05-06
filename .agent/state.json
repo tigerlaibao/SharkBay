@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06T20:05:19+08:00",
+  "updatedAt": "2026-05-06T20:16:12+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,18 +13,28 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Runner work is visible only after task registration.",
+    "currentFocus": "Runtime-derived terminal tab titles are complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
   },
   "currentTask": {
-    "taskId": "t-022-runner-task-registration",
+    "taskId": "t-023-terminal-title-strategy",
     "phase": "done",
     "nextAction": "Ready for the next task.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-06T20:16:12+08:00",
+      "decision": "Completed t-023-terminal-title-strategy with terminal tabs deriving titles from project-relative cwd or foreground occupying commands.",
+      "source": "tasks/t-023-terminal-title-strategy/verification.md"
+    },
+    {
+      "date": "2026-05-06T20:09:07+08:00",
+      "decision": "Open t-023-terminal-title-strategy to make terminal tabs show project-relative cwd by default and foreground occupying commands when more useful.",
+      "source": "user request"
+    },
     {
       "date": "2026-05-06T20:05:19+08:00",
       "decision": "Completed t-022-runner-task-registration with task-first runner protocol rules and SharkBay diagnostics for missing, inactive, or mismatched runner tasks.",

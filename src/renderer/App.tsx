@@ -20,6 +20,7 @@ import type {
   TerminalDataEvent,
   TerminalExitEvent,
   TerminalSession,
+  TerminalUpdateEvent,
   TaskQueueItem,
 } from "./types";
 import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, userActionReason } from "./workflow";
@@ -913,9 +914,11 @@ function TerminalPane({
 
     const offData = terminal.onData((event) => appendTerminalOutput(event));
     const offExit = terminal.onExit((event) => markTerminalExit(event));
+    const offUpdate = terminal.onUpdate ? terminal.onUpdate((event) => updateTerminalSession(event)) : () => undefined;
     return () => {
       offData();
       offExit();
+      offUpdate();
     };
   }, [bridgeAvailable]);
 
@@ -1019,6 +1022,13 @@ function TerminalPane({
     setSpaces((current) => mapTerminalTab(current, event.sessionId, (currentTab) => ({
       ...currentTab,
       session: { ...currentTab.session, status: "exited" },
+    })));
+  }
+
+  function updateTerminalSession(event: TerminalUpdateEvent) {
+    setSpaces((current) => mapTerminalTab(current, event.session.id, (currentTab) => ({
+      ...currentTab,
+      session: event.session,
     })));
   }
 

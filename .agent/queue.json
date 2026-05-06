@@ -243,6 +243,17 @@
       ],
       "status": "done",
       "completedAt": "2026-05-06"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-023-terminal-title-strategy",
+      "title": "Improve terminal tab title strategy",
+      "phase": "done",
+      "dependsOn": [
+        "t-022-runner-task-registration"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-06"
     }
   ]
 }

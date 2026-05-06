@@ -22,6 +22,7 @@ import type {
   TerminalInput,
   TerminalResizeInput,
   TerminalSession,
+  TerminalUpdateEvent,
   UpdateProjectUrlsInput
 } from "../src/shared/types.js";
 
@@ -42,6 +43,7 @@ const channels = {
   resizeTerminal: "terminal:resize",
   closeTerminal: "terminal:close",
   terminalData: "terminal:data",
+  terminalUpdate: "terminal:update",
   terminalExit: "terminal:exit"
 } as const;
 
@@ -126,6 +128,11 @@ const sharkBayApi = {
       const listener = (_event: Electron.IpcRendererEvent, payload: TerminalExitEvent) => callback(payload);
       ipcRenderer.on(channels.terminalExit, listener);
       return () => ipcRenderer.removeListener(channels.terminalExit, listener);
+    },
+    onUpdate: (callback: (event: TerminalUpdateEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: TerminalUpdateEvent) => callback(payload);
+      ipcRenderer.on(channels.terminalUpdate, listener);
+      return () => ipcRenderer.removeListener(channels.terminalUpdate, listener);
     }
   }
 };

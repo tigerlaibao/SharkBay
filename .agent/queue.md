@@ -36,6 +36,7 @@
 | `t-020-right-detail-card-tabs` | Convert right detail column into card tabs | 2026-05-06 |
 | `t-021-harness-behavioral-discipline` | Add behavioral discipline to Ripple harnesses | 2026-05-06 |
 | `t-022-runner-task-registration` | Make runner work visible only after task registration | 2026-05-06 |
+| `t-023-terminal-title-strategy` | Improve terminal tab title strategy | 2026-05-06 |
 
 ## Rules
 

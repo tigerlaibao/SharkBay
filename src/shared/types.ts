@@ -421,3 +421,7 @@ export type TerminalExitEvent = {
   exitCode: number | null;
   signal: string | null;
 };
+
+export type TerminalUpdateEvent = {
+  session: TerminalSession;
+};
