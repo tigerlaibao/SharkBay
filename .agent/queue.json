@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-05",
+  "updatedAt": "2026-05-06",
   "active": [],
   "backlog": [],
   "done": [
@@ -144,6 +144,72 @@
       ],
       "status": "done",
       "completedAt": "2026-05-05"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-014-terminal-integration",
+      "title": "Integrate project terminal tabs",
+      "phase": "done",
+      "dependsOn": [
+        "t-013-task-detail-drilldown"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-06"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-015-xterm-node-pty-terminal-spaces",
+      "title": "Replace terminal with xterm and node-pty project spaces",
+      "phase": "done",
+      "dependsOn": [
+        "t-014-terminal-integration"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-06"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-016-resizable-workbench-columns",
+      "title": "Make workbench columns resizable",
+      "phase": "done",
+      "dependsOn": [
+        "t-015-xterm-node-pty-terminal-spaces"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-06"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-017-minimum-default-columns",
+      "title": "Initialize workbench columns at minimum widths",
+      "phase": "done",
+      "dependsOn": [
+        "t-016-resizable-workbench-columns"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-06"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-018-macos-settings-menu",
+      "title": "Open Settings from the macOS app menu",
+      "phase": "done",
+      "dependsOn": [
+        "t-017-minimum-default-columns"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-06"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-019-preserve-terminals-across-settings",
+      "title": "Preserve terminal spaces across Settings navigation",
+      "phase": "done",
+      "dependsOn": [
+        "t-018-macos-settings-menu"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-06"
     }
   ]
 }

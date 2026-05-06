@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Ready for the next task
-- Last controller run: 2026-05-05 bootstrap
+- Current focus: Terminal spaces persist when opening and leaving Settings
+- Last controller run: 2026-05-06 preserve terminals across Settings navigation
 
 ## Repository Identity
 
@@ -18,7 +18,7 @@
 
 ## Current Task
 
-- Task ID: `t-013-task-detail-drilldown`
+- Task ID: `t-019-preserve-terminals-across-settings`
 - Phase: done
 - Next action: Ready for the next task.
 - Blocked by: none
@@ -104,6 +104,9 @@
 | 2026-05-05T21:55:00+08:00 | Completed `t-011-runner-lifecycle-heartbeat` with separate runner lifecycle metadata, Needs Action semantics, and protocol guidance. | `tasks/t-011-runner-lifecycle-heartbeat/status.md` |
 | 2026-05-05T22:49:00+08:00 | Fixed task list visibility by matching SharkBay's queue reader to section-specific harness queue rules and adding read-only task directory fallback rows. | `tasks/t-012-task-directory-queue-fallback/status.md` |
 | 2026-05-05T23:00:00+08:00 | Moved task artifacts out of the default project overview and added a full-column task drilldown from the Tasks list. | `tasks/t-013-task-detail-drilldown/status.md` |
+| 2026-05-06T16:47:19+08:00 | Open SharkBay Settings from the macOS application menu instead of relying on an in-panel settings button. | `tasks/t-018-macos-settings-menu/implementation.md` |
+| 2026-05-06T16:53:27+08:00 | Removed the left project panel's search, phase, Dirty, Blocked, refresh, and Settings controls. | `tasks/t-018-macos-settings-menu/implementation.md` |
+| 2026-05-06T17:01:51+08:00 | Keep `DashboardView` mounted while Settings is open so terminal spaces, tabs, and xterm instances persist across Settings navigation. | `tasks/t-019-preserve-terminals-across-settings/implementation.md` |
 
 ## Open Questions
 

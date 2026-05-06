@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-05",
+  "updatedAt": "2026-05-06",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,13 +13,13 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Ready for the next task",
+    "currentFocus": "Terminal spaces persist when opening and leaving Settings.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
   },
   "currentTask": {
-    "taskId": "t-013-task-detail-drilldown",
+    "taskId": "t-019-preserve-terminals-across-settings",
     "phase": "done",
     "nextAction": "Ready for the next task.",
     "blockedBy": []
@@ -409,6 +409,21 @@
       "date": "2026-05-05T23:00:00+08:00",
       "decision": "Moved task artifacts out of the default project overview and added a full-column task drilldown from the Tasks list.",
       "source": "tasks/t-013-task-detail-drilldown/status.md"
+    },
+    {
+      "date": "2026-05-06T16:47:19+08:00",
+      "decision": "Open SharkBay Settings from the macOS application menu instead of relying on an in-panel settings button.",
+      "source": "tasks/t-018-macos-settings-menu/implementation.md"
+    },
+    {
+      "date": "2026-05-06T16:53:27+08:00",
+      "decision": "Removed the left project panel's search, phase, Dirty, Blocked, refresh, and Settings controls.",
+      "source": "tasks/t-018-macos-settings-menu/implementation.md"
+    },
+    {
+      "date": "2026-05-06T17:01:51+08:00",
+      "decision": "Keep DashboardView mounted while Settings is open so terminal spaces, tabs, and xterm instances persist across Settings navigation.",
+      "source": "tasks/t-019-preserve-terminals-across-settings/implementation.md"
     }
   ],
   "openQuestions": []

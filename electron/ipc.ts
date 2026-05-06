@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import {
   addConfiguredRoot,
   getConfiguredRoots,
@@ -14,6 +14,7 @@ import {
 import { generateNextActionPrompt } from "../src/main/prompt-generator.js";
 import { scanProjects } from "../src/main/scanner.js";
 import { createHarnessRepo } from "../src/main/template-installer.js";
+import { TerminalManager } from "../src/main/terminal.js";
 import type {
   AppConfig,
   CreateHarnessRepoInput,
@@ -29,6 +30,11 @@ import type {
   RemoveRootInput,
   RootConfigInput,
   SafeWriteResult,
+  TerminalCloseInput,
+  TerminalCreateInput,
+  TerminalInput,
+  TerminalResizeInput,
+  TerminalSession,
   UpdateProjectUrlsInput
 } from "../src/shared/types.js";
 
@@ -49,6 +55,10 @@ export type SharkBayIpcServices = {
   updateHarnessQueue: (input: HarnessJsonPatchInput) => Promise<SafeWriteResult>;
   createHarnessRepo: (input: CreateHarnessRepoInput) => Promise<CreateHarnessRepoResult>;
   nextActionPrompt: (input: NextActionPromptInput) => Promise<NextActionPromptResult>;
+  createTerminal: (input: TerminalCreateInput) => Promise<TerminalSession>;
+  terminalInput: (input: TerminalInput) => Promise<TerminalSession>;
+  resizeTerminal: (input: TerminalResizeInput) => Promise<TerminalSession>;
+  closeTerminal: (input: TerminalCloseInput) => Promise<TerminalSession>;
 };
 
 const channels = {
@@ -62,8 +72,20 @@ const channels = {
   updateHarnessManifest: "harness:updateManifest",
   updateHarnessQueue: "harness:updateQueue",
   createHarnessRepo: "projects:createHarnessRepo",
-  nextActionPrompt: "prompts:nextAction"
+  nextActionPrompt: "prompts:nextAction",
+  createTerminal: "terminal:create",
+  terminalInput: "terminal:input",
+  resizeTerminal: "terminal:resize",
+  closeTerminal: "terminal:close",
+  terminalData: "terminal:data",
+  terminalExit: "terminal:exit"
 } as const;
+
+const terminalManager = new TerminalManager();
+
+export function closeAllTerminalSessions(): void {
+  terminalManager.closeAll();
+}
 
 function createDefaultServices(runtime: IpcRuntime): SharkBayIpcServices {
   return {
@@ -77,7 +99,11 @@ function createDefaultServices(runtime: IpcRuntime): SharkBayIpcServices {
     updateHarnessManifest: (input) => updateHarnessManifest(runtime, input),
     updateHarnessQueue: (input) => updateHarnessQueue(runtime, input),
     createHarnessRepo: (input) => createHarnessRepo(runtime, input),
-    nextActionPrompt: (input) => generateNextActionPrompt(runtime, input)
+    nextActionPrompt: (input) => generateNextActionPrompt(runtime, input),
+    createTerminal: (input) => terminalManager.create(runtime, input),
+    terminalInput: (input) => Promise.resolve(terminalManager.input(input)),
+    resizeTerminal: (input) => Promise.resolve(terminalManager.resize(input)),
+    closeTerminal: (input) => Promise.resolve(terminalManager.close(input))
   };
 }
 
@@ -93,6 +119,18 @@ export function registerIpcHandlers(
   runtime: IpcRuntime,
   services: SharkBayIpcServices = createDefaultServices(runtime)
 ): void {
+  terminalManager.removeAllListeners("data");
+  terminalManager.removeAllListeners("exit");
+  terminalManager.on("data", (event) => {
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.webContents.send(channels.terminalData, event);
+    });
+  });
+  terminalManager.on("exit", (event) => {
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.webContents.send(channels.terminalExit, event);
+    });
+  });
   handle<void, AppConfig>(channels.listRoots, () => services.listRoots());
   handle<RootConfigInput, AppConfig>(channels.addRoot, (payload) => services.addRoot(payload));
   handle<RemoveRootInput, AppConfig>(channels.removeRoot, (payload) =>
@@ -121,5 +159,17 @@ export function registerIpcHandlers(
   );
   handle<NextActionPromptInput, NextActionPromptResult>(channels.nextActionPrompt, (payload) =>
     services.nextActionPrompt(payload)
+  );
+  handle<TerminalCreateInput, TerminalSession>(channels.createTerminal, (payload) =>
+    services.createTerminal(payload)
+  );
+  handle<TerminalInput, TerminalSession>(channels.terminalInput, (payload) =>
+    services.terminalInput(payload)
+  );
+  handle<TerminalResizeInput, TerminalSession>(channels.resizeTerminal, (payload) =>
+    services.resizeTerminal(payload)
+  );
+  handle<TerminalCloseInput, TerminalSession>(channels.closeTerminal, (payload) =>
+    services.closeTerminal(payload)
   );
 }

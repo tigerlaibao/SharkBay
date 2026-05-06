@@ -12,6 +12,8 @@ User
   v
 macOS App UI
   |
+  +--> Application menu opens Settings
+  |
   v
 Local SharkBay process
   |
@@ -22,6 +24,8 @@ Local SharkBay process
   +--> Template installer
   |
   +--> Prompt generator
+  |
+  +--> Terminal session manager
   |
   v
 Local filesystem repositories
@@ -67,8 +71,10 @@ Local filesystem repositories
 | Harness writer | Safely update allowlisted `.agent/*.json` fields | Trust renderer roots, overwrite whole files, follow symlinks outside configured roots |
 | Path safety | Canonicalize paths, enforce configured-root containment, reject symlink escapes | Use string-prefix checks as an authority boundary |
 | Template installer | Create new harness repos from templates | Overwrite existing files blindly |
+| Application menu | Expose macOS-native app actions such as Settings | Perform repository reads or writes directly |
 | Dashboard UI | Display project and task lifecycle state | Execute destructive repo operations |
 | Prompt generator | Produce next-action prompts for Codex | Pretend execution happened |
+| Terminal manager | Spawn user-driven `node-pty` shell tabs inside configured project roots | Treat renderer-supplied cwd as filesystem authority or run outside configured roots |
 | Runner, future | Invoke Codex CLI/MCP with approval | Run without logs or user-visible evidence |
 
 ## 5. Self-Hosting Requirement
@@ -90,9 +96,9 @@ Configured project roots
   -> scanner finds candidate repos
   -> repo reader loads .agent/manifest.json, state, queue, and task artifacts
   -> normalized project records
-  -> dashboard list and detail views
+  -> dashboard list, detail views, and terminal cwd selection
   -> user selects project/task action
-  -> prompt generator or template installer writes controlled outputs
+  -> prompt generator, template installer, or terminal session manager handles the action
 ```
 
 ## 7. Safety Model
@@ -108,6 +114,8 @@ Existing managed repositories are writable only through narrow harness JSON patc
 - URL source of truth: `.agent/state.json` under `project.localUrl`, `project.testUrl`, and `project.deploymentUrl`.
 
 Create-repo writes only to an empty target inside configured roots and rejects non-empty targets, existing harness files, and symlink targets.
+
+Terminal sessions are writable process sessions, but their filesystem authority starts from the same configured-root boundary. The main process canonicalizes the requested cwd through `resolveRepoPath` before spawning a `node-pty` shell, and renderer payloads cannot open arbitrary paths outside configured roots. The renderer uses xterm terminal spaces keyed by project candidate so hidden project terminals remain alive while only the selected project's space is visible.
 
 ## 8. Constraints
 

@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-User-centered project workbench redesign, read-only root child discovery, autonomous UX polish, confirmation-gated Ripple setup, project-authored developer metadata, human intervention signals, setup-time agent onboarding instructions, runner lifecycle separation, robust queue/task visibility, and task detail drilldown are complete.
+User-centered project workbench redesign, read-only root child discovery, autonomous UX polish, confirmation-gated Ripple setup, project-authored developer metadata, human intervention signals, setup-time agent onboarding instructions, runner lifecycle separation, robust queue/task visibility, task detail drilldown, project terminal tabs, xterm/node-pty project terminal spaces, resizable workbench columns, minimum-width default columns, macOS Settings menu access, and Settings-safe terminal persistence are complete.
 
 ## Task List
 
@@ -21,6 +21,12 @@ User-centered project workbench redesign, read-only root child discovery, autono
 | `t-011-runner-lifecycle-heartbeat` | done | Separate runner lifecycle from harness phase | `t-010-agent-onboarding-instructions` | `.agent/runner.json` lease/heartbeat state keeps physical runner lifecycle separate from task phase |
 | `t-012-task-directory-queue-fallback` | done | Show task directories when queue metadata is incomplete | `t-011-runner-lifecycle-heartbeat` | Queue reader now honors section-specific backlog/done shapes and adds read-only task directory fallback rows |
 | `t-013-task-detail-drilldown` | done | Task detail drilldown in project sidebar | `t-012-task-directory-queue-fallback` | Project overview now hides the large task artifact preview and opens task details from the task list |
+| `t-014-terminal-integration` | done | Integrate project terminal tabs | `t-013-task-detail-drilldown` | Three-column workbench with terminal tabs rooted at the selected managed or not-setup project |
+| `t-015-xterm-node-pty-terminal-spaces` | done | Replace terminal with xterm and node-pty project spaces | `t-014-terminal-integration` | Real PTY-backed terminal spaces are scoped per project, with multiple tabs per space |
+| `t-016-resizable-workbench-columns` | done | Make workbench columns resizable | `t-015-xterm-node-pty-terminal-spaces` | Project, detail, and terminal columns can be resized with two persisted drag handles |
+| `t-017-minimum-default-columns` | done | Initialize workbench columns at minimum widths | `t-016-resizable-workbench-columns` | First-load project and detail columns start at minimum width so terminal gets the remaining space |
+| `t-018-macos-settings-menu` | done | Open Settings from the macOS app menu | `t-017-minimum-default-columns` | Settings is in the macOS app menu; the left project panel no longer shows search/filter/refresh/settings controls |
+| `t-019-preserve-terminals-across-settings` | done | Preserve terminal spaces across Settings navigation | `t-018-macos-settings-menu` | Dashboard stays mounted while Settings is open so terminal tabs and output survive returning to the main view |
 
 ## Completed Work
 
@@ -39,6 +45,12 @@ User-centered project workbench redesign, read-only root child discovery, autono
 | `t-011-runner-lifecycle-heartbeat` | 2026-05-05 | `npm run typecheck`, `npm run lint`, focused runner tests, `npm test`, `npm run build`, `git diff --check`, and existing dev-server smoke evidence passed; `npm run dev` was blocked by occupied port `5173` |
 | `t-012-task-directory-queue-fallback` | 2026-05-05 | `npm run typecheck`, focused harness reader tests, `npm test`, `npm run build`, and AIGF reader probe passed |
 | `t-013-task-detail-drilldown` | 2026-05-05 | `npm run typecheck`, `npm test`, `npm run build`, `git diff --check`, and Vite HTTP smoke on port `5175` passed |
+| `t-014-terminal-integration` | 2026-05-06 | `npm run typecheck`, `npm test` with 49 tests, `npm run build`, `git diff --check`, terminal focused tests, and browser layout smoke passed |
+| `t-015-xterm-node-pty-terminal-spaces` | 2026-05-06 | `npm run rebuild:native`, `npm run typecheck`, `npm test` with 49 tests, `npm run build`, `git diff --check`, and browser layout smoke passed |
+| `t-016-resizable-workbench-columns` | 2026-05-06 | `npm run typecheck`, `npm test` with 49 tests, `npm run build`, and `git diff --check` passed |
+| `t-017-minimum-default-columns` | 2026-05-06 | `npm run typecheck`, `npm run build`, and `git diff --check` passed |
+| `t-018-macos-settings-menu` | 2026-05-06 | `npm run typecheck`, `npm test` with 51 tests, `npm run build`, `git diff --check`, and menu template test passed |
+| `t-019-preserve-terminals-across-settings` | 2026-05-06 | `npm run typecheck`, `npm test` with 51 tests, `npm run build`, and `git diff --check` passed |
 
 ## Task Detail Template
 
@@ -75,4 +87,10 @@ t-001-sharkbay-mvp-spec (done)
                     -> t-011-runner-lifecycle-heartbeat (done)
                       -> t-012-task-directory-queue-fallback (done)
                         -> t-013-task-detail-drilldown (done)
+                          -> t-014-terminal-integration (done)
+                            -> t-015-xterm-node-pty-terminal-spaces (done)
+                              -> t-016-resizable-workbench-columns (done)
+                                -> t-017-minimum-default-columns (done)
+                                  -> t-018-macos-settings-menu (done)
+                                    -> t-019-preserve-terminals-across-settings (done)
 ```

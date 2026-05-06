@@ -230,7 +230,56 @@ export type NextActionPromptResult = {
   prompt: string;
 };
 
+export type TerminalSessionStatus = "running" | "exited";
+
+export type TerminalCreateInput = {
+  cwd: string;
+  title?: string;
+  cols?: number;
+  rows?: number;
+};
+
+export type TerminalSession = {
+  id: string;
+  cwd: string;
+  title: string;
+  shell: string;
+  pid: number | null;
+  status: TerminalSessionStatus;
+  createdAt: string;
+};
+
+export type TerminalInput = {
+  sessionId: string;
+  data: string;
+};
+
+export type TerminalResizeInput = {
+  sessionId: string;
+  cols: number;
+  rows: number;
+};
+
+export type TerminalCloseInput = {
+  sessionId: string;
+};
+
+export type TerminalDataEvent = {
+  sessionId: string;
+  data: string;
+  stream: "stdout" | "stderr";
+};
+
+export type TerminalExitEvent = {
+  sessionId: string;
+  exitCode: number | null;
+  signal: string | null;
+};
+
 export type SharkBayBridge = {
+  app?: {
+    onOpenSettings?: (callback: () => void) => () => void;
+  };
   listRoots?: () => Promise<AppConfig | RootRecord[] | string[]>;
   addRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
   removeRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
@@ -252,5 +301,13 @@ export type SharkBayBridge = {
   };
   prompts?: {
     nextAction?: (input: NextActionPromptInput) => Promise<NextActionPromptResult | string>;
+  };
+  terminal?: {
+    create?: (input: TerminalCreateInput) => Promise<TerminalSession>;
+    input?: (input: TerminalInput) => Promise<TerminalSession>;
+    resize?: (input: TerminalResizeInput) => Promise<TerminalSession>;
+    close?: (input: TerminalCloseInput) => Promise<TerminalSession>;
+    onData?: (callback: (event: TerminalDataEvent) => void) => () => void;
+    onExit?: (callback: (event: TerminalExitEvent) => void) => () => void;
   };
 };

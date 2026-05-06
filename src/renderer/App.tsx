@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import { FitAddon } from "@xterm/addon-fit";
+import { WebLinksAddon } from "@xterm/addon-web-links";
+import { Terminal as XTerm } from "@xterm/xterm";
+import "@xterm/xterm/css/xterm.css";
 import type {
   AppConfig,
   CreateHarnessRepoInput,
@@ -13,6 +17,9 @@ import type {
   ScanResult,
   SharkBayBridge,
   TaskArtifacts,
+  TerminalDataEvent,
+  TerminalExitEvent,
+  TerminalSession,
   TaskQueueItem,
   UpdateProjectUrlsInput,
   UpdateProjectUrlsResult,
@@ -40,11 +47,34 @@ type RefreshOptions = {
 
 type CandidateGroup = "managed" | "not_setup";
 
-const defaultDetailColumnWidth = 520;
-const minProjectColumnWidth = 360;
+type Disposable = {
+  dispose: () => void;
+};
+
+type TerminalTab = {
+  session: TerminalSession;
+  terminal: XTerm;
+  fitAddon: FitAddon;
+  disposables: Disposable[];
+};
+
+type TerminalSpace = {
+  projectId: string;
+  projectName: string;
+  path: string;
+  tabs: TerminalTab[];
+  activeId: string | null;
+};
+
+const minProjectColumnWidth = 216;
 const minDetailColumnWidth = 340;
+const minTerminalColumnWidth = 420;
+const defaultProjectColumnWidth = minProjectColumnWidth;
+const defaultDetailColumnWidth = minDetailColumnWidth;
 const resizerColumnWidth = 12;
-const detailColumnStorageKey = "sharkbay.detailColumnWidth";
+const columnResizeStep = 40;
+const detailColumnStorageKey = "sharkbay.detailColumnWidth.v2";
+const projectColumnStorageKey = "sharkbay.projectColumnWidth.v2";
 
 const artifactOrder: ArtifactKey[] = [
   "statusMarkdown",
@@ -217,6 +247,38 @@ async function createHarnessRepo(input: CreateHarnessRepoInput): Promise<CreateH
   });
 }
 
+async function createTerminal(cwd: string, title?: string): Promise<TerminalSession> {
+  const handler = getBridge().terminal?.create;
+  if (!handler) {
+    throw new Error("Terminal sessions are not exposed by the preload API.");
+  }
+  return handler({ cwd, title });
+}
+
+async function sendTerminalInput(sessionId: string, data: string): Promise<void> {
+  const handler = getBridge().terminal?.input;
+  if (!handler) {
+    throw new Error("Terminal input is not exposed by the preload API.");
+  }
+  await handler({ sessionId, data });
+}
+
+async function resizeTerminal(sessionId: string, cols: number, rows: number): Promise<void> {
+  const handler = getBridge().terminal?.resize;
+  if (!handler) {
+    throw new Error("Terminal resize is not exposed by the preload API.");
+  }
+  await handler({ sessionId, cols, rows });
+}
+
+async function closeTerminal(sessionId: string): Promise<void> {
+  const handler = getBridge().terminal?.close;
+  if (!handler) {
+    throw new Error("Terminal close is not exposed by the preload API.");
+  }
+  await handler({ sessionId });
+}
+
 type PromptTask = {
   taskId?: string | null;
   phase?: string | null;
@@ -316,6 +378,19 @@ function cx(...names: Array<string | false | null | undefined>): string {
   return names.filter(Boolean).join(" ");
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), Math.max(min, max));
+}
+
+function storedColumnWidth(key: string, fallback: number, min: number): number {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+
+  const saved = Number(window.localStorage.getItem(key));
+  return Number.isFinite(saved) && saved >= min ? saved : fallback;
+}
+
 function formatScanTime(value: string | null): string {
   if (!value) {
     return "never";
@@ -375,10 +450,6 @@ export function App() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [scanErrors, setScanErrors] = useState<string[]>([]);
-  const [query, setQuery] = useState("");
-  const [phaseFilter, setPhaseFilter] = useState("all");
-  const [dirtyOnly, setDirtyOnly] = useState(false);
-  const [blockedOnly, setBlockedOnly] = useState(false);
   const [lastScanAt, setLastScanAt] = useState<string | null>(null);
   const refreshInFlight = useRef(false);
 
@@ -395,32 +466,6 @@ export function App() {
 
     return selectedId ? projectById.get(selectedId) ?? null : null;
   }, [projectById, selectedCandidate, selectedId]);
-
-  const phaseOptions = useMemo(() => {
-    const phases = new Set(projects.map(phaseOf).filter((phase) => phase !== "unknown"));
-    if (candidates.some((candidate) => candidate.status === "not_setup")) {
-      phases.add("not_setup");
-    }
-    return ["all", ...Array.from(phases).sort()];
-  }, [candidates, projects]);
-
-  const filteredCandidates = useMemo(() => {
-    const search = query.trim().toLowerCase();
-
-    return candidates.filter((candidate) => {
-      const project = candidate.managedProjectId ? projectById.get(candidate.managedProjectId) : null;
-      const matchesSearch =
-        !search ||
-        candidate.name.toLowerCase().includes(search) ||
-        candidate.path.toLowerCase().includes(search) ||
-        (project?.activeTask?.taskId.toLowerCase().includes(search) ?? false);
-      const matchesPhase = phaseFilter === "all" || (project ? phaseOf(project) === phaseFilter : phaseFilter === "not_setup");
-      const matchesDirty = !dirtyOnly || project?.dirtyWorktree === true;
-      const matchesBlocked = !blockedOnly || (project ? gateOf(project) === "blocked" : false);
-
-      return matchesSearch && matchesPhase && matchesDirty && matchesBlocked;
-    });
-  }, [blockedOnly, candidates, dirtyOnly, phaseFilter, projectById, query]);
 
   async function refreshRoots() {
     setRoots(await listRoots());
@@ -537,6 +582,15 @@ export function App() {
       return;
     }
 
+    const unsubscribe = getBridge().app?.onOpenSettings?.(() => setView("settings"));
+    return () => unsubscribe?.();
+  }, [bridgeAvailable]);
+
+  useEffect(() => {
+    if (!bridgeAvailable) {
+      return;
+    }
+
     const timer = window.setInterval(() => {
       void refreshWorkspace({ showToast: false, setBusy: false });
     }, 5000);
@@ -553,39 +607,6 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <nav className="nav-stack" aria-label="Primary">
-          <button className={cx("nav-item", view === "dashboard" && "is-active")} onClick={() => setView("dashboard")}>
-            Projects
-          </button>
-          <button className={cx("nav-item", view === "settings" && "is-active")} onClick={() => setView("settings")}>
-            Settings
-          </button>
-        </nav>
-
-        {actionProjects.length ? (
-          <div className="sidebar-section">
-            <div className="section-heading">Needs Action</div>
-            <div className="compact-list">
-              {actionProjects.slice(0, 10).map((project) => (
-                <button
-                  aria-label={`${project.name} needs action`}
-                  className={cx("compact-project", selectedProject?.id === project.id && "is-active")}
-                  key={project.id}
-                  onClick={() => {
-                    setSelectedId(project.id);
-                    setView("dashboard");
-                  }}
-                >
-                  <span className="truncate">{project.name}</span>
-                  <span aria-hidden="true" className="action-dot" />
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </aside>
-
       <main className="workspace">
         <div className="workspace-body">
           {toast ? (
@@ -597,55 +618,53 @@ export function App() {
             </div>
           ) : null}
 
-          {view === "dashboard" ? (
+          <div
+            aria-hidden={view !== "dashboard"}
+            className={cx("view-surface", view !== "dashboard" && "is-hidden")}
+          >
             <DashboardView
-              blockedOnly={blockedOnly}
               bridgeAvailable={bridgeAvailable}
               configuredRoots={roots.map((root) => root.path)}
               detail={detail}
-              detailLoading={detailLoading}
-              dirtyOnly={dirtyOnly}
-              filteredCandidates={filteredCandidates}
+              filteredCandidates={candidates}
+              isVisible={view === "dashboard"}
               loading={loading}
-              phaseFilter={phaseFilter}
-              phaseOptions={phaseOptions}
               projectById={projectById}
-              query={query}
               scanErrors={scanErrors}
               selectedCandidate={selectedCandidate}
               selectedProject={selectedProject}
-              setBlockedOnly={setBlockedOnly}
-              setDirtyOnly={setDirtyOnly}
-              setPhaseFilter={setPhaseFilter}
-              setQuery={setQuery}
               setSelectedId={setSelectedId}
               setToast={setToast}
               onDetailRefresh={refreshDetail}
               onRefresh={refreshWorkspace}
             />
-          ) : null}
+          </div>
 
           {view === "settings" ? (
-            <SettingsView
-              roots={roots}
-              bridgeAvailable={bridgeAvailable}
-              lastScanAt={lastScanAt}
-              loading={loading}
-              projects={projects}
-              scanErrors={scanErrors}
-              setToast={setToast}
-              onScan={() => refreshProjects({ showToast: true })}
-              onAdd={async (path) => {
-                await addRoot(path);
-                await refreshRoots();
-                await refreshProjects({ showToast: true });
-              }}
-              onRemove={async (path) => {
-                await removeRoot(path);
-                await refreshRoots();
-                await refreshProjects({ showToast: true });
-              }}
-            />
+            <div className="view-surface settings-surface">
+              <SettingsView
+                roots={roots}
+                bridgeAvailable={bridgeAvailable}
+                actionProjects={actionProjects}
+                lastScanAt={lastScanAt}
+                loading={loading}
+                projects={projects}
+                scanErrors={scanErrors}
+                setToast={setToast}
+                onBack={() => setView("dashboard")}
+                onScan={() => refreshProjects({ showToast: true })}
+                onAdd={async (path) => {
+                  await addRoot(path);
+                  await refreshRoots();
+                  await refreshProjects({ showToast: true });
+                }}
+                onRemove={async (path) => {
+                  await removeRoot(path);
+                  await refreshRoots();
+                  await refreshProjects({ showToast: true });
+                }}
+              />
+            </div>
           ) : null}
         </div>
       </main>
@@ -654,49 +673,31 @@ export function App() {
 }
 
 function DashboardView({
-  blockedOnly,
   bridgeAvailable,
   configuredRoots,
   detail,
-  detailLoading,
-  dirtyOnly,
   filteredCandidates,
+  isVisible,
   loading,
-  phaseFilter,
-  phaseOptions,
   projectById,
-  query,
   scanErrors,
   selectedCandidate,
   selectedProject,
-  setBlockedOnly,
-  setDirtyOnly,
-  setPhaseFilter,
-  setQuery,
   setSelectedId,
   setToast,
   onDetailRefresh,
   onRefresh,
 }: {
-  blockedOnly: boolean;
   bridgeAvailable: boolean;
   configuredRoots: string[];
   detail: ProjectDetail | null;
-  detailLoading: boolean;
-  dirtyOnly: boolean;
   filteredCandidates: ProjectCandidate[];
+  isVisible: boolean;
   loading: boolean;
-  phaseFilter: string;
-  phaseOptions: string[];
   projectById: Map<string, ProjectSummary>;
-  query: string;
   scanErrors: string[];
   selectedCandidate: ProjectCandidate | null;
   selectedProject: ProjectSummary | null;
-  setBlockedOnly: (value: boolean) => void;
-  setDirtyOnly: (value: boolean) => void;
-  setPhaseFilter: (value: string) => void;
-  setQuery: (value: string) => void;
   setSelectedId: (value: string) => void;
   setToast: (toast: Toast) => void;
   onDetailRefresh: (project?: ProjectSummary | null) => Promise<void>;
@@ -704,36 +705,74 @@ function DashboardView({
 }) {
   const managedCandidates = filteredCandidates.filter((candidate) => candidate.status === "managed");
   const notSetupCandidates = filteredCandidates.filter((candidate) => candidate.status === "not_setup");
-  const [detailColumnWidth, setDetailColumnWidth] = useState(() => {
-    if (typeof window === "undefined") {
-      return defaultDetailColumnWidth;
-    }
-    const saved = Number(window.localStorage.getItem(detailColumnStorageKey));
-    return Number.isFinite(saved) && saved >= minDetailColumnWidth ? saved : defaultDetailColumnWidth;
-  });
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [projectColumnWidth, setProjectColumnWidth] = useState(() =>
+    storedColumnWidth(projectColumnStorageKey, defaultProjectColumnWidth, minProjectColumnWidth),
+  );
+  const [detailColumnWidth, setDetailColumnWidth] = useState(() =>
+    storedColumnWidth(detailColumnStorageKey, defaultDetailColumnWidth, minDetailColumnWidth),
+  );
 
-  function persistDetailColumnWidth(width: number) {
-    setDetailColumnWidth(width);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(detailColumnStorageKey, String(width));
+  function normalizeColumnWidths(projectWidth: number, detailWidth: number, gridWidth: number) {
+    const availableWidth = gridWidth - resizerColumnWidth * 2;
+    const minimumWidth = minProjectColumnWidth + minDetailColumnWidth + minTerminalColumnWidth;
+
+    if (availableWidth <= minimumWidth) {
+      return {
+        projectWidth: minProjectColumnWidth,
+        detailWidth: minDetailColumnWidth,
+      };
     }
+
+    const nextProjectWidth = clamp(projectWidth, minProjectColumnWidth, availableWidth - minDetailColumnWidth - minTerminalColumnWidth);
+    const nextDetailWidth = clamp(detailWidth, minDetailColumnWidth, availableWidth - nextProjectWidth - minTerminalColumnWidth);
+
+    return {
+      projectWidth: Math.round(nextProjectWidth),
+      detailWidth: Math.round(nextDetailWidth),
+    };
+  }
+
+  function persistColumnWidths(projectWidth: number, detailWidth: number, gridWidth = gridRef.current?.getBoundingClientRect().width) {
+    const next = gridWidth
+      ? normalizeColumnWidths(projectWidth, detailWidth, gridWidth)
+      : {
+          projectWidth: Math.max(minProjectColumnWidth, Math.round(projectWidth)),
+          detailWidth: Math.max(minDetailColumnWidth, Math.round(detailWidth)),
+        };
+
+    setProjectColumnWidth(next.projectWidth);
+    setDetailColumnWidth(next.detailWidth);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(projectColumnStorageKey, String(next.projectWidth));
+      window.localStorage.setItem(detailColumnStorageKey, String(next.detailWidth));
+    }
+  }
+
+  function resizeProjectColumn(grid: HTMLElement, clientX: number) {
+    const rect = grid.getBoundingClientRect();
+    persistColumnWidths(clientX - rect.left, detailColumnWidth, rect.width);
   }
 
   function resizeDetailColumn(grid: HTMLElement, clientX: number) {
     const rect = grid.getBoundingClientRect();
-    const maxDetailWidth = Math.max(minDetailColumnWidth, rect.width - minProjectColumnWidth - resizerColumnWidth);
-    const nextWidth = Math.min(Math.max(rect.right - clientX, minDetailColumnWidth), maxDetailWidth);
-    persistDetailColumnWidth(Math.round(nextWidth));
+    persistColumnWidths(projectColumnWidth, rect.right - clientX, rect.width);
   }
 
-  function startColumnResize(event: ReactPointerEvent<HTMLDivElement>) {
+  function startColumnResize(target: "project" | "detail", event: ReactPointerEvent<HTMLDivElement>) {
     event.preventDefault();
     const grid = event.currentTarget.parentElement;
     if (!grid) {
       return;
     }
 
-    const onPointerMove = (moveEvent: PointerEvent) => resizeDetailColumn(grid, moveEvent.clientX);
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (target === "project") {
+        resizeProjectColumn(grid, moveEvent.clientX);
+      } else {
+        resizeDetailColumn(grid, moveEvent.clientX);
+      }
+    };
     const onPointerUp = () => {
       document.body.classList.remove("is-resizing-columns");
       window.removeEventListener("pointermove", onPointerMove);
@@ -745,57 +784,43 @@ function DashboardView({
     window.addEventListener("pointerup", onPointerUp, { once: true });
   }
 
-  function resizeWithKeyboard(event: KeyboardEvent<HTMLDivElement>) {
+  function resizeWithKeyboard(target: "project" | "detail", event: KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
       return;
     }
     event.preventDefault();
-    const delta = event.key === "ArrowLeft" ? 40 : -40;
-    persistDetailColumnWidth(Math.max(minDetailColumnWidth, detailColumnWidth + delta));
+    const delta = event.key === "ArrowRight" ? columnResizeStep : -columnResizeStep;
+    if (target === "project") {
+      persistColumnWidths(projectColumnWidth + delta, detailColumnWidth);
+    } else {
+      const detailDelta = event.key === "ArrowLeft" ? columnResizeStep : -columnResizeStep;
+      persistColumnWidths(projectColumnWidth, detailColumnWidth + detailDelta);
+    }
   }
 
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) {
+      return;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) {
+        persistColumnWidths(projectColumnWidth, detailColumnWidth, width);
+      }
+    });
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, [detailColumnWidth, projectColumnWidth]);
+
   const gridStyle = {
-    gridTemplateColumns: `minmax(${minProjectColumnWidth}px, 1fr) ${resizerColumnWidth}px minmax(${minDetailColumnWidth}px, ${detailColumnWidth}px)`,
+    gridTemplateColumns: `${projectColumnWidth}px ${resizerColumnWidth}px minmax(${minTerminalColumnWidth}px, 1fr) ${resizerColumnWidth}px ${detailColumnWidth}px`,
   } satisfies CSSProperties;
 
   return (
-    <div className="dashboard-grid" style={gridStyle}>
+    <div className="dashboard-grid" ref={gridRef} style={gridStyle}>
       <section className="panel project-panel">
-        <div className="filter-row">
-          <input
-            aria-label="Filter projects"
-            className="input search-input"
-            placeholder="Filter by name, path, task"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          <select className="input select-input" value={phaseFilter} onChange={(event) => setPhaseFilter(event.target.value)}>
-            {phaseOptions.map((phase) => (
-              <option key={phase} value={phase}>
-                {phase === "all" ? "All phases" : phase}
-              </option>
-            ))}
-          </select>
-          <label className="check-label">
-            <input checked={dirtyOnly} type="checkbox" onChange={(event) => setDirtyOnly(event.target.checked)} />
-            Dirty
-          </label>
-          <label className="check-label">
-            <input checked={blockedOnly} type="checkbox" onChange={(event) => setBlockedOnly(event.target.checked)} />
-            Blocked
-          </label>
-          <button
-            aria-label="Refresh projects"
-            className="icon-button"
-            disabled={!bridgeAvailable || loading || detailLoading}
-            title="Refresh projects"
-            type="button"
-            onClick={() => void onRefresh()}
-          >
-            <RefreshIcon />
-          </button>
-        </div>
-
         {scanErrors.length ? (
           <div className="inline-errors">
             {scanErrors.map((error) => (
@@ -825,13 +850,32 @@ function DashboardView({
       </section>
 
       <div
-        aria-label="Resize project and detail columns"
+        aria-label="Resize project column"
         aria-orientation="vertical"
         className="column-resizer"
         role="separator"
         tabIndex={0}
-        onKeyDown={resizeWithKeyboard}
-        onPointerDown={startColumnResize}
+        onKeyDown={(event) => resizeWithKeyboard("project", event)}
+        onPointerDown={(event) => startColumnResize("project", event)}
+      />
+
+      <section className="panel terminal-panel">
+        <TerminalPane
+          candidate={selectedCandidate}
+          bridgeAvailable={bridgeAvailable}
+          isVisible={isVisible}
+          setToast={setToast}
+        />
+      </section>
+
+      <div
+        aria-label="Resize terminal and detail columns"
+        aria-orientation="vertical"
+        className="column-resizer"
+        role="separator"
+        tabIndex={0}
+        onKeyDown={(event) => resizeWithKeyboard("detail", event)}
+        onPointerDown={(event) => startColumnResize("detail", event)}
       />
 
       <section className="panel detail-panel">
@@ -859,6 +903,392 @@ function DashboardView({
       </section>
     </div>
   );
+}
+
+function TerminalPane({
+  bridgeAvailable,
+  candidate,
+  isVisible,
+  setToast,
+}: {
+  bridgeAvailable: boolean;
+  candidate: ProjectCandidate | null;
+  isVisible: boolean;
+  setToast: (toast: Toast) => void;
+}) {
+  const [spaces, setSpaces] = useState<Record<string, TerminalSpace>>({});
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const spacesRef = useRef<Record<string, TerminalSpace>>({});
+  const creatingProjects = useRef(new Set<string>());
+  const activeSpace = activeProjectId ? spaces[activeProjectId] ?? null : null;
+  const activeTab = activeSpace?.tabs.find((tab) => tab.session.id === activeSpace.activeId) ?? activeSpace?.tabs[0] ?? null;
+  const canCreate = bridgeAvailable && Boolean(candidate?.path);
+
+  useEffect(() => {
+    spacesRef.current = spaces;
+  }, [spaces]);
+
+  useEffect(() => {
+    if (!bridgeAvailable) {
+      return;
+    }
+    const terminal = getBridge().terminal;
+    if (!terminal?.onData || !terminal.onExit) {
+      return;
+    }
+
+    const offData = terminal.onData((event) => appendTerminalOutput(event));
+    const offExit = terminal.onExit((event) => markTerminalExit(event));
+    return () => {
+      offData();
+      offExit();
+    };
+  }, [bridgeAvailable]);
+
+  useEffect(() => {
+    if (!candidate?.path || !bridgeAvailable) {
+      if (!candidate) {
+        setActiveProjectId(null);
+      }
+      return;
+    }
+
+    setActiveProjectId(candidate.id);
+    setSpaces((current) => {
+      if (current[candidate.id]) {
+        return current;
+      }
+      return {
+        ...current,
+        [candidate.id]: {
+          projectId: candidate.id,
+          projectName: candidate.name,
+          path: candidate.path,
+          tabs: [],
+          activeId: null,
+        },
+      };
+    });
+
+    if (!isVisible) {
+      return;
+    }
+
+    const existing = spacesRef.current[candidate.id];
+    if (existing?.tabs.length) {
+      return;
+    }
+    if (creatingProjects.current.has(candidate.id)) {
+      return;
+    }
+
+    creatingProjects.current.add(candidate.id);
+    void openProjectTab(candidate.id, candidate.path, candidate.name, true).finally(() => {
+      creatingProjects.current.delete(candidate.id);
+    });
+  }, [bridgeAvailable, candidate?.id, candidate?.path, isVisible]);
+
+  async function openCurrentProjectTab() {
+    if (!candidate?.path) {
+      return;
+    }
+    await openProjectTab(candidate.id, candidate.path, candidate.name);
+  }
+
+  async function openProjectTab(projectId: string, cwd: string, projectName: string, quiet = false) {
+    try {
+      const session = await createTerminal(cwd, projectName);
+      const terminal = createXTerm(session.id, setToast);
+      const tab: TerminalTab = {
+        session,
+        terminal: terminal.instance,
+        fitAddon: terminal.fitAddon,
+        disposables: terminal.disposables,
+      };
+
+      setSpaces((current) => {
+        const existing = current[projectId] ?? {
+          projectId,
+          projectName,
+          path: cwd,
+          tabs: [],
+          activeId: null,
+        };
+        return {
+          ...current,
+          [projectId]: {
+            ...existing,
+            projectName,
+            path: cwd,
+            tabs: [...existing.tabs, tab],
+            activeId: session.id,
+          },
+        };
+      });
+      setActiveProjectId(projectId);
+    } catch (error) {
+      if (!quiet) {
+        setToast({ tone: "error", message: asMessage(error) });
+      }
+    }
+  }
+
+  function appendTerminalOutput(event: TerminalDataEvent) {
+    const tab = findTerminalTab(spacesRef.current, event.sessionId);
+    tab?.terminal.write(event.data);
+  }
+
+  function markTerminalExit(event: TerminalExitEvent) {
+    const message = `\r\n[process exited${event.exitCode === null ? "" : ` with code ${event.exitCode}`}${event.signal ? `, signal ${event.signal}` : ""}]\r\n`;
+    const tab = findTerminalTab(spacesRef.current, event.sessionId);
+    tab?.terminal.write(message);
+    setSpaces((current) => mapTerminalTab(current, event.sessionId, (currentTab) => ({
+      ...currentTab,
+      session: { ...currentTab.session, status: "exited" },
+    })));
+  }
+
+  async function closeTab(sessionId: string) {
+    const match = findTerminalTabWithSpace(spacesRef.current, sessionId);
+    try {
+      await closeTerminal(sessionId);
+    } catch (error) {
+      setToast({ tone: "error", message: asMessage(error) });
+    } finally {
+      match?.tab.disposables.forEach((disposable) => disposable.dispose());
+      match?.tab.terminal.dispose();
+      setSpaces((current) => {
+        if (!match) {
+          return current;
+        }
+        const space = current[match.space.projectId];
+        if (!space) {
+          return current;
+        }
+        const nextTabs = space.tabs.filter((tab) => tab.session.id !== sessionId);
+        const closingActive = space.activeId === sessionId;
+        const fallback = nextTabs[match.index] ?? nextTabs[match.index - 1] ?? null;
+        return {
+          ...current,
+          [space.projectId]: {
+            ...space,
+            tabs: nextTabs,
+            activeId: closingActive ? fallback?.session.id ?? null : space.activeId,
+          },
+        };
+      });
+    }
+  }
+
+  return (
+    <div className="terminal-layout">
+      <div className="terminal-header">
+        <div>
+          <h3>Terminal</h3>
+          <div className="path-line">{activeSpace?.path ?? candidate?.path ?? "Select a project"}</div>
+        </div>
+        <div className="terminal-actions">
+          <button aria-label="New terminal tab" className="icon-button" disabled={!canCreate} title="New terminal tab" type="button" onClick={() => void openCurrentProjectTab()}>
+            <PlusIcon />
+          </button>
+        </div>
+      </div>
+
+      <div className="terminal-space-stack">
+        {Object.values(spaces).map((space) => (
+          <div className={cx("terminal-space", space.projectId === activeProjectId && "is-active")} key={space.projectId}>
+            {space.tabs.length ? (
+              <div className="terminal-tabs" role="tablist">
+                {space.tabs.map((tab) => (
+                  <div className={cx("terminal-tab", tab.session.id === space.activeId && "is-active")} key={tab.session.id} role="tab" aria-selected={tab.session.id === space.activeId}>
+                    <button
+                      className="terminal-tab-main"
+                      type="button"
+                      onClick={() => setActiveTab(space.projectId, tab.session.id)}
+                    >
+                      <span className={cx("terminal-state", tab.session.status === "exited" && "is-exited")} />
+                      <span className="truncate">{tab.session.title}</span>
+                    </button>
+                    <button
+                      aria-label={`Close ${tab.session.title}`}
+                      className="terminal-tab-close"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void closeTab(tab.session.id);
+                      }}
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            <div className="xterm-surface-stack">
+              {space.tabs.map((tab) => (
+                <XTermSurface
+                  active={isVisible && space.projectId === activeProjectId && tab.session.id === space.activeId}
+                  key={tab.session.id}
+                  tab={tab}
+                  onResize={(cols, rows) => void resizeTerminal(tab.session.id, cols, rows).catch((error) => setToast({ tone: "error", message: asMessage(error) }))}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+        {!activeTab ? (
+          <EmptyState
+            title="No terminal open"
+            body={candidate ? "Open a tab for the selected project." : "Select a project to start a shell."}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+
+  function setActiveTab(projectId: string, sessionId: string) {
+    setSpaces((current) => {
+      const space = current[projectId];
+      if (!space) {
+        return current;
+      }
+      return {
+        ...current,
+        [projectId]: {
+          ...space,
+          activeId: sessionId,
+        },
+      };
+    });
+  }
+}
+
+function XTermSurface({
+  active,
+  onResize,
+  tab,
+}: {
+  active: boolean;
+  onResize: (cols: number, rows: number) => void;
+  tab: TerminalTab;
+}) {
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const openedRef = useRef(false);
+
+  useEffect(() => {
+    if (!hostRef.current || openedRef.current) {
+      return;
+    }
+    tab.terminal.open(hostRef.current);
+    openedRef.current = true;
+  }, [tab]);
+
+  useEffect(() => {
+    if (!active || !openedRef.current) {
+      return;
+    }
+    const fitAndResize = () => {
+      const dimensions = tab.fitAddon.proposeDimensions();
+      if (!dimensions) {
+        return;
+      }
+      tab.fitAddon.fit();
+      onResize(dimensions.cols, dimensions.rows);
+    };
+    const frame = window.requestAnimationFrame(() => {
+      fitAndResize();
+      tab.terminal.focus();
+    });
+    const observer = new ResizeObserver(() => fitAndResize());
+    if (hostRef.current) {
+      observer.observe(hostRef.current);
+    }
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [active, onResize, tab]);
+
+  return (
+    <div
+      aria-hidden={!active}
+      className={cx("xterm-surface", active && "is-active")}
+      ref={hostRef}
+    />
+  );
+}
+
+function createXTerm(sessionId: string, setToast: (toast: Toast) => void): { instance: XTerm; fitAddon: FitAddon; disposables: Disposable[] } {
+  const instance = new XTerm({
+    allowTransparency: false,
+    cursorBlink: true,
+    fontFamily: 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace',
+    fontSize: 12,
+    scrollback: 5000,
+    theme: {
+      background: "#101719",
+      foreground: "#d9e5df",
+      cursor: "#93d7a4",
+      selectionBackground: "#38575d",
+    },
+  });
+  const fitAddon = new FitAddon();
+  instance.loadAddon(fitAddon);
+  instance.loadAddon(new WebLinksAddon());
+  const inputDisposable = instance.onData((data) => {
+    void sendTerminalInput(sessionId, data).catch((error) => {
+      setToast({ tone: "error", message: asMessage(error) });
+    });
+  });
+  return {
+    instance,
+    fitAddon,
+    disposables: [inputDisposable],
+  };
+}
+
+function findTerminalTab(spaces: Record<string, TerminalSpace>, sessionId: string): TerminalTab | null {
+  return findTerminalTabWithSpace(spaces, sessionId)?.tab ?? null;
+}
+
+function findTerminalTabWithSpace(
+  spaces: Record<string, TerminalSpace>,
+  sessionId: string,
+): { space: TerminalSpace; tab: TerminalTab; index: number } | null {
+  for (const space of Object.values(spaces)) {
+    const index = space.tabs.findIndex((tab) => tab.session.id === sessionId);
+    if (index >= 0) {
+      const tab = space.tabs[index];
+      if (tab) {
+        return { space, tab, index };
+      }
+    }
+  }
+  return null;
+}
+
+function mapTerminalTab(
+  spaces: Record<string, TerminalSpace>,
+  sessionId: string,
+  mapTab: (tab: TerminalTab) => TerminalTab,
+): Record<string, TerminalSpace> {
+  let changed = false;
+  const nextSpaces = Object.fromEntries(
+    Object.entries(spaces).map(([projectId, space]) => {
+      const nextTabs = space.tabs.map((tab) => {
+        if (tab.session.id !== sessionId) {
+          return tab;
+        }
+        changed = true;
+        return mapTab(tab);
+      });
+      return [
+        projectId,
+        changed ? { ...space, tabs: nextTabs } : space,
+      ];
+    }),
+  );
+  return changed ? nextSpaces : spaces;
 }
 
 function RootWorkflowPanel({
@@ -1525,20 +1955,15 @@ function QueueTabs({ detail, onSelectTask }: { detail: ProjectDetail; onSelectTa
   }
 
   return (
-    <section className="subpanel">
-      <div className="panel-title-row compact-title-row">
-        <h4>Tasks</h4>
-      </div>
-      <div className="queue-list">
-        {sortedItems.map((item) => (
-          <QueueItem
-            isCurrent={item.taskId === activeTaskId}
-            item={item}
-            key={`${item.taskId}-${item.phase ?? item.status ?? "task"}`}
-            onSelect={() => onSelectTask(item.taskId)}
-          />
-        ))}
-      </div>
+    <section aria-label="Tasks" className="queue-list">
+      {sortedItems.map((item) => (
+        <QueueItem
+          isCurrent={item.taskId === activeTaskId}
+          item={item}
+          key={`${item.taskId}-${item.phase ?? item.status ?? "task"}`}
+          onSelect={() => onSelectTask(item.taskId)}
+        />
+      ))}
     </section>
   );
 }
@@ -1850,6 +2275,7 @@ function Diagnostics({ detail }: { detail: ProjectDetail }) {
 }
 
 function SettingsView({
+  actionProjects,
   roots,
   bridgeAvailable,
   lastScanAt,
@@ -1857,10 +2283,12 @@ function SettingsView({
   projects,
   scanErrors,
   setToast,
+  onBack,
   onScan,
   onAdd,
   onRemove,
 }: {
+  actionProjects: ProjectSummary[];
   roots: RootRecord[];
   bridgeAvailable: boolean;
   lastScanAt: string | null;
@@ -1868,6 +2296,7 @@ function SettingsView({
   projects: ProjectSummary[];
   scanErrors: string[];
   setToast: (toast: Toast) => void;
+  onBack: () => void;
   onScan: () => Promise<void>;
   onAdd: (path: string) => Promise<void>;
   onRemove: (path: string) => Promise<void>;
@@ -1876,6 +2305,17 @@ function SettingsView({
 
   return (
     <div className="settings-layout">
+      <div className="detail-header">
+        <button aria-label="Back to projects" className="icon-button" title="Back to projects" type="button" onClick={onBack}>
+          <ArrowLeftIcon />
+        </button>
+        <div>
+          <h3>Settings</h3>
+          <div className="path-line">
+            {actionProjects.length ? `${actionProjects.length} project${actionProjects.length === 1 ? "" : "s"} need attention` : "Scan roots and local project access"}
+          </div>
+        </div>
+      </div>
       <section className="panel settings-panel">
         <RootWorkflowPanel
           bridgeAvailable={bridgeAvailable}
@@ -1925,13 +2365,19 @@ function ArrowLeftIcon() {
   );
 }
 
-function RefreshIcon() {
+function PlusIcon() {
   return (
     <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16">
-      <path d="M20 6v5h-5" />
-      <path d="M4 18v-5h5" />
-      <path d="M18.6 9A7 7 0 0 0 6.4 6.6L4 9" />
-      <path d="M5.4 15a7 7 0 0 0 12.2 2.4L20 15" />
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+function StopIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16">
+      <path d="M8 8h8v8H8z" />
     </svg>
   );
 }

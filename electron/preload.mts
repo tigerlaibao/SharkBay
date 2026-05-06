@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import { appChannels } from "../src/shared/app-events.js";
 import type {
   AppConfig,
   CreateHarnessRepoInput,
@@ -14,6 +15,13 @@ import type {
   RemoveRootInput,
   RootConfigInput,
   SafeWriteResult,
+  TerminalCloseInput,
+  TerminalCreateInput,
+  TerminalDataEvent,
+  TerminalExitEvent,
+  TerminalInput,
+  TerminalResizeInput,
+  TerminalSession,
   UpdateProjectUrlsInput
 } from "../src/shared/types.js";
 
@@ -28,14 +36,44 @@ const channels = {
   updateHarnessManifest: "harness:updateManifest",
   updateHarnessQueue: "harness:updateQueue",
   createHarnessRepo: "projects:createHarnessRepo",
-  nextActionPrompt: "prompts:nextAction"
+  nextActionPrompt: "prompts:nextAction",
+  createTerminal: "terminal:create",
+  terminalInput: "terminal:input",
+  resizeTerminal: "terminal:resize",
+  closeTerminal: "terminal:close",
+  terminalData: "terminal:data",
+  terminalExit: "terminal:exit"
 } as const;
+
+const openSettingsListeners = new Set<() => void>();
+let openSettingsPending = false;
+
+ipcRenderer.on(appChannels.openSettings, () => {
+  if (!openSettingsListeners.size) {
+    openSettingsPending = true;
+    return;
+  }
+
+  openSettingsListeners.forEach((callback) => callback());
+});
 
 function invoke<Result>(channel: string, payload?: unknown): Promise<Result> {
   return ipcRenderer.invoke(channel, payload) as Promise<Result>;
 }
 
 const sharkBayApi = {
+  app: {
+    onOpenSettings: (callback: () => void) => {
+      openSettingsListeners.add(callback);
+
+      if (openSettingsPending) {
+        openSettingsPending = false;
+        queueMicrotask(callback);
+      }
+
+      return () => openSettingsListeners.delete(callback);
+    }
+  },
   listRoots: () => invoke<AppConfig>(channels.listRoots),
   addRoot: (input: RootConfigInput) => invoke<AppConfig>(channels.addRoot, input),
   removeRoot: (input: RemoveRootInput) => invoke<AppConfig>(channels.removeRoot, input),
@@ -73,6 +111,22 @@ const sharkBayApi = {
   prompts: {
     nextAction: (input: NextActionPromptInput) =>
       invoke<NextActionPromptResult>(channels.nextActionPrompt, input)
+  },
+  terminal: {
+    create: (input: TerminalCreateInput) => invoke<TerminalSession>(channels.createTerminal, input),
+    input: (input: TerminalInput) => invoke<TerminalSession>(channels.terminalInput, input),
+    resize: (input: TerminalResizeInput) => invoke<TerminalSession>(channels.resizeTerminal, input),
+    close: (input: TerminalCloseInput) => invoke<TerminalSession>(channels.closeTerminal, input),
+    onData: (callback: (event: TerminalDataEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: TerminalDataEvent) => callback(payload);
+      ipcRenderer.on(channels.terminalData, listener);
+      return () => ipcRenderer.removeListener(channels.terminalData, listener);
+    },
+    onExit: (callback: (event: TerminalExitEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: TerminalExitEvent) => callback(payload);
+      ipcRenderer.on(channels.terminalExit, listener);
+      return () => ipcRenderer.removeListener(channels.terminalExit, listener);
+    }
   }
 };
 

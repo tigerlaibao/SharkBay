@@ -372,3 +372,49 @@ export type NextActionPromptInput = {
 export type NextActionPromptResult = {
   prompt: string;
 };
+
+export type TerminalSessionStatus = "running" | "exited";
+
+export type TerminalCreateInput = {
+  cwd: string;
+  title?: string;
+  cols?: number;
+  rows?: number;
+};
+
+export type TerminalSession = {
+  id: string;
+  cwd: string;
+  title: string;
+  shell: string;
+  pid: number | null;
+  status: TerminalSessionStatus;
+  createdAt: string;
+};
+
+export type TerminalInput = {
+  sessionId: string;
+  data: string;
+};
+
+export type TerminalResizeInput = {
+  sessionId: string;
+  cols: number;
+  rows: number;
+};
+
+export type TerminalCloseInput = {
+  sessionId: string;
+};
+
+export type TerminalDataEvent = {
+  sessionId: string;
+  data: string;
+  stream: "stdout" | "stderr";
+};
+
+export type TerminalExitEvent = {
+  sessionId: string;
+  exitCode: number | null;
+  signal: string | null;
+};

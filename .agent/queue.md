@@ -27,6 +27,12 @@
 | `t-011-runner-lifecycle-heartbeat` | Separate runner lifecycle from harness phase | 2026-05-05 |
 | `t-012-task-directory-queue-fallback` | Show task directories when queue metadata is incomplete | 2026-05-05 |
 | `t-013-task-detail-drilldown` | Task detail drilldown in project sidebar | 2026-05-05 |
+| `t-014-terminal-integration` | Integrate project terminal tabs | 2026-05-06 |
+| `t-015-xterm-node-pty-terminal-spaces` | Replace terminal with xterm and node-pty project spaces | 2026-05-06 |
+| `t-016-resizable-workbench-columns` | Make workbench columns resizable | 2026-05-06 |
+| `t-017-minimum-default-columns` | Initialize workbench columns at minimum widths | 2026-05-06 |
+| `t-018-macos-settings-menu` | Open Settings from the macOS app menu | 2026-05-06 |
+| `t-019-preserve-terminals-across-settings` | Preserve terminal spaces across Settings navigation | 2026-05-06 |
 
 ## Rules
 

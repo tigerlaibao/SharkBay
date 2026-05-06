@@ -2,6 +2,78 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Hide Stateful Workspaces Instead Of Unmounting
+
+**Problem**: Opening Settings and returning to the workbench made previously opened terminal tabs disappear.
+
+**Cause**: Settings navigation conditionally unmounted `DashboardView`, which also destroyed `TerminalPane` local state and renderer-owned xterm instances.
+
+**Solution**: Keep the dashboard mounted in a hidden view surface while Settings is visible, and pass a visibility flag to xterm surfaces so they refit when shown again.
+
+**Source**: `tasks/t-019-preserve-terminals-across-settings/implementation.md`, `src/renderer/App.tsx`.
+
+---
+
+### Node PTY Needs Permission and Lockfile Hygiene
+
+**Problem**: Installing `node-pty` first failed with npm `Invalid Version:` and then PTY spawning failed with `posix_spawnp failed`.
+
+**Cause**: The existing lockfile had old optional dependency package entries without versions, which npm 11 could not dedupe. After install, the macOS `node-pty` `spawn-helper` file lacked executable permissions.
+
+**Solution**: Remove invalid optional lockfile entries so npm regenerates a valid lock, add `scripts/fix-node-pty-permissions.mjs`, and run it before and after Electron native rebuild.
+
+**Source**: `tasks/t-015-xterm-node-pty-terminal-spaces/implementation.md`, `package-lock.json`, `scripts/fix-node-pty-permissions.mjs`.
+
+---
+
+### Terminal Tabs Belong To Project Spaces
+
+**Problem**: A global terminal tab list made project switching create/focus tabs across unrelated projects.
+
+**Cause**: The first terminal slice keyed tabs by cwd/session globally instead of modeling the user's mental model: each project owns its own terminal workspace.
+
+**Solution**: Keep terminal spaces keyed by project candidate id, keep all spaces mounted but only the selected project visible, and create tabs only inside the active project's space.
+
+**Source**: `tasks/t-015-xterm-node-pty-terminal-spaces/implementation.md`, `src/renderer/App.tsx`.
+
+---
+
+### Terminal CWD Is Runtime Authority
+
+**Problem**: A project terminal needs to run arbitrary user commands, but renderer-selected paths are not trustworthy filesystem authority.
+
+**Cause**: Terminal tabs are more powerful than read-only dashboard views because spawned shells can mutate repositories and run services.
+
+**Solution**: Keep terminal spawning in the Electron main process, load configured roots from runtime config, resolve the cwd with `resolveRepoPath`, and reject paths outside configured roots before creating the child process.
+
+**Source**: `tasks/t-014-terminal-integration/implementation.md`, `src/main/terminal.ts`, `tests/terminal.test.ts`.
+
+---
+
+### Do Not Wrap Piped Electron Shells With macOS `script`
+
+**Problem**: Terminal tabs exited immediately with `script: tcgetattr/ioctl: Operation not supported on socket`.
+
+**Cause**: `/usr/bin/script` expects a real terminal device. SharkBay's first terminal slice spawns child processes with piped stdio, so `script` cannot perform terminal ioctls and exits before the shell is usable.
+
+**Solution**: Spawn the user's shell directly for the lightweight terminal surface, and reserve full PTY behavior for a later `node-pty`/xterm-style integration.
+
+**Source**: `tasks/t-014-terminal-integration/implementation.md`, `src/main/terminal.ts`, `tests/terminal.test.ts`.
+
+---
+
+### Piped zsh Must Not Start Interactive Session Restore
+
+**Problem**: Terminal tabs launched zsh, printed a restored-session banner, then exited with `zsh: error on TTY read: Input/output error`.
+
+**Cause**: Starting zsh with interactive flags under Electron's piped child-process stdio allows macOS shell session restore hooks to attempt TTY reads. There is no real TTY in the lightweight terminal path.
+
+**Solution**: Start the shell as a non-interactive login shell, remove the `-i` flag, and set `SHELL_SESSIONS_DISABLE=1` plus `TERM_PROGRAM=SharkBay` for terminal child processes.
+
+**Source**: `tasks/t-014-terminal-integration/implementation.md`, `src/main/terminal.ts`, `tests/terminal.test.ts`.
+
+---
+
 ### Queue Sections Have Different Shapes
 
 **Problem**: SharkBay showed only one task for AIGF even though `.agent/queue.json` contained backlog and done entries and `tasks/` had task folders.

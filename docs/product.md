@@ -41,7 +41,7 @@ Key terms:
 | Priority | Feature | Description | Acceptance Criteria |
 | --- | --- | --- | --- |
 | P0 | Project workbench | Make Projects the primary view | User sees managed projects, status, current task, links, and next action before low-frequency settings |
-| P0 | Scan root management | Keep directory access in Settings | User can add/remove scan roots without the main workbench being dominated by setup controls |
+| P0 | Scan root management | Keep directory access in Settings, opened from the macOS app menu | User can add/remove scan roots without the main workbench or left project panel being dominated by setup controls |
 | P0 | Project scanning | Scan configured local directories for managed projects | Finds repos with `.agent/manifest.json`; falls back to `.agent/protocol.md` |
 | P0 | Directory safety boundary | Manage only user-configured directories | App does not scan or modify arbitrary filesystem locations outside configured roots |
 | P0 | Project detail | Show queue, active task, lifecycle artifacts, and evidence | User can inspect task files without leaving the app |
@@ -49,6 +49,7 @@ Key terms:
 | P1 | Next-action prompt | Generate a prompt for Codex to advance a selected task | Prompt references repo path, task id, phase, and protocol |
 | P1 | URL tracking | Store local, test, and deployment URLs | URLs appear in project dashboard and detail view |
 | P1 | Ordinary folder discovery | Show all direct child folders under scan roots | User can see projects that are not managed yet and start one-click Ripple setup |
+| P1 | Project terminal | Open terminal tabs rooted at selected project directories | Selecting any managed or not-setup project opens a shell rooted at that project path |
 | P2 | Direct Codex invocation | Advance tasks from the UI through Codex CLI/MCP | Requires explicit user approval and visible logs |
 
 ## 5. Non-Goals
