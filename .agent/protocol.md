@@ -23,6 +23,7 @@ detect repository identity if missing
 select highest-priority active task
 check task dependency locks
 load tasks/<task-id>/status.md
+register new or ad-hoc work in task status, Active queue, and currentTask before runner claim
 write or refresh runner status while physically working
 execute the next needed phase
 write phase artifact and checkpoint commit
@@ -321,6 +322,9 @@ Allowed stored statuses:
 
 Rules:
 
+- Before writing `status=running`, the claimed `taskId` must already exist in `tasks/<task-id>/status.md`, `.agent/queue.json` Active, `.agent/queue.md` Active, and `.agent/state.json/.md` currentTask.
+- If work starts from an ad-hoc user request, first create the task record and mirrors, then claim the runner. Do not let runner-only work be the first durable state.
+- If a runner is already `running` for a task that is missing from Active queue/state, repair the task registration before changing product code; otherwise set `waiting_for_human` or `blocked` with a reason.
 - At the start of active work, write `status=running`, a stable `sessionId`, `owner`, `taskId`, `phase`, `startedAt`, and `heartbeatAt`.
 - Refresh `heartbeatAt` during long work and when changing phase.
 - Use `waiting_for_human` only when a human decision, approval, credential, or external action is actually required.

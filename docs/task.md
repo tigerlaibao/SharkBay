@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-User-centered project workbench redesign, read-only root child discovery, autonomous UX polish, confirmation-gated Ripple setup, project-authored developer metadata, human intervention signals, setup-time agent onboarding instructions, runner lifecycle separation, robust queue/task visibility, task detail drilldown, project terminal tabs, xterm/node-pty project terminal spaces, resizable workbench columns, minimum-width default columns, macOS Settings menu access, Settings-safe terminal persistence, simplified right detail column card tabs with state-preserving tab panels, and Behavioral Discipline harness updates are complete.
+User-centered project workbench redesign, read-only root child discovery, autonomous UX polish, confirmation-gated Ripple setup, project-authored developer metadata, human intervention signals, setup-time agent onboarding instructions, runner lifecycle separation, robust queue/task visibility, task detail drilldown, project terminal tabs, xterm/node-pty project terminal spaces, resizable workbench columns, minimum-width default columns, macOS Settings menu access, Settings-safe terminal persistence, simplified right detail column card tabs with state-preserving tab panels, Behavioral Discipline harness updates, and task-first runner registration diagnostics are complete.
 
 ## Task List
 
@@ -29,6 +29,7 @@ User-centered project workbench redesign, read-only root child discovery, autono
 | `t-019-preserve-terminals-across-settings` | done | Preserve terminal spaces across Settings navigation | `t-018-macos-settings-menu` | Dashboard stays mounted while Settings is open so terminal tabs and output survive returning to the main view |
 | `t-020-right-detail-card-tabs` | done | Convert right detail column into card tabs | `t-019-preserve-terminals-across-settings` | Right detail column exposes Tasks, Decisions, Git, and Info as card-style tabs; handoff stays inside Tasks; Decisions/Git render full lists directly; repository facts live in Git; Info shows project-authored metadata only |
 | `t-021-harness-behavioral-discipline` | done | Add behavioral discipline to Ripple harnesses | `t-020-right-detail-card-tabs` | SharkBay, setup templates, AIBF, and AIGF now include ambiguity, simplicity, traceability, and verification-mapping rules |
+| `t-022-runner-task-registration` | done | Make runner work visible only after task registration | `t-021-harness-behavioral-discipline` | Runner claims now require registered Active task state; SharkBay surfaces missing, inactive, or mismatched runner tasks as Needs Action |
 
 ## Completed Work
 
@@ -55,6 +56,7 @@ User-centered project workbench redesign, read-only root child discovery, autono
 | `t-019-preserve-terminals-across-settings` | 2026-05-06 | `npm run typecheck`, `npm test` with 51 tests, `npm run build`, and `git diff --check` passed |
 | `t-020-right-detail-card-tabs` | 2026-05-06 | `npm run typecheck`, `npm test` with 51 tests, `npm run build`, `git diff --check`, Vite HTTP smoke, and desktop Electron tab/content checks passed; browser CLI was unavailable |
 | `t-021-harness-behavioral-discipline` | 2026-05-06 | `git diff --check`, harness JSON parse checks, behavioral discipline text scan, and focused AIBF/AIGF diff checks passed |
+| `t-022-runner-task-registration` | 2026-05-06 | `npm run typecheck`, focused runner registration tests, `npm test` with 52 tests, `npm run build`, and `git diff --check` passed |
 
 ## Task Detail Template
 
@@ -99,4 +101,5 @@ t-001-sharkbay-mvp-spec (done)
                                       -> t-019-preserve-terminals-across-settings (done)
                                         -> t-020-right-detail-card-tabs (done)
                                           -> t-021-harness-behavioral-discipline (done)
+                                            -> t-022-runner-task-registration (done)
 ```

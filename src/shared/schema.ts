@@ -87,6 +87,8 @@ export function normalizeRunnerMetadata(source: unknown, nowMs = Date.now(), sta
     reason: normalizeString(source.reason),
     stale,
     staleAfterSeconds,
+    taskRegistrationStatus: "none",
+    taskRegistrationMessage: null,
   };
 }
 
@@ -105,6 +107,8 @@ export function emptyRunnerSummary(staleAfterSeconds = runnerStaleAfterSeconds):
     reason: null,
     stale: false,
     staleAfterSeconds,
+    taskRegistrationStatus: "none",
+    taskRegistrationMessage: null,
   };
 }
 

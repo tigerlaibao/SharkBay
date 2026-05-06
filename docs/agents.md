@@ -73,7 +73,8 @@ If a command is unavailable, record the missing command and residual risk in `co
 - Existing managed repo writes must go through narrow typed harness JSON patches with revision checks, schema validation, path containment, and atomic write behavior.
 - Preserve user changes.
 - Keep task state on disk.
-- Keep runner lifecycle on disk while physically working: write `status=running`, refresh `heartbeatAt`, and set `waiting_for_human`, `blocked`, or `idle` when stopping.
+- Register new or ad-hoc work in `tasks/<task-id>/status.md`, Active queue, and currentTask before writing `runner.status=running`.
+- Keep runner lifecycle on disk while physically working: write `status=running` only for a visible Active task, refresh `heartbeatAt`, and set `waiting_for_human`, `blocked`, or `idle` when stopping.
 - Prefer small, reviewable changes.
 - Do not skip review or verification gates.
 

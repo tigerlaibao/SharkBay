@@ -256,6 +256,88 @@ describe("harness reader", () => {
     expect(detail.errors.some((error) => error.file.endsWith("runner.json"))).toBe(true);
   });
 
+  it("diagnoses runner tasks that are not registered as active work", async () => {
+    const root = await makeTempRoot("reader-runner-unregistered");
+    const repo = await createHarnessFixture(root, "UnregisteredRunnerRepo");
+    const queueFile = path.join(repo, ".agent", "queue.json");
+    const stateFile = path.join(repo, ".agent", "state.json");
+    const runnerFile = path.join(repo, ".agent", "runner.json");
+
+    await writeJson(queueFile, {
+      schemaVersion: 1,
+      updatedAt: "2026-05-06",
+      active: [],
+      backlog: [],
+      done: [],
+    });
+    await writeJson(stateFile, {
+      schemaVersion: 1,
+      updatedAt: "2026-05-06",
+      project: {},
+      currentTask: { taskId: "", phase: "done", nextAction: "Idle.", blockedBy: [] },
+      recentDecisions: [],
+    });
+    await writeJson(runnerFile, {
+      schemaVersion: 1,
+      status: "running",
+      taskId: "t-999-invisible-work",
+      heartbeatAt: new Date().toISOString(),
+    });
+
+    const missingDetail = await readProjectDetail(repo, "manifest", { configuredRoots: [root] });
+    expect(missingDetail.activeTask).toBeNull();
+    expect(missingDetail.runner.taskRegistrationStatus).toBe("missing");
+    expect(missingDetail.runner.taskRegistrationMessage).toContain("not registered");
+    expect(missingDetail.errors.some((error) => error.message.includes("not registered"))).toBe(true);
+
+    await writeJson(queueFile, {
+      schemaVersion: 1,
+      updatedAt: "2026-05-06",
+      active: [],
+      backlog: [
+        {
+          taskId: "t-999-invisible-work",
+          title: "Invisible work",
+          phase: "backlog",
+          status: "backlog",
+          dependsOn: [],
+        },
+      ],
+      done: [],
+    });
+
+    const inactiveDetail = await readProjectDetail(repo, "manifest", { configuredRoots: [root] });
+    expect(inactiveDetail.runner.taskRegistrationStatus).toBe("inactive");
+    expect(inactiveDetail.runner.taskRegistrationMessage).toContain("not in the Active queue");
+
+    await writeJson(queueFile, {
+      schemaVersion: 1,
+      updatedAt: "2026-05-06",
+      active: [
+        {
+          taskId: "t-999-invisible-work",
+          title: "Invisible work",
+          phase: "coding",
+          status: "active",
+          dependsOn: [],
+        },
+      ],
+      backlog: [],
+      done: [],
+    });
+    await writeJson(stateFile, {
+      schemaVersion: 1,
+      updatedAt: "2026-05-06",
+      project: {},
+      currentTask: { taskId: "t-001-other-task", phase: "coding", nextAction: "Mismatch.", blockedBy: [] },
+      recentDecisions: [],
+    });
+
+    const mismatchedDetail = await readProjectDetail(repo, "manifest", { configuredRoots: [root] });
+    expect(mismatchedDetail.runner.taskRegistrationStatus).toBe("mismatched");
+    expect(mismatchedDetail.runner.taskRegistrationMessage).toContain("currentTask is t-001-other-task");
+  });
+
   it("uses task status files to override stale queue and state mirrors", async () => {
     const root = await makeTempRoot("reader-stale-queue");
     const repo = await createHarnessFixture(root, "StaleQueueRepo");

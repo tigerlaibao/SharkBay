@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Runner Claims Need Registered Tasks
+
+**Problem**: An agent could be running for several minutes while SharkBay still showed no started task, or no visible task at all.
+
+**Cause**: Runner lifecycle state was separate from task phase, but the protocol did not require task registration before `runner.status=running`, and SharkBay did not diagnose runner tasks missing from Active queue/currentTask.
+
+**Solution**: Require task registration before runner claim, and have SharkBay annotate live runner tasks as `missing`, `inactive`, or `mismatched` when queue/state/task files do not agree.
+
+**Source**: `tasks/t-022-runner-task-registration/implementation.md`, `.agent/protocol.md`, `src/main/harness-reader.ts`, `src/renderer/workflow.ts`.
+
+---
+
 ### Behavioral Discipline Belongs In Gates
 
 **Problem**: Lightweight agent behavior guidance such as clarifying ambiguity, keeping diffs simple, and mapping goals to verification can be forgotten when it lives only in chat or an external instruction file.

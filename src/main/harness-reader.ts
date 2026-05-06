@@ -81,11 +81,12 @@ export async function readProjectDetail(
   const git = await readGitMetadata(repoPath);
   const gitHistory = await readGitHistory(repoPath);
   const development = await readDevelopmentMetadata(repoPath, configuredRoots, errors);
-  const runner = await readRunnerMetadata(repoPath, configuredRoots, errors);
+  const runnerMetadata = await readRunnerMetadata(repoPath, configuredRoots, errors);
 
   const queue = normalizeQueue(queueJson.data);
   const visibleQueue = await mergeTaskDirectoryQueue(repoPath, containingRoot, configuredRoots, queue, errors);
   const activeTask = normalizeActiveTask(visibleQueue, state.data);
+  const runner = annotateRunnerTaskRegistration(runnerMetadata, visibleQueue, readStateCurrentTaskId(state.data), repoPath, errors);
   const urls = readUrls(state.ok, state.data, manifest.data);
   const name = readProjectName(manifest.data, repoPath);
   const repoUrl = readRepoUrl(state.data) || readRepoUrl(manifest.data) || git.githubUrl;
@@ -157,6 +158,56 @@ async function readRunnerMetadata(repoPath: string, configuredRoots: string[], e
   }
 
   return normalizeRunnerMetadata(result.data);
+}
+
+function annotateRunnerTaskRegistration(
+  runner: RunnerSummary,
+  queue: Record<QueueSection, TaskQueueItem[]>,
+  currentTaskId: string | null,
+  repoPath: string,
+  errors: HarnessError[],
+): RunnerSummary {
+  const taskId = runner.taskId?.trim();
+  const claimsWork = Boolean(taskId && ["running", "stale", "blocked", "waiting_for_human"].includes(runner.status));
+
+  if (!claimsWork || !taskId) {
+    return { ...runner, taskRegistrationStatus: "none", taskRegistrationMessage: null };
+  }
+
+  const activeTaskIds = new Set(queue.active.map((item) => item.taskId.trim()).filter(Boolean));
+  const allTaskIds = new Set(Object.values(queue).flatMap((items) => items.map((item) => item.taskId.trim()).filter(Boolean)));
+
+  if (activeTaskIds.has(taskId)) {
+    if (currentTaskId !== taskId) {
+      const message = currentTaskId
+        ? `Runner task ${taskId} is active but .agent/state.json currentTask is ${currentTaskId}.`
+        : `Runner task ${taskId} is active but .agent/state.json currentTask is missing.`;
+      errors.push({ file: path.join(repoPath, ".agent/runner.json"), message });
+      return { ...runner, taskRegistrationStatus: "mismatched", taskRegistrationMessage: message };
+    }
+    return { ...runner, taskRegistrationStatus: "active", taskRegistrationMessage: null };
+  }
+
+  const message = allTaskIds.has(taskId)
+    ? `Runner task ${taskId} is registered but is not in the Active queue.`
+    : `Runner task ${taskId} is not registered in the queue or tasks directory.`;
+
+  errors.push({ file: path.join(repoPath, ".agent/runner.json"), message });
+
+  return {
+    ...runner,
+    taskRegistrationStatus: allTaskIds.has(taskId) ? "inactive" : "missing",
+    taskRegistrationMessage: message,
+  };
+}
+
+function readStateCurrentTaskId(state: unknown): string | null {
+  if (!isRecord(state) || !isRecord(state.currentTask) || typeof state.currentTask.taskId !== "string") {
+    return null;
+  }
+
+  const taskId = state.currentTask.taskId.trim();
+  return taskId || null;
 }
 
 async function readDevelopmentMetadata(repoPath: string, configuredRoots: string[], errors: HarnessError[]): Promise<DevelopmentMetadata | null> {
@@ -452,7 +503,8 @@ function normalizeActiveTask(queue: Record<QueueSection, TaskQueueItem[]>, state
   }
   if (isRecord(state) && isRecord(state.currentTask) && typeof state.currentTask.taskId === "string") {
     const currentTask = state.currentTask;
-    const taskId = String(currentTask.taskId);
+    const taskId = String(currentTask.taskId).trim();
+    if (!taskId) return null;
     const matchingQueueTask = Object.values(queue).flat().find((item) => item.taskId === taskId);
     const phase = typeof currentTask.phase === "string" ? currentTask.phase : matchingQueueTask?.phase ?? "unknown";
     return {

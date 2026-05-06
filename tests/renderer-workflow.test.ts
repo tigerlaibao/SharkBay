@@ -67,6 +67,10 @@ describe("renderer workflow contracts", () => {
     expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "stale" } })).toBe(true);
     expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "waiting_for_human", reason: "Choose a path" } })).toBe(true);
     expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "blocked", reason: "Missing token" } })).toBe(true);
+    expect(projectNeedsUserAction({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "missing" } })).toBe(true);
+    expect(projectNeedsUserAction({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "inactive" } })).toBe(true);
+    expect(projectNeedsUserAction({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "mismatched" } })).toBe(true);
+    expect(projectNeedsUserAction({ activeTask: null, runner: { status: "idle", taskId: "t-999", taskRegistrationStatus: "missing" } })).toBe(false);
     expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "blocked" } })).toBe(true);
     expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, gateStatus: "blocked" })).toBe(true);
     expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding", requiresUserAction: true } })).toBe(true);
@@ -91,6 +95,8 @@ describe("renderer workflow contracts", () => {
     })).toBeNull();
     expect(userActionReason({ activeTask: { taskId: "t-009", phase: "coding", requiresUserAction: true, userActionReason: "Approve deploy" } })).toBe("Approve deploy");
     expect(userActionReason({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "waiting_for_human", reason: "Approve design" } })).toBe("Approve design");
+    expect(userActionReason({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "missing" } })).toBe("Runner task t-999 is not registered");
+    expect(userActionReason({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "mismatched" } })).toBe("Runner task t-999 does not match currentTask");
   });
 
   it("resolves selected managed projects even when scan candidates are incomplete", () => {

@@ -35,6 +35,7 @@
 | `t-019-preserve-terminals-across-settings` | Preserve terminal spaces across Settings navigation | 2026-05-06 |
 | `t-020-right-detail-card-tabs` | Convert right detail column into card tabs | 2026-05-06 |
 | `t-021-harness-behavioral-discipline` | Add behavioral discipline to Ripple harnesses | 2026-05-06 |
+| `t-022-runner-task-registration` | Make runner work visible only after task registration | 2026-05-06 |
 
 ## Rules
 

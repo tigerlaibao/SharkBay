@@ -37,6 +37,7 @@ export type ActiveTaskSummary = {
 };
 
 export type RunnerStatus = "unknown" | "idle" | "running" | "stale" | "blocked" | "waiting_for_human";
+export type RunnerTaskRegistrationStatus = "none" | "active" | "inactive" | "missing" | "mismatched";
 
 export type RunnerSummary = {
   schemaVersion?: number | null;
@@ -52,6 +53,8 @@ export type RunnerSummary = {
   reason?: string | null;
   stale?: boolean;
   staleAfterSeconds?: number;
+  taskRegistrationStatus?: RunnerTaskRegistrationStatus;
+  taskRegistrationMessage?: string | null;
 };
 
 export type UrlFields = {

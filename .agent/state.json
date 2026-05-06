@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06T19:51:41+08:00",
+  "updatedAt": "2026-05-06T20:05:19+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,18 +13,28 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Behavioral Discipline harness updates are complete for SharkBay, future setup templates, and local AIBF/AIGF projects.",
+    "currentFocus": "Runner work is visible only after task registration.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
   },
   "currentTask": {
-    "taskId": "t-021-harness-behavioral-discipline",
+    "taskId": "t-022-runner-task-registration",
     "phase": "done",
     "nextAction": "Ready for the next task.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-06T20:05:19+08:00",
+      "decision": "Completed t-022-runner-task-registration with task-first runner protocol rules and SharkBay diagnostics for missing, inactive, or mismatched runner tasks.",
+      "source": "tasks/t-022-runner-task-registration/verification.md"
+    },
+    {
+      "date": "2026-05-06T19:58:01+08:00",
+      "decision": "Open t-022-runner-task-registration to prevent runner-only work from staying invisible when task queue/state registration is missing.",
+      "source": "user request"
+    },
     {
       "date": "2026-05-06T19:51:41+08:00",
       "decision": "Completed t-021-harness-behavioral-discipline with Behavioral Discipline rules applied to SharkBay, setup templates, AIBF, and AIGF.",

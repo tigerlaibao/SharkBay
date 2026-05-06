@@ -39,13 +39,14 @@ When the user asks to continue or advance work:
 2. Read `.agent/queue.json` and `.agent/queue.md`, then choose the highest-priority active task.
 3. Check dependency locks before advancing the task.
 4. Read `tasks/<task-id>/status.md`.
-5. Write or refresh `.agent/runner.json` with `status=running` while you are actively working.
-6. Execute the needed phase transitions autonomously while scope and stop conditions allow.
-7. Write or update the phase artifact.
-8. Update `tasks/<task-id>/status.md`.
-9. Update `.agent/state.json` and `.agent/state.md` if repo-level state changed.
-10. Keep `.agent/queue.json` and `.agent/queue.md` in sync.
-11. Set `.agent/runner.json` to `waiting_for_human`, `blocked`, or `idle` when work stops.
+5. If the work is new or ad hoc, register it before claiming runner state: create `tasks/<task-id>/status.md`, add it to Active in `.agent/queue.json` and `.agent/queue.md`, and update `.agent/state.json` and `.agent/state.md` currentTask.
+6. Write or refresh `.agent/runner.json` with `status=running` only after `runner.taskId` is visible as the Active task.
+7. Execute the needed phase transitions autonomously while scope and stop conditions allow.
+8. Write or update the phase artifact.
+9. Update `tasks/<task-id>/status.md`.
+10. Update `.agent/state.json` and `.agent/state.md` if repo-level state changed.
+11. Keep `.agent/queue.json` and `.agent/queue.md` in sync.
+12. Set `.agent/runner.json` to `waiting_for_human`, `blocked`, or `idle` when work stops.
 
 ## Quality Gate
 

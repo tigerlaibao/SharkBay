@@ -8,6 +8,9 @@ Default to autonomous forward progress. Continue across phases until the task is
 
 When physically working, publish runner state in optional `.agent/runner.json`:
 
+- Register new or ad-hoc work before claiming runner state: create `tasks/<task-id>/status.md`, add it to Active in `.agent/queue.json` and `.agent/queue.md`, and update `.agent/state.json` and `.agent/state.md` currentTask.
+- Only write `status=running` after `runner.taskId` is visible as the Active task.
+- If a runner is already `running` for a task that is missing from Active queue/state, repair task registration before product code changes or set `waiting_for_human`/`blocked` with a reason.
 - `running` while actively working; refresh `heartbeatAt` during long work and phase changes.
 - `waiting_for_human` only when a human decision, approval, credential, or external action is required.
 - `blocked` when work cannot proceed without a non-routine dependency or unavailable authority.

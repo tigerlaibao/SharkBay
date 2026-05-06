@@ -2,6 +2,7 @@ type GateStatus = "pass" | "pending" | "blocked" | "unknown";
 
 type DetectionMode = "manifest" | "protocol-fallback";
 type RunnerStatus = "unknown" | "idle" | "running" | "stale" | "blocked" | "waiting_for_human";
+type RunnerTaskRegistrationStatus = "none" | "active" | "inactive" | "missing" | "mismatched";
 
 export type WorkflowProjectCandidate = {
   id: string;
@@ -28,9 +29,12 @@ export type GateStatusCandidate = {
   } | null;
   runner?: {
     status?: RunnerStatus | string | null;
+    taskId?: string | null;
     reason?: string | null;
     message?: string | null;
     heartbeatAt?: string | null;
+    taskRegistrationStatus?: RunnerTaskRegistrationStatus | string | null;
+    taskRegistrationMessage?: string | null;
   } | null;
   activeTask?: {
     taskId?: string | null;
@@ -78,6 +82,11 @@ export function projectNeedsUserAction(project: GateStatusCandidate): boolean {
 }
 
 export function userActionReason(project: GateStatusCandidate): string | null {
+  const runnerRegistrationReason = runnerTaskRegistrationReason(project);
+  if (runnerRegistrationReason) {
+    return runnerRegistrationReason;
+  }
+
   const activeTask = project.activeTask;
   if (!activeTask?.taskId) {
     return null;
@@ -175,6 +184,28 @@ function runnerUserActionReason(project: GateStatusCandidate): string | null {
   return null;
 }
 
+function runnerTaskRegistrationReason(project: GateStatusCandidate): string | null {
+  const runnerStatus = normalizeRunnerStatus(project.runner?.status);
+  if (!runnerStatus || runnerStatus === "idle" || runnerStatus === "unknown") {
+    return null;
+  }
+
+  const registrationStatus = normalizeRunnerTaskRegistrationStatus(project.runner?.taskRegistrationStatus);
+  if (registrationStatus !== "missing" && registrationStatus !== "inactive" && registrationStatus !== "mismatched") {
+    return null;
+  }
+
+  const message = normalizeUserActionReason(project.runner?.taskRegistrationMessage);
+  if (message) {
+    return message;
+  }
+
+  const taskId = normalizeTaskId(project.runner?.taskId) ?? "unknown task";
+  if (registrationStatus === "inactive") return `Runner task ${taskId} is not active`;
+  if (registrationStatus === "mismatched") return `Runner task ${taskId} does not match currentTask`;
+  return `Runner task ${taskId} is not registered`;
+}
+
 function normalizeRunnerStatus(value: string | null | undefined): RunnerStatus | null {
   const normalized = value?.trim().toLowerCase();
   switch (normalized) {
@@ -184,6 +215,20 @@ function normalizeRunnerStatus(value: string | null | undefined): RunnerStatus |
     case "blocked":
     case "waiting_for_human":
     case "unknown":
+      return normalized;
+    default:
+      return null;
+  }
+}
+
+function normalizeRunnerTaskRegistrationStatus(value: string | null | undefined): RunnerTaskRegistrationStatus | null {
+  const normalized = value?.trim().toLowerCase();
+  switch (normalized) {
+    case "none":
+    case "active":
+    case "inactive":
+    case "missing":
+    case "mismatched":
       return normalized;
     default:
       return null;

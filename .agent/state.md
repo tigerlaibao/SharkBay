@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Behavioral Discipline harness updates are complete for SharkBay, future setup templates, AIBF, and AIGF
-- Last controller run: 2026-05-06 completed `t-021-harness-behavioral-discipline`
+- Current focus: Runner work is visible only after task registration
+- Last controller run: 2026-05-06 completed `t-022-runner-task-registration`
 
 ## Repository Identity
 
@@ -18,7 +18,7 @@
 
 ## Current Task
 
-- Task ID: `t-021-harness-behavioral-discipline`
+- Task ID: `t-022-runner-task-registration`
 - Phase: done
 - Next action: Ready for the next task.
 - Blocked by: none
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-06T20:05:19+08:00 | Completed `t-022-runner-task-registration` with task-first runner protocol rules and SharkBay diagnostics for missing, inactive, or mismatched runner tasks. | `tasks/t-022-runner-task-registration/verification.md` |
+| 2026-05-06T19:58:01+08:00 | Open `t-022-runner-task-registration` to prevent runner-only work from staying invisible when task queue/state registration is missing. | User request |
 | 2026-05-06T19:51:41+08:00 | Completed `t-021-harness-behavioral-discipline` with Behavioral Discipline rules applied to SharkBay, setup templates, AIBF, and AIGF. | `tasks/t-021-harness-behavioral-discipline/verification.md` |
 | 2026-05-06T19:44:38+08:00 | Open `t-021-harness-behavioral-discipline` to add ambiguity, simplicity, traceability, and verification-mapping rules to SharkBay, templates, AIBF, and AIGF. | User request |
 | 2026-05-05 | Initialized SharkBay from the project seed in `init.md`. | `init.md` |
