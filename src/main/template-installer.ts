@@ -45,7 +45,9 @@ export async function createHarnessRepo(
     }
 
     const variables = templateVariables(input);
-    const files = await copyTemplateTree(templateDir, targetDir, variables);
+    const files = await copyTemplateTree(templateDir, targetDir, variables, {
+      skipExistingSeedFiles: input.allowExistingDirectory ? [".gitignore"] : [],
+    });
     await writeCurrentTemplateSyncMetadata(targetDir, templateDir);
     return { ok: true, path: targetDir, files: [...files, harnessTemplateSyncMetadataPath].sort() };
   } catch (error) {
@@ -63,17 +65,25 @@ class FileCollisionError extends Error {
   }
 }
 
-async function copyTemplateTree(templateRoot: string, targetRoot: string, variables: Record<string, string>): Promise<string[]> {
+async function copyTemplateTree(
+  templateRoot: string,
+  targetRoot: string,
+  variables: Record<string, string>,
+  options: { skipExistingSeedFiles?: string[] } = {},
+): Promise<string[]> {
   const written: string[] = [];
   const files = await collectTemplateFiles(templateRoot, targetRoot);
+  const skipExistingSeedFiles = new Set(options.skipExistingSeedFiles ?? []);
 
   for (const file of files) {
     if (await exists(file.target)) {
+      if (skipExistingSeedFiles.has(file.relativePath)) continue;
       throw new FileCollisionError(file.target);
     }
   }
 
   for (const file of files) {
+    if (skipExistingSeedFiles.has(file.relativePath) && await exists(file.target)) continue;
     await fs.mkdir(path.dirname(file.target), { recursive: true });
     const rendered = renderTemplate(await fs.readFile(file.source, "utf8"), variables);
     await fs.writeFile(file.target, rendered, { encoding: "utf8", mode: 0o600 });

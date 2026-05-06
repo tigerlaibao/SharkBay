@@ -74,6 +74,29 @@ describe("template installer", () => {
     expect(await fs.readFile(path.join(target, ".agent", "manifest.json"), "utf8")).toContain('"name": "Existing Project"');
   });
 
+  it("preserves existing project gitignore during existing directory setup", async () => {
+    const root = await makeTempRoot("template-existing-gitignore");
+    const target = path.join(root, "ExistingGitignore");
+    const originalGitignore = "node_modules/\n.env\n";
+    await writeText(path.join(target, ".gitignore"), originalGitignore);
+
+    const result = await createHarnessRepo({
+      targetDir: target,
+      configuredRoots: [root],
+      projectName: "Existing Gitignore",
+      allowExistingDirectory: true,
+      templateDir: path.join(process.cwd(), "templates", "harness"),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.files).toContain("AGENTS.md");
+    expect(result.files).toContain(".agent/manifest.json");
+    expect(result.files).not.toContain(".gitignore");
+    expect(await fs.readFile(path.join(target, ".gitignore"), "utf8")).toBe(originalGitignore);
+    expect(await fs.readFile(path.join(target, ".agent", "manifest.json"), "utf8")).toContain('"name": "Existing Gitignore"');
+  });
+
   it("refuses existing harness files and template collisions during existing directory setup", async () => {
     const root = await makeTempRoot("template-collisions");
     const withAgent = path.join(root, "WithAgent");
