@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Terminal title strategy now preserves interactive foreground app titles
-- Last controller run: 2026-05-06 completed the `t-023-terminal-title-strategy` revision
+- Current focus: README refreshed for current SharkBay workbench capabilities
+- Last controller run: 2026-05-06 completed `t-025-readme-publish`
 
 ## Repository Identity
 
@@ -14,19 +14,21 @@
 - Default branch: main
 - Remote origin: `git@github.com:SharkUI/SharkBay.git`
 - GitHub repository: `git@github.com:SharkUI/SharkBay.git`
-- Dirty worktree: yes
+- Dirty worktree: no
 
 ## Current Task
 
-- Task ID: `t-023-terminal-title-strategy`
+- Task ID: `t-025-readme-publish`
 - Phase: done
-- Next action: Ready for the next task.
+- Next action: Push `main` to origin.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-06T20:42:52+08:00 | Completed `t-025-readme-publish` with `README.md` refreshed for current SharkBay workbench capabilities and native terminal rebuild guidance. | `tasks/t-025-readme-publish/verification.md` |
+| 2026-05-06T20:41:15+08:00 | Open `t-025-readme-publish` to refresh `README.md` and push the current `main` branch to origin. | User request |
 | 2026-05-06T20:32:36+08:00 | Completed the `t-023-terminal-title-strategy` revision so `codex`, `claude`, and terminal monitor foreground apps keep process titles and OSC color responses no longer pollute tab titles. | `tasks/t-023-terminal-title-strategy/verification.md` |
 | 2026-05-06T20:29:49+08:00 | Reopened `t-023-terminal-title-strategy` because Codex/xterm OSC color responses and interactive app input could overwrite the intended foreground app tab title. | User report |
 | 2026-05-06T20:24:02+08:00 | Completed `t-024-project-aware-column-headings` with the terminal column titled by selected project name and redundant right detail project name/path headers removed. | `tasks/t-024-project-aware-column-headings/verification.md` |

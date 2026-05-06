@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-User-centered project workbench redesign, read-only root child discovery, autonomous UX polish, confirmation-gated Ripple setup, project-authored developer metadata, human intervention signals, setup-time agent onboarding instructions, runner lifecycle separation, robust queue/task visibility, task detail drilldown, project terminal tabs, xterm/node-pty project terminal spaces, resizable workbench columns, minimum-width default columns, macOS Settings menu access, Settings-safe terminal persistence, simplified right detail column card tabs with state-preserving tab panels, Behavioral Discipline harness updates, task-first runner registration diagnostics, runtime-derived terminal tab titles with interactive foreground app stability, and project-aware workbench column headings are complete.
+User-centered project workbench redesign, read-only root child discovery, autonomous UX polish, confirmation-gated Ripple setup, project-authored developer metadata, human intervention signals, setup-time agent onboarding instructions, runner lifecycle separation, robust queue/task visibility, task detail drilldown, project terminal tabs, xterm/node-pty project terminal spaces, resizable workbench columns, minimum-width default columns, macOS Settings menu access, Settings-safe terminal persistence, simplified right detail column card tabs with state-preserving tab panels, Behavioral Discipline harness updates, task-first runner registration diagnostics, runtime-derived terminal tab titles with interactive foreground app stability, project-aware workbench column headings, and README publish refresh are complete.
 
 ## Task List
 
@@ -32,6 +32,7 @@ User-centered project workbench redesign, read-only root child discovery, autono
 | `t-022-runner-task-registration` | done | Make runner work visible only after task registration | `t-021-harness-behavioral-discipline` | Runner claims now require registered Active task state; SharkBay surfaces missing, inactive, or mismatched runner tasks as Needs Action |
 | `t-023-terminal-title-strategy` | done | Improve terminal tab title strategy | `t-022-runner-task-registration` | Terminal tabs show project-relative cwd by default, long-running shell commands when useful, and stable `codex`/`claude`/monitor titles for interactive foreground apps |
 | `t-024-project-aware-column-headings` | done | Project-aware workbench column headings | `t-023-terminal-title-strategy` | Terminal column title now shows the selected project name; right detail project name/path headers were removed |
+| `t-025-readme-publish` | done | Refresh README and publish local commits | none | README now describes current workbench, runner, terminal, and native rebuild behavior |
 
 ## Completed Work
 
@@ -61,6 +62,7 @@ User-centered project workbench redesign, read-only root child discovery, autono
 | `t-022-runner-task-registration` | 2026-05-06 | `npm run typecheck`, focused runner registration tests, `npm test` with 52 tests, `npm run build`, and `git diff --check` passed |
 | `t-023-terminal-title-strategy` | 2026-05-06 | `npm test -- tests/terminal.test.ts`, `npm run typecheck`, `npm test` with 54 tests, `npm run build`, and `git diff --check` passed; revision added OSC color response and interactive foreground app title regressions |
 | `t-024-project-aware-column-headings` | 2026-05-06 | `npm run typecheck`, `npm run build`, and `git diff --check` passed |
+| `t-025-readme-publish` | 2026-05-06 | `git diff --check`, harness JSON parse check, and focused README review passed; push verification runs after commit |
 
 ## Task Detail Template
 
@@ -108,4 +110,5 @@ t-001-sharkbay-mvp-spec (done)
                                             -> t-022-runner-task-registration (done)
                                               -> t-023-terminal-title-strategy (done)
                                                 -> t-024-project-aware-column-headings (done)
+t-025-readme-publish (done)
 ```

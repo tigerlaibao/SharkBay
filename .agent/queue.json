@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06T20:32:36+08:00",
+  "updatedAt": "2026-05-06T20:42:52+08:00",
   "active": [],
   "backlog": [],
   "done": [
@@ -263,6 +263,15 @@
       "dependsOn": [
         "t-023-terminal-title-strategy"
       ],
+      "status": "done",
+      "completedAt": "2026-05-06"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-025-readme-publish",
+      "title": "Refresh README and publish local commits",
+      "phase": "done",
+      "dependsOn": [],
       "status": "done",
       "completedAt": "2026-05-06"
     }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06T20:32:36+08:00",
+  "updatedAt": "2026-05-06T20:42:52+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -8,23 +8,33 @@
     "defaultBranch": "main",
     "remoteOrigin": "git@github.com:SharkUI/SharkBay.git",
     "githubUrl": "git@github.com:SharkUI/SharkBay.git",
-    "dirtyWorktree": true
+    "dirtyWorktree": false
   },
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Terminal title strategy now preserves interactive foreground app titles.",
+    "currentFocus": "README refreshed for current SharkBay workbench capabilities.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
   },
   "currentTask": {
-    "taskId": "t-023-terminal-title-strategy",
+    "taskId": "t-025-readme-publish",
     "phase": "done",
-    "nextAction": "Ready for the next task.",
+    "nextAction": "Push main to origin.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-06T20:42:52+08:00",
+      "decision": "Completed t-025-readme-publish with README.md refreshed for current SharkBay workbench capabilities and native terminal rebuild guidance.",
+      "source": "tasks/t-025-readme-publish/verification.md"
+    },
+    {
+      "date": "2026-05-06T20:41:15+08:00",
+      "decision": "Open t-025-readme-publish to refresh README.md and push the current main branch to origin.",
+      "source": "user request"
+    },
     {
       "date": "2026-05-06T20:32:36+08:00",
       "decision": "Completed the t-023-terminal-title-strategy revision so codex, claude, and terminal monitor foreground apps keep process titles and OSC color responses no longer pollute tab titles.",

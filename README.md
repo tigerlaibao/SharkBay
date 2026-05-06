@@ -2,15 +2,19 @@
 
 SharkBay is a local-first macOS workbench for managing AI-assisted software projects.
 
-It reads lightweight project metadata from local repositories, shows task and verification state in one place, and helps generate next-action prompts for coding agents that follow a file-based workflow.
+It reads lightweight project metadata from local repositories, shows task, runner, Git, and verification state in one place, opens project-rooted terminal spaces, and helps generate next-action prompts for coding agents that follow a file-based workflow.
 
 ## What It Does
 
 - Scans user-configured local folders for harness-enabled projects.
 - Reads project state from `.agent/`, `docs/`, and `tasks/`.
 - Shows active tasks, queues, lifecycle phase, recent decisions, Git status, and verification artifacts.
+- Tracks runner lifecycle separately from task phase through optional `.agent/runner.json` heartbeat metadata.
+- Presents project detail as focused Tasks, Decisions, Git, and Info tabs.
 - Creates or sets up managed projects from bundled Ripple harness templates.
 - Generates next-action prompts that tell an agent what files to read and which phase to advance.
+- Opens per-project terminal workspaces backed by xterm and `node-pty`, with tabs titled from runtime cwd or foreground commands.
+- Keeps workbench columns resizable and preserves terminal sessions while Settings is open.
 - Keeps filesystem access scoped to configured roots.
 
 ## Project Model
@@ -23,6 +27,8 @@ SharkBay expects managed projects to use a small file-based harness:
 - `.agent/state.md` and `.agent/queue.md` for human-readable mirrors.
 - `docs/` for durable product, architecture, task, and learning records.
 - `tasks/<task-id>/` for phase artifacts, reviews, verification evidence, and decisions.
+- `.agent/runner.json` for optional local runner lease and heartbeat state.
+- `.agent/development.json` for optional stable project-authored development metadata.
 
 The app is intentionally local-first. Project data stays in local repository files unless the user chooses to publish the repository.
 
@@ -39,6 +45,7 @@ The app is intentionally local-first. Project data stays in local repository fil
 - Node.js `>=20.11`
 - npm
 - macOS for the desktop app workflow
+- Native build tooling required by Electron native modules, including `node-pty`
 
 ## Development
 
@@ -64,6 +71,12 @@ npm run build
 
 `npm run lint` currently delegates to `npm run typecheck`.
 
+If Electron or native terminal dependencies change, rebuild native modules:
+
+```bash
+npm run rebuild:native
+```
+
 ## Safety Notes
 
 SharkBay is designed around explicit local boundaries:
@@ -72,9 +85,9 @@ SharkBay is designed around explicit local boundaries:
 - Runtime services load configured roots from app config rather than trusting renderer-provided authority.
 - Existing managed repositories are updated only through narrow harness JSON writes.
 - Template installation rejects non-empty targets and symlink escapes.
+- Terminal sessions are spawned only after the main process resolves the requested cwd inside configured roots.
 - Direct agent execution is treated as a future capability that requires explicit approval and visible logs.
 
 ## Repository Status
 
 This repository is also a managed SharkBay project. The included `.agent/`, `docs/`, and `tasks/` files are part of the product dogfood loop and demonstrate the harness format that SharkBay reads.
-
