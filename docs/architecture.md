@@ -4,7 +4,7 @@
 
 SharkBay is a local-first macOS application with a web-style UI and a local process that can scan configured project roots. The local process reads harness metadata from repositories and exposes normalized project/task state to the UI.
 
-This repository is both the SharkBay product codebase and the first harness-enabled project SharkBay should be able to understand. That self-hosting constraint is intentional: the app should be able to scan this repo, read its `.agent/manifest.json`, task queue, current phase, and evidence files, then present them exactly as it would for any other configured project.
+This repository is the SharkBay product codebase and can be dogfooded as a harness-enabled project locally. The public repository does not track its root `.agent/`, root `tasks/`, `docs/task.md`, or `docs/learnings.md` runtime/history files; those are local state. The self-hosting constraint remains intentional: when a local harness exists, the app should scan this repo, read its `.agent/manifest.json`, task queue, current phase, and evidence files, then present them exactly as it would for any other configured project.
 
 ```text
 User
@@ -58,8 +58,8 @@ Local filesystem repositories
 │   └── harness/
 ├── tests/
 ├── docs/
-├── .agent/
-└── tasks/
+├── .agent/        # local dogfood state, ignored in public Git
+└── tasks/         # local dogfood task history, ignored in public Git
 ```
 
 ## 4. Module Boundaries
@@ -79,14 +79,14 @@ Local filesystem repositories
 
 ## 5. Self-Hosting Requirement
 
-The first real repository SharkBay manages should be this SharkBay repository.
+The first real repository SharkBay manages in a development workspace may be this SharkBay repository. In public clones, local harness state is optional and ignored; the tracked harness source for newly managed projects is `templates/harness/`.
 
 Acceptance criteria:
 
-- A configured root that contains `<repo-root>` can discover this repo.
+- A configured root that contains `<repo-root>` can discover this repo after a local harness is present.
 - The repo appears as project `SharkBay`.
-- The active task appears as `t-001-sharkbay-mvp-spec`.
-- The phase is read from the current harness state on disk.
+- The active task appears according to the local `.agent/state.json` and `.agent/queue.json` files.
+- The phase is read from the current local harness state on disk.
 - The app treats this repo like any other managed harness project, not as a hard-coded special case.
 
 ## 6. Data Flow

@@ -5,7 +5,15 @@ dist-electron/
 coverage/
 .vite/
 .vitest/
-.agent/runner.json
+
+# Local SharkBay dogfood harness state. The public product repository keeps
+# bundled setup templates under templates/harness/** tracked, but not this
+# repository's own local task/run history.
+/.agent/
+/tasks/
+/docs/task.md
+/docs/learnings.md
+
 *.log
 npm-debug.log*
 yarn-debug.log*

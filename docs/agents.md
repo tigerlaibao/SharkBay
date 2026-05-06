@@ -6,13 +6,21 @@ This file provides guidance to AI coding assistants when working in this reposit
 
 - Product: SharkBay
 - Project type: local-first macOS app / developer tool
-- Current phase: MVP foundation implemented
+- Current public repository mode: product source plus bundled harness templates
 
 ## Required Reading
 
-Start with:
+Start with public project context:
 
 - `AGENTS.md` - repository entry point
+- `README.md` - project overview and development commands
+- `docs/product.md` - product requirements
+- `docs/architecture.md` - architecture and module boundaries
+- `templates/harness/` - canonical harness files installed into managed projects
+- `scripts/README.md` - validation script conventions
+
+When a local dogfood harness exists in this clone, also read:
+
 - `.agent/manifest.json` - machine-readable project identity
 - `.agent/state.json` - machine-readable repository state
 - `.agent/queue.json` - machine-readable task queue
@@ -21,11 +29,10 @@ Start with:
 - `.agent/quality-rules.md` - review and verification gates
 - `.agent/queue.md` - human-readable task queue
 - `.agent/state.md` - human-readable repository state
-- `docs/product.md` - product requirements
-- `docs/architecture.md` - architecture and module boundaries
 - `docs/task.md` - human-readable task list
 - `docs/learnings.md` - durable lessons
-- `scripts/README.md` - validation script conventions
+
+The root `.agent/`, root `tasks/`, `docs/task.md`, and `docs/learnings.md` files are local SharkBay dogfood state and are intentionally not tracked in the public repository. Do not recreate SharkBay's private task history in fresh clones unless the user explicitly asks to initialize a local harness.
 
 ## Development Commands
 
@@ -72,9 +79,9 @@ If a command is unavailable, record the missing command and residual risk in `co
 - Runtime IPC/service entry points must treat persisted configured roots as authoritative; renderer-supplied roots are not trusted.
 - Existing managed repo writes must go through narrow typed harness JSON patches with revision checks, schema validation, path containment, and atomic write behavior.
 - Preserve user changes.
-- Keep task state on disk.
-- Register new or ad-hoc work in `tasks/<task-id>/status.md`, Active queue, and currentTask before writing `runner.status=running`.
-- Keep runner lifecycle on disk while physically working: write `status=running` only for a visible Active task, refresh `heartbeatAt`, and set `waiting_for_human`, `blocked`, or `idle` when stopping.
+- Keep task state on disk when a local harness is present.
+- Register new or ad-hoc harness-managed work in `tasks/<task-id>/status.md`, Active queue, and currentTask before writing `runner.status=running`.
+- Keep runner lifecycle on disk while physically working in a harness-managed clone: write `status=running` only for a visible Active task, refresh `heartbeatAt`, and set `waiting_for_human`, `blocked`, or `idle` when stopping.
 - Prefer small, reviewable changes.
 - Do not skip review or verification gates.
 

@@ -4,7 +4,7 @@
 
 SharkBay is a macOS local app for managing AI-assisted software projects. It starts with local projects that have SharkBay's Ripple files installed: a file-based project memory and task protocol under `.agent/`, `docs/`, and `tasks/`. The project exists because switching between many AI sessions and repositories makes it hard to see what each project is doing, what phase each task is in, and what evidence exists for review or verification.
 
-SharkBay is also its own first managed project. This repository is the SharkBay product codebase, and it uses the same `.agent/`, `docs/`, and `tasks/` harness files that SharkBay will later read from other configured projects.
+SharkBay can also manage this repository locally during dogfooding. That local root `.agent/`, root `tasks/`, `docs/task.md`, and `docs/learnings.md` state is intentionally not tracked in the public product repository so forks do not inherit SharkBay's private work queue or run history. The public source of the harness that SharkBay installs into other projects is `templates/harness/`.
 
 Key terms:
 

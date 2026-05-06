@@ -32,6 +32,8 @@ SharkBay expects managed projects to use a small file-based harness:
 
 The app is intentionally local-first. Project data stays in local repository files unless the user chooses to publish the repository.
 
+The bundled source templates for that harness live in `templates/harness/` and are part of the public product repository. SharkBay's own local dogfood harness state under root `.agent/`, root `tasks/`, `docs/task.md`, and `docs/learnings.md` is intentionally ignored so forked copies do not inherit this repository's private work queue or run history.
+
 ## Tech Stack
 
 - Electron
@@ -90,4 +92,4 @@ SharkBay is designed around explicit local boundaries:
 
 ## Repository Status
 
-This repository is also a managed SharkBay project. The included `.agent/`, `docs/`, and `tasks/` files are part of the product dogfood loop and demonstrate the harness format that SharkBay reads.
+This repository can be managed by SharkBay locally, but its root `.agent/` and `tasks/` state are not part of the public source tree. Use `templates/harness/` as the canonical example of the files SharkBay installs into other projects.

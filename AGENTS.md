@@ -1,10 +1,10 @@
 # AGENTS.md
 
-This repository uses a Codex-oriented engineering harness.
+This repository can use a local Codex-oriented engineering harness while it is being dogfooded in SharkBay. The public source tree does not track this repository's root `.agent/`, root `tasks/`, `docs/task.md`, or `docs/learnings.md` runtime/history files; those are local project state.
 
 ## Start Here
 
-Before starting any task, read:
+Before starting any task, first check whether local harness files exist. If they do, read:
 
 1. `.agent/manifest.json` - machine-readable repository identity
 2. `.agent/state.json` - machine-readable current state
@@ -19,9 +19,17 @@ Before starting any task, read:
 11. `docs/task.md` - human-readable task list
 12. `docs/learnings.md` - durable lessons from prior work
 
+If those local harness files are absent in a fresh clone, use the public project files instead:
+
+1. `README.md` - project overview and development commands
+2. `docs/product.md` - product context
+3. `docs/architecture.md` - technical structure and boundaries
+4. `docs/agents.md` - assistant guidance for this public repository
+5. `templates/harness/` - canonical Ripple harness template installed into managed projects
+
 ## Operating Rule
 
-Do not rely on chat memory as the source of truth. If a decision, task state, test result, or review finding matters, write it to the appropriate file.
+Do not rely on chat memory as the source of truth. If the local harness exists and a decision, task state, test result, or review finding matters, write it to the appropriate local harness file. For ordinary public-repo maintenance without local harness state, keep durable user-facing decisions in public docs only when they are relevant to future users.
 
 ## Behavioral Discipline
 
@@ -33,7 +41,7 @@ Do not rely on chat memory as the source of truth. If a decision, task state, te
 
 ## Default Workflow
 
-When the user asks to continue or advance work:
+When the user asks to continue or advance harness-managed work and local harness files exist:
 
 1. Read `.agent/protocol.md`.
 2. Read `.agent/queue.json` and `.agent/queue.md`, then choose the highest-priority active task.
@@ -48,6 +56,8 @@ When the user asks to continue or advance work:
 11. Keep `.agent/queue.json` and `.agent/queue.md` in sync.
 12. Set `.agent/runner.json` to `waiting_for_human`, `blocked`, or `idle` when work stops.
 
+When local harness files are absent, do not recreate SharkBay's private work history automatically. Work directly from the user's request, public docs, and the codebase.
+
 ## Quality Gate
 
-Design and code do not pass because they "look fine." They pass only when the relevant review and verification gates in `.agent/quality-rules.md` are satisfied.
+Design and code do not pass because they "look fine." When local harness gates exist, satisfy `.agent/quality-rules.md`; otherwise use the same standard directly: scope clarity, focused implementation, review for regressions, and concrete verification evidence.
