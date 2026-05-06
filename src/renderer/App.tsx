@@ -1064,11 +1064,13 @@ function TerminalPane({
     }
   }
 
+  const terminalHeading = candidate?.name ?? "Terminal";
+
   return (
     <div className="terminal-layout">
       <div className="terminal-header">
         <div>
-          <h3>Terminal</h3>
+          <h3>{terminalHeading}</h3>
           <div className="path-line">{activeSpace?.path ?? candidate?.path ?? "Select a project"}</div>
         </div>
         <div className="terminal-actions">
@@ -1514,13 +1516,6 @@ function NotSetupPane({
 
   return (
     <div className="detail-layout">
-      <div className="detail-header">
-        <div>
-          <h3>{candidate.name}</h3>
-          <div className="path-line">{candidate.path}</div>
-        </div>
-      </div>
-
       <section className="subpanel current-task-card">
         <div className="panel-title-row">
           <div>
@@ -1633,13 +1628,6 @@ function ProjectDetailPane({
 
   return (
     <div className="detail-layout">
-      <div className="detail-header">
-        <div>
-          <h3>{resolved.name}</h3>
-          <div className="path-line">{resolved.path}</div>
-        </div>
-      </div>
-
       <div className="detail-tab-cards" role="tablist" aria-label="Project detail sections">
         {detailTabs.map((tab) => (
           <button

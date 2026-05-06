@@ -32,3 +32,14 @@ Terminal tabs no longer stay named after the project. A tab at project root show
 
 - Command-line capture reflects text typed or pasted into SharkBay's terminal. Commands launched entirely from shell history may fall back to the foreground process name.
 - Cwd polling depends on platform support. macOS uses `lsof`; if inspection fails, the previous known cwd remains.
+
+## Revision: Interactive Foreground Apps
+
+The initial implementation missed the user's intended behavior for full-screen or interactive foreground apps after they start. `codex`, `claude`, and terminal monitors such as `top` should keep the app/process title while the app owns the terminal; text typed inside those apps must not replace the tab title.
+
+Revisions:
+
+- Added an interactive foreground process allowlist for `codex`, `claude`, `top`, `htop`, and `btop`. These return the foreground process name even if a later input line was captured.
+- Changed command capture so submitted input is only recorded while the shell is still the foreground process. Once a non-shell foreground command is observed, later internal input no longer updates `activeCommandLine`.
+- Extended escape skipping to handle OSC sequences such as `ESC ] 10 ; rgb:... BEL` and `ESC ] ... ESC \`, preventing xterm color query responses from leaking into `pendingInputLine`.
+- Added regression tests covering `codex`/`claude` title stability and OSC color responses.

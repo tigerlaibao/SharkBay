@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06T20:05:19+08:00",
+  "updatedAt": "2026-05-06T20:32:36+08:00",
   "active": [],
   "backlog": [],
   "done": [
@@ -251,6 +251,17 @@
       "phase": "done",
       "dependsOn": [
         "t-022-runner-task-registration"
+      ],
+      "status": "done",
+      "completedAt": "2026-05-06"
+    },
+    {
+      "priority": 1,
+      "taskId": "t-024-project-aware-column-headings",
+      "title": "Project-aware workbench column headings",
+      "phase": "done",
+      "dependsOn": [
+        "t-023-terminal-title-strategy"
       ],
       "status": "done",
       "completedAt": "2026-05-06"

@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Runtime-derived terminal tab titles are complete
-- Last controller run: 2026-05-06 completed `t-023-terminal-title-strategy`
+- Current focus: Terminal title strategy now preserves interactive foreground app titles
+- Last controller run: 2026-05-06 completed the `t-023-terminal-title-strategy` revision
 
 ## Repository Identity
 
@@ -14,7 +14,7 @@
 - Default branch: main
 - Remote origin: `git@github.com:SharkUI/SharkBay.git`
 - GitHub repository: `git@github.com:SharkUI/SharkBay.git`
-- Dirty worktree: no
+- Dirty worktree: yes
 
 ## Current Task
 
@@ -27,6 +27,10 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-06T20:32:36+08:00 | Completed the `t-023-terminal-title-strategy` revision so `codex`, `claude`, and terminal monitor foreground apps keep process titles and OSC color responses no longer pollute tab titles. | `tasks/t-023-terminal-title-strategy/verification.md` |
+| 2026-05-06T20:29:49+08:00 | Reopened `t-023-terminal-title-strategy` because Codex/xterm OSC color responses and interactive app input could overwrite the intended foreground app tab title. | User report |
+| 2026-05-06T20:24:02+08:00 | Completed `t-024-project-aware-column-headings` with the terminal column titled by selected project name and redundant right detail project name/path headers removed. | `tasks/t-024-project-aware-column-headings/verification.md` |
+| 2026-05-06T20:21:48+08:00 | Open `t-024-project-aware-column-headings` to title the terminal column with the selected project name and remove the redundant project name/path header from the right detail column. | User request |
 | 2026-05-06T20:16:12+08:00 | Completed `t-023-terminal-title-strategy` with terminal tabs deriving titles from project-relative cwd or foreground occupying commands. | `tasks/t-023-terminal-title-strategy/verification.md` |
 | 2026-05-06T20:09:07+08:00 | Open `t-023-terminal-title-strategy` to make terminal tabs show project-relative cwd by default and foreground occupying commands when more useful. | User request |
 | 2026-05-06T20:05:19+08:00 | Completed `t-022-runner-task-registration` with task-first runner protocol rules and SharkBay diagnostics for missing, inactive, or mismatched runner tasks. | `tasks/t-022-runner-task-registration/verification.md` |

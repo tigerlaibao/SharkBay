@@ -37,6 +37,7 @@
 | `t-021-harness-behavioral-discipline` | Add behavioral discipline to Ripple harnesses | 2026-05-06 |
 | `t-022-runner-task-registration` | Make runner work visible only after task registration | 2026-05-06 |
 | `t-023-terminal-title-strategy` | Improve terminal tab title strategy | 2026-05-06 |
+| `t-024-project-aware-column-headings` | Project-aware workbench column headings | 2026-05-06 |
 
 ## Rules
 

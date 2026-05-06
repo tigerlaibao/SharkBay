@@ -39,8 +39,8 @@ Out of scope:
 | Dependencies | pass | `t-022-runner-task-registration` is done. |
 | Contract | pass | User provided concrete desired behavior; implementation can stay inside terminal state/title derivation. |
 | Coding | pass | Runtime title strategy, IPC update event, and renderer tab updates implemented. |
-| Code review | pass | Self-review found and fixed a stale update race after tab close. |
-| Verification | pass | Focused terminal tests, typecheck, full test suite, build, and diff check passed. |
+| Code review | pass | Revision review confirmed interactive foreground app titles and OSC filtering are covered. |
+| Verification | pass | Focused regression tests, typecheck, full test suite, build, and diff check passed. |
 
 ## Next Action
 
@@ -59,3 +59,5 @@ Task complete.
 | 2026-05-06 | intake -> coding | Opened focused task from the user's Terminal tab title request. |
 | 2026-05-06 | coding -> verification | Implemented runtime-derived terminal titles and update events. |
 | 2026-05-06 | verification -> done | Verification and docs update passed; task marked done. |
+| 2026-05-06 | done -> code_revision | Reopened after user reported the implementation did not preserve `codex` titles once internal input/control responses occurred. |
+| 2026-05-06 | code_revision -> done | Added interactive foreground app title stability and OSC filtering regressions; verification passed. |

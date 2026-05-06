@@ -62,7 +62,22 @@ describe("terminal cwd validation", () => {
       currentCwd: root,
       shell: "/bin/zsh",
       foregroundProcess: "top",
+      activeCommandLine: "q",
     })).toBe("top");
+    expect(terminalDisplayTitle({
+      projectRoot: root,
+      currentCwd: root,
+      shell: "/bin/zsh",
+      foregroundProcess: "codex",
+      activeCommandLine: "10;rgb:d9d9/e5e5/dfdf",
+    })).toBe("codex");
+    expect(terminalDisplayTitle({
+      projectRoot: root,
+      currentCwd: root,
+      shell: "/bin/zsh",
+      foregroundProcess: "claude",
+      activeCommandLine: "fix this file",
+    })).toBe("claude");
   });
 
   it("tracks submitted command lines from terminal input", () => {
@@ -81,6 +96,14 @@ describe("terminal cwd validation", () => {
     expect(applyTerminalInputData("claude", "\u0015top\r")).toEqual({
       pendingInputLine: "",
       submittedCommand: "top",
+    });
+    expect(applyTerminalInputData("", "\u001b]10;rgb:d9d9/e5e5/dfdf\u0007")).toEqual({
+      pendingInputLine: "",
+      submittedCommand: null,
+    });
+    expect(applyTerminalInputData("", "\u001b]10;rgb:d9d9/e5e5/dfdf\u001b\\")).toEqual({
+      pendingInputLine: "",
+      submittedCommand: null,
     });
   });
 

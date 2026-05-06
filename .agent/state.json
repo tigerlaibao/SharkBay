@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06T20:16:12+08:00",
+  "updatedAt": "2026-05-06T20:32:36+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -8,12 +8,12 @@
     "defaultBranch": "main",
     "remoteOrigin": "git@github.com:SharkUI/SharkBay.git",
     "githubUrl": "git@github.com:SharkUI/SharkBay.git",
-    "dirtyWorktree": false
+    "dirtyWorktree": true
   },
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Runtime-derived terminal tab titles are complete.",
+    "currentFocus": "Terminal title strategy now preserves interactive foreground app titles.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,26 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-06T20:32:36+08:00",
+      "decision": "Completed the t-023-terminal-title-strategy revision so codex, claude, and terminal monitor foreground apps keep process titles and OSC color responses no longer pollute tab titles.",
+      "source": "tasks/t-023-terminal-title-strategy/verification.md"
+    },
+    {
+      "date": "2026-05-06T20:29:49+08:00",
+      "decision": "Reopened t-023-terminal-title-strategy because Codex/xterm OSC color responses and interactive app input could overwrite the intended foreground app tab title.",
+      "source": "user report"
+    },
+    {
+      "date": "2026-05-06T20:24:02+08:00",
+      "decision": "Completed t-024-project-aware-column-headings with the terminal column titled by selected project name and redundant right detail project name/path headers removed.",
+      "source": "tasks/t-024-project-aware-column-headings/verification.md"
+    },
+    {
+      "date": "2026-05-06T20:21:48+08:00",
+      "decision": "Open t-024-project-aware-column-headings to title the terminal column with the selected project name and remove the redundant project name/path header from the right detail column.",
+      "source": "user request"
+    },
     {
       "date": "2026-05-06T20:16:12+08:00",
       "decision": "Completed t-023-terminal-title-strategy with terminal tabs deriving titles from project-relative cwd or foreground occupying commands.",

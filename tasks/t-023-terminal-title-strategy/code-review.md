@@ -2,7 +2,7 @@
 
 ## Findings
 
-No blocker or major findings.
+No blocker or major findings after revision.
 
 ## Review Notes
 
@@ -19,3 +19,14 @@ No blocker or major findings.
 | minor | 0 |
 
 Code review passes.
+
+## Revision Review: 2026-05-06
+
+The user correctly identified that the first implementation did not satisfy the intended interaction model for `codex`/`claude`/`top` style foreground apps. Review confirmed the fix is scoped to terminal title derivation:
+
+- `codex`, `claude`, and monitor-style foreground apps now return the foreground process name before considering captured input.
+- Submitted input is ignored for title capture when the foreground process is already non-shell, preventing prompts typed inside Codex/Claude from becoming tab titles.
+- OSC terminal control responses are skipped before input text accumulation, covering the observed `10;rgb:d9d9/e5e5/dfdf` regression.
+- Existing cwd titles and long-running command titles such as `pnpm dev:server` remain covered by tests.
+
+Gate remains pass with blocker=0 and major=0.

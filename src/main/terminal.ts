@@ -22,6 +22,7 @@ import type {
 const execFileAsync = promisify(execFile);
 const defaultTerminalInspectIntervalMs = 1000;
 const staleSubmittedCommandMs = 2000;
+const interactiveForegroundProcesses = new Set(["btop", "claude", "codex", "htop", "top"]);
 
 type CwdInspector = (pid: number) => Promise<string | null>;
 
@@ -207,6 +208,13 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
     if (!next.submittedCommand) {
       return;
     }
+    const foregroundProcess = safeForegroundProcess(session.pty);
+    if (foregroundProcess) {
+      session.foregroundProcess = foregroundProcess;
+    }
+    if (!isShellForeground(session.foregroundProcess, session.shell)) {
+      return;
+    }
     session.activeCommandLine = next.submittedCommand;
     session.commandSubmittedAt = this.now();
     session.foregroundCommandObserved = false;
@@ -283,6 +291,9 @@ export function terminalCommand(shell: string): { file: string; args: string[] }
 export function terminalDisplayTitle(input: TerminalTitleInput): string {
   const foregroundProcess = normalizeForegroundProcess(input.foregroundProcess);
   if (foregroundProcess && !isShellForeground(foregroundProcess, input.shell)) {
+    if (isInteractiveForegroundProcess(foregroundProcess)) {
+      return foregroundProcess;
+    }
     return normalizeTerminalCommandLine(input.activeCommandLine) ?? foregroundProcess;
   }
   return relativeTerminalCwd(input.projectRoot, input.currentCwd);
@@ -403,6 +414,10 @@ function isShellForeground(foregroundProcess: string | null | undefined, shell: 
   return processName.toLowerCase() === shellName || processName.toLowerCase() === "login";
 }
 
+function isInteractiveForegroundProcess(foregroundProcess: string): boolean {
+  return interactiveForegroundProcesses.has(foregroundProcess.toLowerCase());
+}
+
 function safeForegroundProcess(ptyProcess: pty.IPty): string | null {
   try {
     return ptyProcess.process || null;
@@ -423,6 +438,19 @@ function skipEscapeSequence(value: string, startIndex: number): number {
       }
     }
     return index;
+  }
+  if (value[index] === "]") {
+    index += 1;
+    while (index < value.length) {
+      if (value[index] === "\u0007") {
+        return index + 1;
+      }
+      if (value[index] === "\u001b" && value[index + 1] === "\\") {
+        return index + 2;
+      }
+      index += 1;
+    }
+    return value.length;
   }
   return Math.min(value.length, index + 1);
 }

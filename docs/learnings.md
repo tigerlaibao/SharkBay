@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Terminal Title Capture Must Treat App Input As App Input
+
+**Problem**: A terminal tab initially showed `codex`, then changed to `10;rgb:d9d9/e5e5/dfdf...` after using Codex.
+
+**Cause**: xterm color query responses use OSC control sequences such as `ESC ] 10 ; rgb:... BEL`, but SharkBay's input tracker only skipped CSI sequences. The same tracker also kept treating text submitted inside interactive foreground apps as shell commands.
+
+**Solution**: Skip OSC input sequences and preserve foreground process titles for interactive apps such as `codex`, `claude`, and terminal monitors instead of letting internal input overwrite the tab title.
+
+**Source**: `tasks/t-023-terminal-title-strategy/implementation.md`, `src/main/terminal.ts`, `tests/terminal.test.ts`.
+
+---
+
 ### Terminal Titles Need Runtime State
 
 **Problem**: Terminal tabs named after the project did not help distinguish tabs once multiple shells were open for the same repository.
