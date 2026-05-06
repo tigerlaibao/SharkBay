@@ -4,6 +4,7 @@
 
 | Priority | Task ID | Title | Phase | Depends On | Status |
 | --- | --- | --- | --- | --- | --- |
+| 1 | `t-020-right-detail-card-tabs` | Convert right detail column into card tabs | coding | `t-019-preserve-terminals-across-settings` | active |
 
 ## Backlog
 

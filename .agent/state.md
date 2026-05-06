@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Terminal spaces persist when opening and leaving Settings
-- Last controller run: 2026-05-06 preserve terminals across Settings navigation
+- Current focus: Right detail column card tabs for Tasks, Decisions, Git, and Info
+- Last controller run: 2026-05-06 right detail card tabs
 
 ## Repository Identity
 
@@ -18,9 +18,9 @@
 
 ## Current Task
 
-- Task ID: `t-019-preserve-terminals-across-settings`
-- Phase: done
-- Next action: Ready for the next task.
+- Task ID: `t-020-right-detail-card-tabs`
+- Phase: coding
+- Next action: Implement right detail column card tabs and keep handoff inside Tasks.
 - Blocked by: none
 
 ## Recent Decisions
@@ -107,6 +107,7 @@
 | 2026-05-06T16:47:19+08:00 | Open SharkBay Settings from the macOS application menu instead of relying on an in-panel settings button. | `tasks/t-018-macos-settings-menu/implementation.md` |
 | 2026-05-06T16:53:27+08:00 | Removed the left project panel's search, phase, Dirty, Blocked, refresh, and Settings controls. | `tasks/t-018-macos-settings-menu/implementation.md` |
 | 2026-05-06T17:01:51+08:00 | Keep `DashboardView` mounted while Settings is open so terminal spaces, tabs, and xterm instances persist across Settings navigation. | `tasks/t-019-preserve-terminals-across-settings/implementation.md` |
+| 2026-05-06T18:50:09+08:00 | Open `t-020-right-detail-card-tabs` to convert the right detail column into card-style tabs for Tasks, Decisions, Git, and Info, with handoff remaining inside Tasks. | User request |
 
 ## Open Questions
 

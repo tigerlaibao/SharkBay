@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06",
+  "updatedAt": "2026-05-06T18:50:09+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,15 +13,15 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Terminal spaces persist when opening and leaving Settings.",
+    "currentFocus": "Right detail column card tabs for Tasks, Decisions, Git, and Info.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
   },
   "currentTask": {
-    "taskId": "t-019-preserve-terminals-across-settings",
-    "phase": "done",
-    "nextAction": "Ready for the next task.",
+    "taskId": "t-020-right-detail-card-tabs",
+    "phase": "coding",
+    "nextAction": "Implement right detail column card tabs and keep handoff inside Tasks.",
     "blockedBy": []
   },
   "recentDecisions": [
@@ -424,6 +424,11 @@
       "date": "2026-05-06T17:01:51+08:00",
       "decision": "Keep DashboardView mounted while Settings is open so terminal spaces, tabs, and xterm instances persist across Settings navigation.",
       "source": "tasks/t-019-preserve-terminals-across-settings/implementation.md"
+    },
+    {
+      "date": "2026-05-06T18:50:09+08:00",
+      "decision": "Open t-020-right-detail-card-tabs to convert the right detail column into card-style tabs for Tasks, Decisions, Git, and Info, with handoff remaining inside Tasks.",
+      "source": "user request"
     }
   ],
   "openQuestions": []

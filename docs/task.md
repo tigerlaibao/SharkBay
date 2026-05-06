@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-User-centered project workbench redesign, read-only root child discovery, autonomous UX polish, confirmation-gated Ripple setup, project-authored developer metadata, human intervention signals, setup-time agent onboarding instructions, runner lifecycle separation, robust queue/task visibility, task detail drilldown, project terminal tabs, xterm/node-pty project terminal spaces, resizable workbench columns, minimum-width default columns, macOS Settings menu access, and Settings-safe terminal persistence are complete.
+User-centered project workbench redesign, read-only root child discovery, autonomous UX polish, confirmation-gated Ripple setup, project-authored developer metadata, human intervention signals, setup-time agent onboarding instructions, runner lifecycle separation, robust queue/task visibility, task detail drilldown, project terminal tabs, xterm/node-pty project terminal spaces, resizable workbench columns, minimum-width default columns, macOS Settings menu access, and Settings-safe terminal persistence are complete. Right detail column card tabs are active.
 
 ## Task List
 
@@ -27,6 +27,7 @@ User-centered project workbench redesign, read-only root child discovery, autono
 | `t-017-minimum-default-columns` | done | Initialize workbench columns at minimum widths | `t-016-resizable-workbench-columns` | First-load project and detail columns start at minimum width so terminal gets the remaining space |
 | `t-018-macos-settings-menu` | done | Open Settings from the macOS app menu | `t-017-minimum-default-columns` | Settings is in the macOS app menu; the left project panel no longer shows search/filter/refresh/settings controls |
 | `t-019-preserve-terminals-across-settings` | done | Preserve terminal spaces across Settings navigation | `t-018-macos-settings-menu` | Dashboard stays mounted while Settings is open so terminal tabs and output survive returning to the main view |
+| `t-020-right-detail-card-tabs` | active | Convert right detail column into card tabs | `t-019-preserve-terminals-across-settings` | Right detail column should expose Tasks, Decisions, Git, and Info as card-style tabs; handoff stays inside Tasks |
 
 ## Completed Work
 
@@ -93,4 +94,5 @@ t-001-sharkbay-mvp-spec (done)
                                 -> t-017-minimum-default-columns (done)
                                   -> t-018-macos-settings-menu (done)
                                     -> t-019-preserve-terminals-across-settings (done)
+                                      -> t-020-right-detail-card-tabs (active)
 ```

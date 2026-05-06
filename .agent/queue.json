@@ -1,7 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-06",
-  "active": [],
+  "updatedAt": "2026-05-06T18:50:09+08:00",
+  "active": [
+    {
+      "priority": 1,
+      "taskId": "t-020-right-detail-card-tabs",
+      "title": "Convert right detail column into card tabs",
+      "phase": "coding",
+      "dependsOn": [
+        "t-019-preserve-terminals-across-settings"
+      ],
+      "status": "active"
+    }
+  ],
   "backlog": [],
   "done": [
     {
