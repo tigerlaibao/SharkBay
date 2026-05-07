@@ -1,10 +1,19 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T12:41:56+08:00",
+  "updatedAt": "2026-05-07T13:26:55+08:00",
   "active": [],
   "backlog": [
   ],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-041-settings-terminal-resize-guard",
+      "title": "Guard terminal resize when entering Settings",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-07"
+    },
     {
       "priority": 1,
       "taskId": "t-040-project-status-model",

@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Hidden Terminal Surfaces Can Report Invalid Fit Dimensions
+
+**Problem**: Entering Settings could show `Error invoking remote method 'terminal:resize': Error: resizing must be done using positive cols and rows`.
+
+**Cause**: The dashboard remains mounted while Settings is visible, so terminal fit/resize work can race against hidden or unmeasured xterm surfaces and produce invalid dimensions such as `0` or `NaN`.
+
+**Solution**: Validate xterm proposed dimensions before sending renderer resize IPC, and make the terminal backend ignore invalid resize payloads before calling `node-pty`.
+
+**Source**: `.sharkbay/tasks/t-041-settings-terminal-resize-guard/implementation.md`, `src/renderer/App.tsx`, `src/main/terminal.ts`.
+
+---
+
 ### Project Status Needs Three Separate Signals
 
 **Problem**: Project rows could show `done` for AIBF/AIGF but show no status for ItsMyLife/SharkBay even though all four were managed projects with completed work.

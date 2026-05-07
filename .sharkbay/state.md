@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Clarified project task, runner, and human waiting status display.
-- Last controller run: 2026-05-07T12:37:17+08:00 opened `t-040-project-status-model`
+- Current focus: Guarded terminal resize during Settings navigation.
+- Last controller run: 2026-05-07T13:23:04+08:00 opened `t-041-settings-terminal-resize-guard`
 
 ## Repository Identity
 
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T040 status model verification.
+- Next action: Idle after T041 Settings terminal resize guard verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-07T13:26:55+08:00 | Completed `t-041-settings-terminal-resize-guard` with renderer and backend terminal resize guards plus passing focused and full verification. | `.sharkbay/tasks/t-041-settings-terminal-resize-guard/verification.md` |
+| 2026-05-07T13:23:04+08:00 | Opened `t-041-settings-terminal-resize-guard` to fix terminal resize errors when entering Settings. | `.sharkbay/tasks/t-041-settings-terminal-resize-guard/status.md` |
 | 2026-05-07T12:41:56+08:00 | Committed `t-040-project-status-model` product changes as `e391eff Clarify project status model`. | `git commit -m "Clarify project status model"` |
 | 2026-05-07T12:41:56+08:00 | Completed `t-040-project-status-model` with normalized `taskStatus` summaries, separate runner/status pills, Needs Action waiting fixes, and passing verification. | `.sharkbay/tasks/t-040-project-status-model/verification.md` |
 | 2026-05-07T12:37:17+08:00 | Opened `t-040-project-status-model` to separate task queue state, runner execution state, and human waiting state in SharkBay project status display. | `.sharkbay/tasks/t-040-project-status-model/status.md` |

@@ -24,7 +24,7 @@ import type {
   TerminalUpdateEvent,
   TaskQueueItem,
 } from "./types";
-import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, taskStatusKind, taskStatusLabel, userActionReason } from "./workflow";
+import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, taskStatusKind, taskStatusLabel, userActionReason, validTerminalResizeDimensions } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailMode = "overview" | "task";
@@ -266,11 +266,14 @@ async function sendTerminalInput(sessionId: string, data: string): Promise<void>
 }
 
 async function resizeTerminal(sessionId: string, cols: number, rows: number): Promise<void> {
+  if (!validTerminalResizeDimensions(cols, rows)) {
+    return;
+  }
   const handler = getBridge().terminal?.resize;
   if (!handler) {
     throw new Error("Terminal resize is not exposed by the preload API.");
   }
-  await handler({ sessionId, cols, rows });
+  await handler({ sessionId, cols: Math.floor(cols), rows: Math.floor(rows) });
 }
 
 async function closeTerminal(sessionId: string): Promise<void> {
@@ -1214,8 +1217,11 @@ function XTermSurface({
       if (!dimensions) {
         return;
       }
+      if (!validTerminalResizeDimensions(dimensions.cols, dimensions.rows)) {
+        return;
+      }
       tab.fitAddon.fit();
-      onResize(dimensions.cols, dimensions.rows);
+      onResize(Math.floor(dimensions.cols), Math.floor(dimensions.rows));
     };
     const frame = window.requestAnimationFrame(() => {
       fitAndResize();

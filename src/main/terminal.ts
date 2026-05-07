@@ -148,8 +148,13 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
 
   resize(input: TerminalResizeInput): TerminalSession {
     const session = this.requireSession(input.sessionId);
+    const cols = positiveTerminalDimension(input.cols);
+    const rows = positiveTerminalDimension(input.rows);
+    if (cols === null || rows === null) {
+      return publicSession(session);
+    }
     if (session.status === "running") {
-      session.pty.resize(Math.max(1, input.cols), Math.max(1, input.rows));
+      session.pty.resize(cols, rows);
     }
     return publicSession(session);
   }
@@ -286,6 +291,14 @@ export async function resolveTerminalCwd(runtime: IpcRuntimeLike, cwd: string): 
 
 export function terminalCommand(shell: string): { file: string; args: string[] } {
   return { file: shell, args: ["-l"] };
+}
+
+function positiveTerminalDimension(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+  const dimension = Math.floor(value);
+  return dimension > 0 ? dimension : null;
 }
 
 export function terminalDisplayTitle(input: TerminalTitleInput): string {

@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-041-settings-terminal-resize-guard` | Guard terminal resize when entering Settings | 2026-05-07 |
 | `t-040-project-status-model` | Clarify project task, runner, and waiting states | 2026-05-07 |
 | `t-039-legacy-harness-file-cleanup` | Clean up legacy root harness files after `.sharkbay` compatibility lands | 2026-05-07 |
 | `t-038-gitignore-agent-owned-setup-guidance` | Delegate setup gitignore changes to the target project agent | 2026-05-07 |

@@ -172,6 +172,15 @@ export function taskStatusKind(project: GateStatusCandidate): string {
   return "unknown";
 }
 
+export function validTerminalResizeDimensions(cols: number | null | undefined, rows: number | null | undefined): boolean {
+  return typeof cols === "number"
+    && typeof rows === "number"
+    && Number.isFinite(cols)
+    && Number.isFinite(rows)
+    && Math.floor(cols) >= 1
+    && Math.floor(rows) >= 1;
+}
+
 export function nextReadyBacklogTask(project: GateStatusCandidate): QueueTaskCandidate | null {
   const doneTaskIds = new Set((project.queue?.done ?? []).flatMap((item) => normalizeTaskId(item.taskId) ?? []));
   return (project.queue?.backlog ?? []).find((item) => {

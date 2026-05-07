@@ -147,6 +147,31 @@ describe("terminal cwd validation", () => {
     expect(manager.list()).toHaveLength(0);
   });
 
+  it("ignores invalid resize dimensions without surfacing node-pty errors", async () => {
+    const userDataPath = await makeTempRoot("terminal-config");
+    const root = await makeTempRoot("terminal-root");
+    const repo = await createHarnessFixture(root, "TerminalRepo");
+    await writeJson(getRuntimeConfigPath({ userDataPath }), {
+      schemaVersion: 1,
+      configuredRoots: [root],
+      updatedAt: "2026-05-07",
+    });
+
+    const manager = new TerminalManager();
+    const session = await manager.create({ userDataPath }, { cwd: repo, title: "TerminalRepo" });
+
+    try {
+      expect(() => manager.resize({ sessionId: session.id, cols: Number.NaN, rows: 24 })).not.toThrow();
+      expect(() => manager.resize({ sessionId: session.id, cols: 80, rows: 0 })).not.toThrow();
+      expect(manager.resize({ sessionId: session.id, cols: 80, rows: 24 })).toMatchObject({
+        id: session.id,
+        status: "running",
+      });
+    } finally {
+      manager.close({ sessionId: session.id });
+    }
+  });
+
   it("accepts input and streams command output", async () => {
     const userDataPath = await makeTempRoot("terminal-config");
     const root = await makeTempRoot("terminal-root");

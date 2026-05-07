@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readProjectDetail } from "../src/main/harness-reader.js";
-import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, resolveSelectedCandidate, taskStatusKind, taskStatusLabel, userActionReason } from "../src/renderer/workflow.js";
+import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, resolveSelectedCandidate, taskStatusKind, taskStatusLabel, userActionReason, validTerminalResizeDimensions } from "../src/renderer/workflow.js";
 import {
   createSelfHostFixture,
   makeTempRoot,
@@ -10,6 +10,15 @@ import {
 } from "./helpers.js";
 
 describe("renderer workflow contracts", () => {
+  it("skips terminal resize dimensions from hidden or unmeasured surfaces", () => {
+    expect(validTerminalResizeDimensions(80, 24)).toBe(true);
+    expect(validTerminalResizeDimensions(80.8, 24.2)).toBe(true);
+    expect(validTerminalResizeDimensions(0, 24)).toBe(false);
+    expect(validTerminalResizeDimensions(80, 0)).toBe(false);
+    expect(validTerminalResizeDimensions(Number.NaN, 24)).toBe(false);
+    expect(validTerminalResizeDimensions(80, Number.POSITIVE_INFINITY)).toBe(false);
+  });
+
   it("covers the detail data surfaces expected by the self-hosting workflow", async () => {
     const root = await makeTempRoot("renderer-detail");
     const repo = await createSelfHostFixture(root);
