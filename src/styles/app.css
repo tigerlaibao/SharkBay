@@ -61,11 +61,11 @@ textarea::placeholder {
   overflow: hidden;
 }
 
-.window-drag-strip {
+.project-window-drag-strip {
   position: absolute;
   top: 0;
-  right: 14px;
-  left: 86px;
+  right: 0;
+  left: 72px;
   z-index: 10;
   height: 30px;
   user-select: none;
@@ -254,7 +254,7 @@ textarea::placeholder {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: 34px 14px 14px;
+  padding: 0 14px 14px;
 }
 
 .workspace-body {
@@ -279,6 +279,7 @@ textarea::placeholder {
 .settings-surface {
   align-items: stretch;
   overflow: auto;
+  padding-top: 34px;
 }
 
 .dashboard-grid {
@@ -358,9 +359,11 @@ body.is-resizing-columns * {
 }
 
 .project-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding-top: 34px;
 }
 
 .detail-panel {
@@ -948,7 +951,7 @@ body.is-resizing-columns * {
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 12px;
-  min-height: 32px;
+  min-height: 48px;
   background: #f4f1eb;
   border-bottom: 1px solid #e1ddd4;
 }
@@ -956,14 +959,14 @@ body.is-resizing-columns * {
 .detail-tab-card {
   position: relative;
   min-width: 0;
-  min-height: 31px;
+  min-height: 47px;
   color: #5f6c6e;
   background: transparent;
   border: 0;
   border-bottom: 2px solid transparent;
   border-radius: 0;
   margin-bottom: -1px;
-  padding: 5px 1px 7px;
+  padding: 12px 1px 13px;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0;
@@ -1597,7 +1600,7 @@ body.is-resizing-columns * {
   position: absolute;
   inset: 0;
   display: none;
-  padding: 8px 0 8px 8px;
+  padding: 8px 0 16px 8px;
   background: #101719;
 }
 
@@ -1606,7 +1609,7 @@ body.is-resizing-columns * {
 }
 
 .xterm-surface .xterm {
-  height: 100%;
+  height: calc(100% - 8px);
 }
 
 .xterm-surface .xterm-viewport,

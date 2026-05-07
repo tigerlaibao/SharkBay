@@ -629,7 +629,6 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <div className="window-drag-strip" aria-hidden="true" />
       <main className="workspace">
         <div className="workspace-body">
           {toast ? (
@@ -841,6 +840,7 @@ function DashboardView({
   return (
     <div className="dashboard-grid" ref={gridRef} style={gridStyle}>
       <section className="project-panel">
+        <div className="project-window-drag-strip" aria-hidden="true" />
         {scanErrors.length ? (
           <div className="inline-errors">
             {scanErrors.map((error) => (

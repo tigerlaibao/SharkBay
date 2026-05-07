@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T19:24:35+08:00",
+  "updatedAt": "2026-05-07T19:45:49+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Custom SharkBay app icon is wired from the provided shark.png asset.",
+    "currentFocus": "Workbench titlebar space, terminal clipping, and right detail tabs are polished.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T043 custom app icon verification.",
+    "nextAction": "Idle after T044 workbench layout polish verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-07T19:45:49+08:00",
+      "decision": "Completed t-044-workbench-layout-polish with left-column-only titlebar drag space, terminal bottom padding, taller right detail tabs, and passing verification.",
+      "source": ".sharkbay/tasks/t-044-workbench-layout-polish/verification.md"
+    },
+    {
+      "date": "2026-05-07T19:43:28+08:00",
+      "decision": "Opened t-044-workbench-layout-polish to constrain hidden-titlebar space to the left column, prevent terminal bottom-line clipping, and increase right detail tab height.",
+      "source": ".sharkbay/tasks/t-044-workbench-layout-polish/status.md"
+    },
     {
       "date": "2026-05-07T19:24:35+08:00",
       "decision": "Completed t-043-custom-app-icon with repository icon assets, Electron BrowserWindow icon wiring, macOS Dock icon setup, and passing verification.",

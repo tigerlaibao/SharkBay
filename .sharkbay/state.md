@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Custom SharkBay app icon is wired from the provided `shark.png` asset.
-- Last controller run: 2026-05-07T19:22:07+08:00 opened `t-043-custom-app-icon`
+- Current focus: Workbench titlebar space, terminal clipping, and right detail tabs are polished.
+- Last controller run: 2026-05-07T19:43:28+08:00 opened `t-044-workbench-layout-polish`
 
 ## Repository Identity
 
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T043 custom app icon verification.
+- Next action: Idle after T044 workbench layout polish verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-07T19:45:49+08:00 | Completed `t-044-workbench-layout-polish` with left-column-only titlebar drag space, terminal bottom padding, taller right detail tabs, and passing verification. | `.sharkbay/tasks/t-044-workbench-layout-polish/verification.md` |
+| 2026-05-07T19:43:28+08:00 | Opened `t-044-workbench-layout-polish` to constrain hidden-titlebar space to the left column, prevent terminal bottom-line clipping, and increase right detail tab height. | `.sharkbay/tasks/t-044-workbench-layout-polish/status.md` |
 | 2026-05-07T19:24:35+08:00 | Completed `t-043-custom-app-icon` with repository icon assets, Electron BrowserWindow icon wiring, macOS Dock icon setup, and passing verification. | `.sharkbay/tasks/t-043-custom-app-icon/verification.md` |
 | 2026-05-07T19:22:07+08:00 | Opened `t-043-custom-app-icon` to use the provided `~/Downloads/shark.png` asset as the SharkBay Electron app icon. | `.sharkbay/tasks/t-043-custom-app-icon/status.md` |
 | 2026-05-07T14:09:19+08:00 | Completed `t-042-settings-two-column-redesign` with a left settings section selector, right content pane, preserved root controls, status section, and passing verification. | `.sharkbay/tasks/t-042-settings-two-column-redesign/verification.md` |

@@ -1,10 +1,19 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T19:24:35+08:00",
+  "updatedAt": "2026-05-07T19:45:49+08:00",
   "active": [],
   "backlog": [
   ],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-044-workbench-layout-polish",
+      "title": "Polish workbench titlebar, terminal, and detail tabs",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-07"
+    },
     {
       "priority": 1,
       "taskId": "t-043-custom-app-icon",
