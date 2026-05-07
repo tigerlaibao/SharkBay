@@ -1544,7 +1544,7 @@ function NotSetupPane({
         {!confirming ? <p className="summary-text">Add harness files to this project without changing existing files.</p> : null}
         {confirming ? (
           <div className="confirm-panel">
-            <p className="summary-text">This adds `.agent`, `docs`, and `tasks` files. Existing files will not be overwritten.</p>
+            <p className="summary-text">This adds `AGENTS.md` and contained `.sharkbay` harness files. Existing files will not be overwritten.</p>
             <div className="button-row">
               <button className="button secondary compact" disabled={busy} type="button" onClick={() => setConfirming(false)}>
                 Cancel

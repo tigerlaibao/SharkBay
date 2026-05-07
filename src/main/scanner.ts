@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { DetectionMode, IpcRuntimeLike, ProjectCandidate, ProjectScanInput, ProjectSummary, ScanProjectsResult } from "../shared/types.js";
 import { loadAppConfig, getRuntimeConfigPath } from "./config.js";
+import { detectHarnessLayout } from "./harness-layout.js";
 import { readProjectSummary } from "./harness-reader.js";
 import { isPathInside, resolveConfiguredRoots } from "./path-safety.js";
 
@@ -137,17 +138,7 @@ export async function findRootCandidates(rootPath: string): Promise<Array<Omit<P
 }
 
 export async function detectHarnessRepo(directory: string): Promise<DetectionMode | null> {
-  const agentDir = path.join(directory, ".agent");
-  try {
-    const agentStat = await fs.lstat(agentDir);
-    if (!agentStat.isDirectory() || agentStat.isSymbolicLink()) return null;
-  } catch {
-    return null;
-  }
-
-  if (await exists(path.join(agentDir, "manifest.json"))) return "manifest";
-  if (await exists(path.join(agentDir, "protocol.md"))) return "protocol-fallback";
-  return null;
+  return (await detectHarnessLayout(directory))?.detection ?? null;
 }
 
 function candidateFromPath(candidatePath: string, rootPath: string): Omit<ProjectCandidate, "status" | "managedProjectId" | "detection"> {
@@ -161,14 +152,5 @@ function candidateFromPath(candidatePath: string, rootPath: string): Omit<Projec
 
 function shouldIgnoreDirectory(name: string): boolean {
   if (ignoredDirectories.has(name)) return true;
-  return name.startsWith(".") && name !== ".agent";
-}
-
-async function exists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
+  return name.startsWith(".") && name !== ".agent" && name !== ".sharkbay";
 }

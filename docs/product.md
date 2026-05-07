@@ -2,7 +2,7 @@
 
 ## 1. Background and Terms
 
-SharkBay is a macOS local app for managing AI-assisted software projects. It starts with local projects that have SharkBay's Ripple files installed: a file-based project memory and task protocol under `.agent/`, `docs/`, and `tasks/`. The project exists because switching between many AI sessions and repositories makes it hard to see what each project is doing, what phase each task is in, and what evidence exists for review or verification.
+SharkBay is a macOS local app for managing AI-assisted software projects. It starts with local projects that have SharkBay's Ripple files installed: a file-based project memory and task protocol under contained `.sharkbay/` harness files, with legacy support for older `.agent/`, root `docs/`, and root `tasks/` projects. The project exists because switching between many AI sessions and repositories makes it hard to see what each project is doing, what phase each task is in, and what evidence exists for review or verification.
 
 SharkBay can also manage this repository locally during dogfooding. That local root `.agent/`, root `tasks/`, `docs/task.md`, and `docs/learnings.md` state is intentionally not tracked in the public product repository so forks do not inherit SharkBay's private work queue or run history. The public source of the harness that SharkBay installs into other projects is `templates/harness/`.
 
@@ -11,7 +11,7 @@ Key terms:
 | Term | Meaning |
 | --- | --- |
 | Managed project | A local project SharkBay can read and display |
-| Ripple files | SharkBay's `.agent/`, `docs/`, and `tasks/` project memory files |
+| Ripple files | SharkBay's `.sharkbay/` project memory files, plus legacy `.agent`/root docs/root tasks compatibility |
 | Scan root | A local parent directory SharkBay scans for managed projects |
 | Phase | The current lifecycle step for a task, such as `spec`, `design`, `coding`, or `verification` |
 | Gate | A quality condition required before a task can advance |
@@ -42,10 +42,10 @@ Key terms:
 | --- | --- | --- | --- |
 | P0 | Project workbench | Make Projects the primary view | User sees managed projects, status, current task, links, and next action before low-frequency settings |
 | P0 | Scan root management | Keep directory access in Settings, opened from the macOS app menu | User can add/remove scan roots without the main workbench or left project panel being dominated by setup controls |
-| P0 | Project scanning | Scan configured local directories for managed projects | Finds repos with `.agent/manifest.json`; falls back to `.agent/protocol.md` |
+| P0 | Project scanning | Scan configured local directories for managed projects | Finds repos with `.sharkbay/manifest.json` or legacy `.agent/manifest.json`; falls back to protocol files |
 | P0 | Directory safety boundary | Manage only user-configured directories | App does not scan or modify arbitrary filesystem locations outside configured roots |
 | P0 | Project detail | Show queue, active task, lifecycle artifacts, and evidence | User can inspect task files without leaving the app |
-| P0 | New managed project wizard | Create a new project directory from bundled templates | Writes `AGENTS.md`, `.agent/`, `docs/`, `tasks/`, and machine-readable JSON |
+| P0 | New managed project wizard | Create a new project directory from bundled templates | Writes root `AGENTS.md` and contained `.sharkbay/` harness files |
 | P1 | Next-action prompt | Generate a prompt for Codex to advance a selected task | Prompt references repo path, task id, phase, and protocol |
 | P1 | URL tracking | Store local, test, and deployment URLs | URLs appear in project dashboard and detail view |
 | P1 | Ordinary folder discovery | Show all direct child folders under scan roots | User can see projects that are not managed yet and start one-click Ripple setup |

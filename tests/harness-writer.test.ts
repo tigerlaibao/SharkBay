@@ -1,11 +1,34 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createHarnessFixture, makeTempRoot, writeJson } from "./helpers.js";
+import { createContainedHarnessFixture, createHarnessFixture, makeTempRoot, writeJson } from "./helpers.js";
 import { applyHarnessPatch, updateProjectUrls } from "../src/main/harness-writer.js";
 import { readJsonFile } from "../src/main/json-file.js";
 
 describe("harness writer", () => {
+  it("writes contained .sharkbay state when the project uses the contained layout", async () => {
+    const root = await makeTempRoot("writer-contained");
+    const repo = await createContainedHarnessFixture(root, "ContainedWriterRepo");
+    const file = path.join(repo, ".sharkbay", "state.json");
+    const before = await readJsonFile(file);
+    if (!before.ok) throw new Error("fixture failed");
+
+    const result = await applyHarnessPatch({
+      repoPath: repo,
+      configuredRoots: [root],
+      file: ".agent/state.json",
+      expectedRevision: before.revision,
+      patch: { type: "updateProjectUrls", urls: { localUrl: "https://contained.example" } },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const after = await readJsonFile(file);
+    if (!after.ok || typeof after.data !== "object" || after.data === null) throw new Error("reread failed");
+    expect((after.data as any).project.localUrl).toBe("https://contained.example");
+    await expect(fs.access(path.join(repo, ".agent", "state.json"))).rejects.toThrow();
+  });
+
   it("updates state URLs while preserving unknown fields and returning a new revision", async () => {
     const root = await makeTempRoot("writer");
     const repo = await createHarnessFixture(root, "WriterRepo");

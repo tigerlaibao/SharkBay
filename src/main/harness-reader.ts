@@ -21,6 +21,7 @@ import type {
 import { asQueueItem, emptyRunnerSummary, isRecord, normalizeDevelopmentMetadata, normalizeRunnerMetadata, normalizeUrlFields, validateDevelopmentJson, validateRunnerJson } from "../shared/schema.js";
 import { getRuntimeConfigPath, loadAppConfig } from "./config.js";
 import { readGitHistory, readGitMetadata } from "./git.js";
+import { detectHarnessLayout, harnessJsonRelativePath, type HarnessLayout } from "./harness-layout.js";
 import { checkHarnessTemplateSync } from "./harness-template-sync.js";
 import { readJsonFile } from "./json-file.js";
 import { isPathInside, resolveReadableHarnessJsonFile, resolveReadableRepoFile, resolveRepoPath } from "./path-safety.js";
@@ -76,24 +77,30 @@ export async function readProjectDetail(
     return unsafeProjectDetail(rawRepoPath, detection, message);
   }
 
-  const manifest = await readHarnessJson(repoPath, configuredRoots, ".agent/manifest.json", errors);
-  const state = await readHarnessJson(repoPath, configuredRoots, ".agent/state.json", errors);
-  const queueJson = await readHarnessJson(repoPath, configuredRoots, ".agent/queue.json", errors);
+  const detectedLayout = await detectHarnessLayout(repoPath);
+  if (!detectedLayout) {
+    return unsafeProjectDetail(repoPath, detection, "Repository does not contain a supported harness layout");
+  }
+  const layout = detectedLayout.layout;
+
+  const manifest = await readHarnessJson(repoPath, configuredRoots, layout, ".agent/manifest.json", errors);
+  const state = await readHarnessJson(repoPath, configuredRoots, layout, ".agent/state.json", errors);
+  const queueJson = await readHarnessJson(repoPath, configuredRoots, layout, ".agent/queue.json", errors);
   const git = await readGitMetadata(repoPath);
   const gitHistory = await readGitHistory(repoPath);
-  const development = await readDevelopmentMetadata(repoPath, configuredRoots, errors);
-  const runnerMetadata = await readRunnerMetadata(repoPath, configuredRoots, errors);
+  const development = await readDevelopmentMetadata(repoPath, configuredRoots, layout, errors);
+  const runnerMetadata = await readRunnerMetadata(repoPath, configuredRoots, layout, errors);
 
   const queue = normalizeQueue(queueJson.data);
-  const visibleQueue = await mergeTaskDirectoryQueue(repoPath, containingRoot, configuredRoots, queue, errors);
+  const visibleQueue = await mergeTaskDirectoryQueue(repoPath, containingRoot, configuredRoots, layout, queue, errors);
   const activeTask = normalizeActiveTask(visibleQueue, state.data);
-  const runner = annotateRunnerTaskRegistration(runnerMetadata, visibleQueue, readStateCurrentTaskId(state.data), repoPath, errors);
+  const runner = annotateRunnerTaskRegistration(runnerMetadata, visibleQueue, readStateCurrentTaskId(state.data), repoPath, layout, errors);
   const urls = readUrls(state.ok, state.data, manifest.data);
   const name = readProjectName(manifest.data, repoPath);
   const repoUrl = readRepoUrl(state.data) || readRepoUrl(manifest.data) || git.githubUrl;
   const harnessTemplate = await readHarnessTemplateSummary(repoPath, configuredRoots, options.templateDir, errors);
-  const currentTask = options.includeArtifacts === false || !activeTask ? null : await readTaskArtifacts(repoPath, configuredRoots, activeTask.taskId, errors);
-  const taskArtifacts = options.includeArtifacts === false ? {} : await readVisibleTaskArtifacts(repoPath, configuredRoots, visibleQueue, errors);
+  const currentTask = options.includeArtifacts === false || !activeTask ? null : await readTaskArtifacts(repoPath, configuredRoots, layout, activeTask.taskId, errors);
+  const taskArtifacts = options.includeArtifacts === false ? {} : await readVisibleTaskArtifacts(repoPath, configuredRoots, layout, visibleQueue, errors);
   const recentDecisions = readRecentDecisions(state.data);
 
   return {
@@ -149,16 +156,17 @@ async function readHarnessTemplateSummary(
 async function readVisibleTaskArtifacts(
   repoPath: string,
   configuredRoots: string[],
+  layout: HarnessLayout,
   queue: Record<QueueSection, TaskQueueItem[]>,
   errors: HarnessError[],
 ): Promise<Record<string, TaskArtifacts>> {
   const taskIds = [...new Set(Object.values(queue).flat().map((item) => item.taskId).filter((taskId) => Boolean(taskId.trim())))];
-  const entries = await Promise.all(taskIds.map(async (taskId) => [taskId, await readTaskArtifacts(repoPath, configuredRoots, taskId, errors)] as const));
+  const entries = await Promise.all(taskIds.map(async (taskId) => [taskId, await readTaskArtifacts(repoPath, configuredRoots, layout, taskId, errors)] as const));
   return Object.fromEntries(entries);
 }
 
-async function readRunnerMetadata(repoPath: string, configuredRoots: string[], errors: HarnessError[]): Promise<RunnerSummary> {
-  const relativePath = ".agent/runner.json";
+async function readRunnerMetadata(repoPath: string, configuredRoots: string[], layout: HarnessLayout, errors: HarnessError[]): Promise<RunnerSummary> {
+  const relativePath = layout.runnerJson;
   let filePath: string;
   try {
     filePath = await resolveReadableRepoFile(repoPath, configuredRoots, relativePath);
@@ -189,6 +197,7 @@ function annotateRunnerTaskRegistration(
   queue: Record<QueueSection, TaskQueueItem[]>,
   currentTaskId: string | null,
   repoPath: string,
+  layout: HarnessLayout,
   errors: HarnessError[],
 ): RunnerSummary {
   const taskId = runner.taskId?.trim();
@@ -204,9 +213,9 @@ function annotateRunnerTaskRegistration(
   if (activeTaskIds.has(taskId)) {
     if (currentTaskId !== taskId) {
       const message = currentTaskId
-        ? `Runner task ${taskId} is active but .agent/state.json currentTask is ${currentTaskId}.`
-        : `Runner task ${taskId} is active but .agent/state.json currentTask is missing.`;
-      errors.push({ file: path.join(repoPath, ".agent/runner.json"), message });
+        ? `Runner task ${taskId} is active but harness state currentTask is ${currentTaskId}.`
+        : `Runner task ${taskId} is active but harness state currentTask is missing.`;
+      errors.push({ file: path.join(repoPath, layout.runnerJson), message });
       return { ...runner, taskRegistrationStatus: "mismatched", taskRegistrationMessage: message };
     }
     return { ...runner, taskRegistrationStatus: "active", taskRegistrationMessage: null };
@@ -216,7 +225,7 @@ function annotateRunnerTaskRegistration(
     ? `Runner task ${taskId} is registered but is not in the Active queue.`
     : `Runner task ${taskId} is not registered in the queue or tasks directory.`;
 
-  errors.push({ file: path.join(repoPath, ".agent/runner.json"), message });
+  errors.push({ file: path.join(repoPath, layout.runnerJson), message });
 
   return {
     ...runner,
@@ -234,8 +243,8 @@ function readStateCurrentTaskId(state: unknown): string | null {
   return taskId || null;
 }
 
-async function readDevelopmentMetadata(repoPath: string, configuredRoots: string[], errors: HarnessError[]): Promise<DevelopmentMetadata | null> {
-  const relativePath = ".agent/development.json";
+async function readDevelopmentMetadata(repoPath: string, configuredRoots: string[], layout: HarnessLayout, errors: HarnessError[]): Promise<DevelopmentMetadata | null> {
+  const relativePath = layout.developmentJson;
   let filePath: string;
   try {
     filePath = await resolveReadableRepoFile(repoPath, configuredRoots, relativePath);
@@ -272,12 +281,19 @@ function repoPathFromInput(input: DetectionMode | ProjectDetailInput): string {
   return repoPath;
 }
 
-async function readHarnessJson(repoPath: string, configuredRoots: string[], file: ".agent/manifest.json" | ".agent/state.json" | ".agent/queue.json", errors: HarnessError[]): Promise<{ ok: boolean; data: unknown; revision: string | null }> {
+async function readHarnessJson(
+  repoPath: string,
+  configuredRoots: string[],
+  layout: HarnessLayout,
+  file: ".agent/manifest.json" | ".agent/state.json" | ".agent/queue.json",
+  errors: HarnessError[],
+): Promise<{ ok: boolean; data: unknown; revision: string | null }> {
+  const relativePath = harnessJsonRelativePath(layout, file);
   let filePath: string;
   try {
     filePath = (await resolveReadableHarnessJsonFile(repoPath, configuredRoots, file)).filePath;
   } catch (error) {
-    errors.push({ file: path.join(repoPath, file), message: error instanceof Error ? error.message : String(error) });
+    errors.push({ file: path.join(repoPath, relativePath), message: error instanceof Error ? error.message : String(error) });
     return { ok: false, data: null, revision: null };
   }
   const result = await readJsonFile(filePath);
@@ -347,10 +363,11 @@ async function mergeTaskDirectoryQueue(
   repoPath: string,
   containingRoot: string,
   configuredRoots: string[],
+  layout: HarnessLayout,
   queue: Record<QueueSection, TaskQueueItem[]>,
   errors: HarnessError[],
 ): Promise<Record<QueueSection, TaskQueueItem[]>> {
-  const discovered = await readTaskDirectoryItems(repoPath, containingRoot, configuredRoots, errors);
+  const discovered = await readTaskDirectoryItems(repoPath, containingRoot, configuredRoots, layout, errors);
   if (!discovered.length) return queue;
 
   const discoveredById = new Map(discovered.map((item) => [item.taskId, item]));
@@ -430,9 +447,10 @@ async function readTaskDirectoryItems(
   repoPath: string,
   containingRoot: string,
   configuredRoots: string[],
+  layout: HarnessLayout,
   errors: HarnessError[],
 ): Promise<TaskQueueItem[]> {
-  const tasksPath = path.join(repoPath, "tasks");
+  const tasksPath = path.join(repoPath, layout.tasksDir);
   let entries: import("node:fs").Dirent[];
   try {
     const stat = await fs.lstat(tasksPath);
@@ -456,7 +474,7 @@ async function readTaskDirectoryItems(
     entries
       .filter((entry) => entry.isDirectory() && !entry.isSymbolicLink() && !entry.name.startsWith("_") && /^[A-Za-z0-9._-]+$/.test(entry.name))
       .map(async (entry) => {
-        const statusPath = path.join("tasks", entry.name, "status.md");
+        const statusPath = path.join(layout.tasksDir, entry.name, "status.md");
         let safePath: string;
         try {
           safePath = await resolveReadableRepoFile(repoPath, configuredRoots, statusPath);
@@ -567,14 +585,14 @@ function readUserActionReason(source: Record<string, unknown>): string | null {
   return null;
 }
 
-async function readTaskArtifacts(repoPath: string, configuredRoots: string[], taskId: string, errors: HarnessError[]): Promise<TaskArtifacts> {
+async function readTaskArtifacts(repoPath: string, configuredRoots: string[], layout: HarnessLayout, taskId: string, errors: HarnessError[]): Promise<TaskArtifacts> {
   if (!/^[A-Za-z0-9._-]+$/.test(taskId)) {
-    errors.push({ file: path.join(repoPath, "tasks", taskId), message: "Task id contains unsafe path characters" });
+    errors.push({ file: path.join(repoPath, layout.tasksDir, taskId), message: "Task id contains unsafe path characters" });
     return emptyTaskArtifacts();
   }
   const entries = await Promise.all(
     Object.entries(artifactFiles).map(async ([key, file]) => {
-      const relativePath = path.join("tasks", taskId, file);
+      const relativePath = path.join(layout.tasksDir, taskId, file);
       let safePath: string;
       try {
         safePath = await resolveReadableRepoFile(repoPath, configuredRoots, relativePath);

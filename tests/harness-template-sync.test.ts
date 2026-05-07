@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { checkHarnessTemplateSync, harnessTemplateSyncMetadataPath, updateHarnessTemplateFiles, versionOwnedHarnessTemplateFiles } from "../src/main/harness-template-sync.js";
 import { scanConfiguredRoots } from "../src/main/scanner.js";
 import { createHarnessRepo } from "../src/main/template-installer.js";
-import { makeTempRoot, writeText } from "./helpers.js";
+import { createHarnessFixture, makeTempRoot, writeText } from "./helpers.js";
 
 const templateDir = path.join(process.cwd(), "templates", "harness");
 
@@ -29,9 +29,9 @@ describe("harness template sync", () => {
     const created = await createHarnessRepo({ targetDir: target, configuredRoots: [root], projectName: "Stale Project", description: "Keep me", templateDir });
     expect(created.ok).toBe(true);
 
-    const statePath = path.join(target, ".agent", "state.json");
+    const statePath = path.join(target, ".sharkbay", "state.json");
     const gitignorePath = path.join(target, ".gitignore");
-    const productPath = path.join(target, "docs", "product.md");
+    const productPath = path.join(target, ".sharkbay", "docs", "product.md");
     const originalState = await fs.readFile(statePath, "utf8");
     const originalGitignore = "# Project ignore rules\ncustom-cache/\n";
     const originalProduct = await fs.readFile(productPath, "utf8");
@@ -79,11 +79,30 @@ describe("harness template sync", () => {
     const target = path.join(root, "ScannedProject");
     const created = await createHarnessRepo({ targetDir: target, configuredRoots: [root], projectName: "Scanned Project", templateDir });
     expect(created.ok).toBe(true);
-    await writeText(path.join(target, ".agent", "protocol.md"), "# Old protocol\n");
+    await writeText(path.join(target, ".sharkbay", "protocol.md"), "# Old protocol\n");
 
     const scan = await scanConfiguredRoots([root], { templateDir });
     expect(scan.projects[0]?.harnessTemplate?.status).toBe("stale");
-    expect(scan.projects[0]?.harnessTemplate?.staleFiles).toContain(".agent/protocol.md");
+    expect(scan.projects[0]?.harnessTemplate?.staleFiles).toContain(".sharkbay/protocol.md");
+  });
+
+  it("updates legacy projects using legacy target paths", async () => {
+    const root = await makeTempRoot("harness-template-legacy");
+    const target = await createHarnessFixture(root, "LegacySyncProject");
+    await writeText(path.join(target, ".agent", "protocol.md"), "# Old protocol\n");
+
+    const stale = await checkHarnessTemplateSync({ repoPath: target, configuredRoots: [root], templateDir });
+    expect(stale.ok).toBe(true);
+    if (!stale.ok) return;
+    expect(stale.files.map((file) => file.path)).toContain(".agent/protocol.md");
+    expect(stale.status).toBe("missing");
+
+    const updated = await updateHarnessTemplateFiles({ repoPath: target, configuredRoots: [root], templateDir });
+    expect(updated.ok).toBe(true);
+    if (!updated.ok) return;
+    expect(updated.files).toContain(".agent/protocol.md");
+    expect(updated.files).toContain(".agent/template-sync.json");
+    expect(await fs.readFile(path.join(target, ".agent", "protocol.md"), "utf8")).toContain("Do not skip phase gates");
   });
 
   it("rejects projects outside configured roots and symlinked version-owned files", async () => {

@@ -1,16 +1,18 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createHarnessFixture, makeTempRoot, writeJson, writeText } from "./helpers.js";
+import { createContainedHarnessFixture, createHarnessFixture, makeTempRoot, writeJson, writeText } from "./helpers.js";
 import { scanConfiguredRoots, scanProjects } from "../src/main/scanner.js";
 
 describe("scanner", () => {
   it("discovers manifest and protocol-fallback repos", async () => {
     const root = await makeTempRoot("scanner");
     await createHarnessFixture(root, "ManifestRepo");
+    await createContainedHarnessFixture(root, "ContainedRepo");
     await writeText(path.join(root, "ProtocolRepo", ".agent", "protocol.md"), "# Protocol\n");
 
     const result = await scanConfiguredRoots([root]);
+    expect(result.projects.map((project) => [project.name, project.detection])).toContainEqual(["ContainedRepo", "manifest"]);
     expect(result.projects.map((project) => [project.name, project.detection])).toContainEqual(["ManifestRepo", "manifest"]);
     expect(result.projects.map((project) => [project.name, project.detection])).toContainEqual(["ProtocolRepo", "protocol-fallback"]);
     expect(result.candidates.map((candidate) => [candidate.name, candidate.status])).toContainEqual(["ManifestRepo", "managed"]);

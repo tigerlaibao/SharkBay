@@ -4,22 +4,24 @@ This repository uses a Codex-oriented Ripple harness.
 
 ## Start Here
 
-Before starting any task, read:
+Before starting any task, use `.sharkbay/` as the harness directory when it exists. If this project still uses the legacy layout, use `.agent/` for control files, root `docs/` for docs, and root `tasks/` for task artifacts.
 
-1. `.agent/manifest.json` - machine-readable repository identity
-2. `.agent/state.json` - machine-readable current state
-3. `.agent/queue.json` - machine-readable task queue
-4. `.agent/protocol.md` - controller workflow and phase rules
-5. `.agent/quality-rules.md` - review and verification gates
-6. `.agent/runner.json` - optional local runner lifecycle and heartbeat
-7. `.agent/queue.md` - human-readable active task queue
-8. `.agent/state.md` - human-readable repo-level state
-9. `docs/product.md` - product context
-10. `docs/architecture.md` - technical structure and boundaries
-11. `docs/task.md` - human-readable task list
-12. `docs/learnings.md` - durable lessons from prior work
+For the contained layout, read:
 
-For the active task, also read `tasks/<task-id>/status.md` and `tasks/<task-id>/contract.md` when the current phase has an implementation contract.
+1. `.sharkbay/manifest.json` - machine-readable repository identity
+2. `.sharkbay/state.json` - machine-readable current state
+3. `.sharkbay/queue.json` - machine-readable task queue
+4. `.sharkbay/protocol.md` - controller workflow and phase rules
+5. `.sharkbay/quality-rules.md` - review and verification gates
+6. `.sharkbay/runner.json` - optional local runner lifecycle and heartbeat
+7. `.sharkbay/queue.md` - human-readable active task queue
+8. `.sharkbay/state.md` - human-readable repo-level state
+9. `.sharkbay/docs/product.md` - product context
+10. `.sharkbay/docs/architecture.md` - technical structure and boundaries
+11. `.sharkbay/docs/task.md` - human-readable task list
+12. `.sharkbay/docs/learnings.md` - durable lessons from prior work
+
+For the active task, also read `.sharkbay/tasks/<task-id>/status.md` and `.sharkbay/tasks/<task-id>/contract.md` when the current phase has an implementation contract. In legacy projects, read `tasks/<task-id>/status.md` and `tasks/<task-id>/contract.md` instead.
 
 ## Operating Rule
 
@@ -37,24 +39,24 @@ Do not rely on chat memory as the source of truth. If a decision, task state, te
 
 When asked to continue or advance work:
 
-1. Read `.agent/protocol.md`.
-2. Read `.agent/queue.json` and `.agent/queue.md`, then choose the highest-priority active task.
+1. Read `.sharkbay/protocol.md` or legacy `.agent/protocol.md`.
+2. Read `.sharkbay/queue.json` and `.sharkbay/queue.md`, or legacy `.agent/queue.json` and `.agent/queue.md`, then choose the highest-priority active task.
 3. Check dependency locks before advancing into coding.
-4. Read `tasks/<task-id>/status.md`.
-5. If the work is new or ad hoc, register it before claiming runner state: create `tasks/<task-id>/status.md`, add it to Active in `.agent/queue.json` and `.agent/queue.md`, and update `.agent/state.json` and `.agent/state.md` currentTask.
-6. Write or refresh `.agent/runner.json` with `status=running` only after `runner.taskId` is visible as the Active task.
+4. Read `.sharkbay/tasks/<task-id>/status.md` or legacy `tasks/<task-id>/status.md`.
+5. If the work is new or ad hoc, register it before claiming runner state: create `.sharkbay/tasks/<task-id>/status.md`, add it to Active in `.sharkbay/queue.json` and `.sharkbay/queue.md`, and update `.sharkbay/state.json` and `.sharkbay/state.md` currentTask. In legacy projects, use the matching `.agent/` and root `tasks/` paths.
+6. Write or refresh `.sharkbay/runner.json` with `status=running` only after `runner.taskId` is visible as the Active task. In legacy projects, use `.agent/runner.json`.
 7. Execute the next required phase transition without skipping gates.
 8. Write or update the phase artifact.
-9. Update `tasks/<task-id>/status.md`.
-10. Update `.agent/state.json` and `.agent/state.md` if repo-level state changed.
-11. Keep `.agent/queue.json` and `.agent/queue.md` in sync.
+9. Update `.sharkbay/tasks/<task-id>/status.md`, or legacy `tasks/<task-id>/status.md`.
+10. Update `.sharkbay/state.json` and `.sharkbay/state.md` if repo-level state changed. In legacy projects, use `.agent/state.json` and `.agent/state.md`.
+11. Keep `.sharkbay/queue.json` and `.sharkbay/queue.md` in sync. In legacy projects, use `.agent/queue.json` and `.agent/queue.md`.
 12. Make a focused checkpoint commit for completed phase work when the repository is a git repo.
 13. Continue autonomously across phases until the task is done, blocked, or the protocol requires human intervention.
-14. Set `.agent/runner.json` to `waiting_for_human`, `blocked`, or `idle` when work stops.
+14. Set `.sharkbay/runner.json`, or legacy `.agent/runner.json`, to `waiting_for_human`, `blocked`, or `idle` when work stops.
 
 ## Quality Gate
 
-Design and code pass only when the relevant review and verification gates in `.agent/protocol.md`, the task contract, and the phase artifacts are satisfied. Verification must leave evidence: commands, exit codes, output excerpts, screenshots, traces, or validation scripts as appropriate.
+Design and code pass only when the relevant review and verification gates in `.sharkbay/protocol.md` or legacy `.agent/protocol.md`, the task contract, and the phase artifacts are satisfied. Verification must leave evidence: commands, exit codes, output excerpts, screenshots, traces, or validation scripts as appropriate.
 
 ## Safety
 
@@ -73,4 +75,4 @@ Commit after:
 - Review fixes before re-entering review.
 - Verification/docs updates when a task is marked done.
 
-Keep commits focused. Do not mix unrelated user changes into a harness checkpoint. If a checkpoint cannot be made, record the reason in `tasks/<task-id>/status.md` before stopping.
+Keep commits focused. Do not mix unrelated user changes into a harness checkpoint. If a checkpoint cannot be made, record the reason in `.sharkbay/tasks/<task-id>/status.md` or legacy `tasks/<task-id>/status.md` before stopping.

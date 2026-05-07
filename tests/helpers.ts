@@ -100,6 +100,65 @@ export async function createHarnessFixture(root: string, name = "FixtureApp"): P
   return repo;
 }
 
+export async function createContainedHarnessFixture(root: string, name = "ContainedFixtureApp"): Promise<string> {
+  const repo = path.join(root, name);
+  const harnessRoot = path.join(repo, ".sharkbay");
+  await fs.mkdir(harnessRoot, { recursive: true });
+  await writeJson(path.join(harnessRoot, "manifest.json"), {
+    schemaVersion: 1,
+    project: { name, slug: name.toLowerCase() },
+    repository: { githubUrl: "git@example.test:fixture/repo.git" },
+    runtime: { localUrl: "http://manifest.local", testUrl: "unknown", deploymentUrl: "https://manifest.example" },
+    files: { development: ".sharkbay/development.json" },
+  });
+  await writeJson(path.join(harnessRoot, "development.json"), {
+    schemaVersion: 1,
+    updatedAt: "2026-05-05T12:30:00+08:00",
+    maintainedBy: "test-agent",
+    stack: { frontend: ["React", "TypeScript"], runtime: ["Node.js"] },
+    environment: { packageManager: "npm", setupCommands: ["npm install"], requiredEnvFiles: [] },
+    commands: { dev: ["npm run dev"], test: ["npm test"] },
+    endpoints: {
+      local: [{ label: "Fixture local", url: "http://localhost:5173", ports: [5173], source: "test" }],
+      test: [],
+      production: [],
+    },
+    ports: [{ port: 5173, protocol: "http", purpose: "Fixture dev server", status: "expected" }],
+    tools: ["vitest"],
+    notes: [],
+  });
+  await writeJson(path.join(harnessRoot, "state.json"), {
+    schemaVersion: 1,
+    updatedAt: "2026-05-05",
+    repository: { currentBranch: "main", dirtyWorktree: false },
+    project: { localUrl: "unknown", testUrl: "", deploymentUrl: "https://state.example" },
+    currentTask: { taskId: "t-001-fixture", phase: "coding", nextAction: "Test it", blockedBy: [] },
+    recentDecisions: [{ date: "2026-05-05", decision: "Test decision", source: ".sharkbay/tasks/t-001-fixture/status.md" }],
+    customStateKey: true,
+  });
+  await writeJson(path.join(harnessRoot, "queue.json"), {
+    schemaVersion: 1,
+    updatedAt: "2026-05-05",
+    active: [
+      {
+        priority: 1,
+        taskId: "t-001-fixture",
+        title: "Fixture task",
+        phase: "coding",
+        dependsOn: [],
+        status: "active",
+        customTaskKey: "keep-me",
+      },
+    ],
+    backlog: [],
+    done: [],
+  });
+  await writeText(path.join(harnessRoot, "protocol.md"), "# Protocol\n");
+  await writeText(path.join(harnessRoot, "tasks", "t-001-fixture", "status.md"), "# Status\n");
+  await writeText(path.join(harnessRoot, "tasks", "t-001-fixture", "contract.md"), "# Contract\n");
+  return repo;
+}
+
 export async function createSelfHostFixture(root: string): Promise<string> {
   const repo = path.join(root, "SharkBay");
   const taskId = "t-002-self-hosting-ux";

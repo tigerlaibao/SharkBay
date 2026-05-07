@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { HarnessJsonFile, RootScanResult } from "../shared/types.js";
+import { detectHarnessLayout, harnessJsonRelativePath, harnessLayouts, type HarnessLayout } from "./harness-layout.js";
 
 export const harnessJsonFiles: HarnessJsonFile[] = [
   ".agent/manifest.json",
@@ -83,13 +84,20 @@ export async function resolveHarnessJsonFile(
   }
 
   const safeRepo = await resolveRepoPath(repoPath, configuredRoots);
-  const agentPath = path.join(safeRepo.repoPath, ".agent");
-  await rejectSymlink(agentPath, ".agent directory cannot be a symlink");
+  await rejectHarnessRootSymlinks(safeRepo.repoPath);
+  const detected = await detectHarnessLayout(safeRepo.repoPath);
+  const layout = detected?.layout ?? await existingHarnessRootLayout(safeRepo.repoPath);
+  if (!layout) {
+    throw new Error("Repository does not contain a supported harness layout");
+  }
+  const relativePath = harnessJsonRelativePath(layout, file);
+  const harnessRootPath = path.join(safeRepo.repoPath, layout.rootDir);
+  await rejectSymlink(harnessRootPath, `${layout.rootDir} directory cannot be a symlink`);
 
-  const filePath = path.join(safeRepo.repoPath, file);
+  const filePath = path.join(safeRepo.repoPath, relativePath);
   await rejectSymlink(filePath, "Harness JSON file cannot be a symlink");
   const realFile = await fs.realpath(filePath);
-  const expected = path.join(safeRepo.repoPath, file);
+  const expected = path.join(safeRepo.repoPath, relativePath);
 
   if (realFile !== expected) {
     throw new Error("Harness JSON file resolves away from the repository");
@@ -111,10 +119,17 @@ export async function resolveReadableHarnessJsonFile(
   }
 
   const safeRepo = await resolveRepoPath(repoPath, configuredRoots);
-  const agentPath = path.join(safeRepo.repoPath, ".agent");
-  await rejectSymlink(agentPath, ".agent directory cannot be a symlink");
+  await rejectHarnessRootSymlinks(safeRepo.repoPath);
+  const detected = await detectHarnessLayout(safeRepo.repoPath);
+  const layout = detected?.layout ?? await existingHarnessRootLayout(safeRepo.repoPath);
+  if (!layout) {
+    throw new Error("Repository does not contain a supported harness layout");
+  }
+  const relativePath = harnessJsonRelativePath(layout, file);
+  const harnessRootPath = path.join(safeRepo.repoPath, layout.rootDir);
+  await rejectSymlink(harnessRootPath, `${layout.rootDir} directory cannot be a symlink`);
 
-  const filePath = path.join(safeRepo.repoPath, file);
+  const filePath = path.join(safeRepo.repoPath, relativePath);
   const expected = filePath;
   try {
     await rejectSymlink(filePath, "Harness JSON file cannot be a symlink");
@@ -199,6 +214,24 @@ async function rejectExistingSymlink(targetPath: string, message: string): Promi
     if (isMissingPathError(error)) return;
     throw error;
   }
+}
+
+async function rejectHarnessRootSymlinks(repoPath: string): Promise<void> {
+  for (const layout of harnessLayouts) {
+    await rejectExistingSymlink(path.join(repoPath, layout.rootDir), `${layout.rootDir} directory cannot be a symlink`);
+  }
+}
+
+async function existingHarnessRootLayout(repoPath: string): Promise<HarnessLayout | null> {
+  for (const layout of harnessLayouts) {
+    try {
+      const stat = await fs.lstat(path.join(repoPath, layout.rootDir));
+      if (stat.isDirectory() && !stat.isSymbolicLink()) return layout;
+    } catch {
+      // Try the next layout.
+    }
+  }
+  return null;
 }
 
 function isMissingPathError(error: unknown): boolean {

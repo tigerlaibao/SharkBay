@@ -4,7 +4,7 @@
 
 SharkBay is a local-first macOS application with a web-style UI and a local process that can scan configured project roots. The local process reads harness metadata from repositories and exposes normalized project/task state to the UI.
 
-This repository is the SharkBay product codebase and can be dogfooded as a harness-enabled project locally. The public repository does not track its root `.agent/`, root `tasks/`, `docs/task.md`, or `docs/learnings.md` runtime/history files; those are local state. The self-hosting constraint remains intentional: when a local harness exists, the app should scan this repo, read its `.agent/manifest.json`, task queue, current phase, and evidence files, then present them exactly as it would for any other configured project.
+This repository is the SharkBay product codebase and can be dogfooded as a harness-enabled project locally. The public repository does not track its root `.agent/`, root `tasks/`, `docs/task.md`, or `docs/learnings.md` runtime/history files; those are local state. The self-hosting constraint remains intentional: when a local harness exists, the app should scan this repo, read its harness manifest, task queue, current phase, and evidence files, then present them exactly as it would for any other configured project.
 
 ```text
 User
@@ -58,6 +58,8 @@ Local filesystem repositories
 │   └── styles/
 ├── templates/
 │   └── harness/
+│       ├── AGENTS.md
+│       └── .sharkbay/
 ├── tests/
 ├── docs/
 ├── .agent/        # local dogfood state, ignored in public Git
@@ -69,8 +71,8 @@ Local filesystem repositories
 | Module | Responsibility | Must Not Do |
 | --- | --- | --- |
 | Scanner | Discover harness repos under configured roots | Modify repositories |
-| Repo reader | Parse `.agent/manifest.json`, state, queue, and task files | Infer missing facts without marking uncertainty |
-| Harness writer | Safely update allowlisted `.agent/*.json` fields | Trust renderer roots, overwrite whole files, follow symlinks outside configured roots |
+| Repo reader | Parse contained `.sharkbay/` or legacy `.agent`/root task files | Infer missing facts without marking uncertainty |
+| Harness writer | Safely update allowlisted harness JSON fields in the resolved layout | Trust renderer roots, overwrite whole files, follow symlinks outside configured roots |
 | Path safety | Canonicalize paths, enforce configured-root containment, reject symlink escapes | Use string-prefix checks as an authority boundary |
 | Template installer | Create new harness repos from templates | Overwrite existing files blindly |
 | Harness template sync | Compare/update version-owned Ripple control files from tracked `templates/harness/` | Overwrite project-owned identity, queue, state, docs, tasks, or runtime history |
@@ -88,7 +90,7 @@ Acceptance criteria:
 
 - A configured root that contains `<repo-root>` can discover this repo after a local harness is present.
 - The repo appears as project `SharkBay`.
-- The active task appears according to the local `.agent/state.json` and `.agent/queue.json` files.
+- The active task appears according to the local harness state and queue files.
 - The phase is read from the current local harness state on disk.
 - The app treats this repo like any other managed harness project, not as a hard-coded special case.
 
@@ -97,7 +99,7 @@ Acceptance criteria:
 ```text
 Configured project roots
   -> scanner finds candidate repos
-  -> repo reader loads .agent/manifest.json, state, queue, and task artifacts
+  -> repo reader loads manifest, state, queue, and task artifacts from the resolved harness layout
   -> normalized project records
   -> dashboard list, detail views, and terminal cwd selection
   -> user selects project/task action
@@ -112,17 +114,17 @@ The scan IPC returns the full `ScanProjectsResult`, including root availability 
 
 Existing managed repositories are writable only through narrow harness JSON patches:
 
-- Supported files: `.agent/manifest.json`, `.agent/state.json`, `.agent/queue.json`.
+- Supported logical files: manifest, state, and queue JSON in the resolved harness layout.
 - Required protections: configured-root containment, symlink rejection, revision-token conflict detection, schema validation, unknown-field preservation, stable JSON serialization, and atomic writes.
-- URL source of truth: `.agent/state.json` under `project.localUrl`, `project.testUrl`, and `project.deploymentUrl`.
+- URL source of truth: harness state JSON under `project.localUrl`, `project.testUrl`, and `project.deploymentUrl`.
 
 Harness template sync has a separate allowlist for version-owned control files:
 
 - `AGENTS.md`
-- `.agent/protocol.md`
-- `.agent/quality-rules.md`
+- protocol markdown in the resolved harness layout
+- quality rules markdown in the resolved harness layout
 
-The sync checker computes a content-hash version from those tracked template files, records new install metadata in `.agent/template-sync.json`, and exposes current/stale/missing status through project scan/detail data. It does not overwrite project-owned files such as `.agent/manifest.json`, `.agent/state.json`, `.agent/queue.*`, `.agent/development.json`, `.gitignore`, `docs/**`, or `tasks/**`. The setup template may seed `.gitignore` for new projects, but template refresh does not own or rewrite project ignore rules.
+The sync checker computes a content-hash version from those tracked template files, records new install metadata in harness `template-sync.json`, and exposes current/stale/missing status through project scan/detail data. It does not overwrite project-owned files such as manifest, state, queue, development metadata, `.gitignore`, docs, or tasks. Setup does not own or rewrite project ignore rules.
 
 Create-repo writes only to an empty target inside configured roots and rejects non-empty targets, existing harness files, and symlink targets.
 

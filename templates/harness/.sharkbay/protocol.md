@@ -1,14 +1,14 @@
 # Codex Controller Protocol
 
-Read `.agent/manifest.json`, `.agent/state.json`, `.agent/queue.json`, `.agent/protocol.md`, `.agent/quality-rules.md`, `.agent/queue.md`, `.agent/state.md`, and the active task status before advancing work.
+Read `.sharkbay/manifest.json`, `.sharkbay/state.json`, `.sharkbay/queue.json`, `.sharkbay/protocol.md`, `.sharkbay/quality-rules.md`, `.sharkbay/queue.md`, `.sharkbay/state.md`, and the active task status before advancing work.
 
 Do not skip phase gates. Advance by one phase transition at a time, record that transition in the harness files, then continue to the next phase while the task scope and safety rules allow.
 
 Default to autonomous forward progress. Continue across phases until the task is done, blocked, or a real human intervention is required.
 
-When physically working, publish runner state in optional `.agent/runner.json`:
+When physically working, publish runner state in optional `.sharkbay/runner.json`:
 
-- Register new or ad-hoc work before claiming runner state: create `tasks/<task-id>/status.md`, add it to Active in `.agent/queue.json` and `.agent/queue.md`, and update `.agent/state.json` and `.agent/state.md` currentTask.
+- Register new or ad-hoc work before claiming runner state: create `.sharkbay/tasks/<task-id>/status.md`, add it to Active in `.sharkbay/queue.json` and `.sharkbay/queue.md`, and update `.sharkbay/state.json` and `.sharkbay/state.md` currentTask.
 - Only write `status=running` after `runner.taskId` is visible as the Active task.
 - If a runner is already `running` for a task that is missing from Active queue/state, repair task registration before product code changes or set `waiting_for_human`/`blocked` with a reason.
 - `running` while actively working; refresh `heartbeatAt` during long work and phase changes.
@@ -41,5 +41,5 @@ Commit rules:
 
 - Keep commits focused on one phase or one coherent behavior change.
 - Do not mix unrelated user changes into a checkpoint.
-- Do not commit secrets, generated dependency folders, build output, local logs, or `.agent/runner.json`.
-- If a required checkpoint cannot be made, record the reason in `tasks/<task-id>/status.md` and stop only when the reason requires human intervention.
+- Do not commit secrets, generated dependency folders, build output, local logs, or `.sharkbay/runner.json`.
+- If a required checkpoint cannot be made, record the reason in `.sharkbay/tasks/<task-id>/status.md` and stop only when the reason requires human intervention.

@@ -3,12 +3,37 @@ import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
-import { createHarnessFixture, makeTempRoot, writeJson, writeText } from "./helpers.js";
+import { createContainedHarnessFixture, createHarnessFixture, makeTempRoot, writeJson, writeText } from "./helpers.js";
 import { readProjectDetail } from "../src/main/harness-reader.js";
 
 const execFileAsync = promisify(execFile);
 
 describe("harness reader", () => {
+  it("reads contained .sharkbay harness projects", async () => {
+    const root = await makeTempRoot("reader-contained");
+    const repo = await createContainedHarnessFixture(root, "ContainedReaderRepo");
+
+    const detail = await readProjectDetail(repo, "manifest");
+    expect(detail.name).toBe("ContainedReaderRepo");
+    expect(detail.activeTask?.taskId).toBe("t-001-fixture");
+    expect(detail.currentTask?.statusMarkdown).toContain("# Status");
+    expect(detail.taskArtifacts["t-001-fixture"]?.contractMarkdown).toContain("# Contract");
+    expect(detail.development?.commands.dev).toEqual(["npm run dev"]);
+    expect(detail.errors.some((error) => error.file.includes(".agent"))).toBe(false);
+  });
+
+  it("prefers contained layout when legacy files are also present", async () => {
+    const root = await makeTempRoot("reader-mixed");
+    const repo = await createContainedHarnessFixture(root, "ContainedPreferredRepo");
+    await writeJson(path.join(repo, ".agent", "manifest.json"), {
+      schemaVersion: 1,
+      project: { name: "Legacy Name" },
+    });
+
+    const detail = await readProjectDetail(repo, "manifest");
+    expect(detail.name).toBe("ContainedPreferredRepo");
+  });
+
   it("normalizes queue, decisions, revisions, artifacts, and URL values", async () => {
     const root = await makeTempRoot("reader");
     const repo = await createHarnessFixture(root, "ReaderRepo");

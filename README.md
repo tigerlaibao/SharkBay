@@ -7,9 +7,9 @@ It reads lightweight project metadata from local repositories, shows task, runne
 ## What It Does
 
 - Scans user-configured local folders for harness-enabled projects.
-- Reads project state from `.agent/`, `docs/`, and `tasks/`.
+- Reads project state from contained `.sharkbay/` harnesses and legacy `.agent`/root `docs`/root `tasks` harnesses.
 - Shows active tasks, queues, lifecycle phase, recent decisions, Git status, and verification artifacts.
-- Tracks runner lifecycle separately from task phase through optional `.agent/runner.json` heartbeat metadata.
+- Tracks runner lifecycle separately from task phase through optional harness runner heartbeat metadata.
 - Presents project detail as focused Tasks, Decisions, Git, and Info tabs.
 - Creates or sets up managed projects from bundled Ripple harness templates.
 - Generates next-action prompts that tell an agent what files to read and which phase to advance.
@@ -22,15 +22,17 @@ It reads lightweight project metadata from local repositories, shows task, runne
 SharkBay expects managed projects to use a small file-based harness:
 
 - `AGENTS.md` for agent entrypoint instructions.
-- `.agent/manifest.json` for project identity.
-- `.agent/state.json` and `.agent/queue.json` for machine-readable state.
-- `.agent/state.md` and `.agent/queue.md` for human-readable mirrors.
-- `docs/` for durable product, architecture, task, and learning records.
-- `tasks/<task-id>/` for phase artifacts, reviews, verification evidence, and decisions.
-- `.agent/runner.json` for optional local runner lease and heartbeat state.
-- `.agent/development.json` for optional stable project-authored development metadata.
+- `.sharkbay/manifest.json` for project identity.
+- `.sharkbay/state.json` and `.sharkbay/queue.json` for machine-readable state.
+- `.sharkbay/state.md` and `.sharkbay/queue.md` for human-readable mirrors.
+- `.sharkbay/docs/` for durable product, architecture, task, and learning records.
+- `.sharkbay/tasks/<task-id>/` for phase artifacts, reviews, verification evidence, and decisions.
+- `.sharkbay/runner.json` for optional local runner lease and heartbeat state.
+- `.sharkbay/development.json` for optional stable project-authored development metadata.
 
 The app is intentionally local-first. Project data stays in local repository files unless the user chooses to publish the repository.
+
+SharkBay still reads legacy projects that use `.agent/`, root `docs/`, and root `tasks/`. New setup uses the contained `.sharkbay/` layout to minimize interference with external projects.
 
 The bundled source templates for that harness live in `templates/harness/` and are part of the public product repository. SharkBay's own local dogfood harness state under root `.agent/`, root `tasks/`, `docs/task.md`, and `docs/learnings.md` is intentionally ignored so forked copies do not inherit this repository's private work queue or run history.
 
@@ -92,4 +94,4 @@ SharkBay is designed around explicit local boundaries:
 
 ## Repository Status
 
-This repository can be managed by SharkBay locally, but its root `.agent/` and `tasks/` state are not part of the public source tree. Use `templates/harness/` as the canonical example of the files SharkBay installs into other projects.
+This repository can be managed by SharkBay locally, but its root `.agent/` and `tasks/` state are not part of the public source tree. Use `templates/harness/` as the canonical example of the contained files SharkBay installs into other projects.

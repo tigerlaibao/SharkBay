@@ -19,7 +19,7 @@ Start with public project context:
 - `templates/harness/` - canonical harness files installed into managed projects
 - `scripts/README.md` - validation script conventions
 
-When a local dogfood harness exists in this clone, also read:
+When a local dogfood harness exists in this clone, also read its resolved harness layout. This repository currently uses the legacy local layout:
 
 - `.agent/manifest.json` - machine-readable project identity
 - `.agent/state.json` - machine-readable repository state

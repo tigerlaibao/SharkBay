@@ -20,22 +20,25 @@ describe("template installer", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.files).toContain("AGENTS.md");
-    expect(result.files).toContain(".gitignore");
-    expect(result.files).toContain(".agent/template-sync.json");
-    expect(result.files).toContain(".agent/manifest.json");
-    expect(result.files).toContain("docs/product.md");
+    expect(result.files).not.toContain(".gitignore");
+    expect(result.files).toContain(".sharkbay/template-sync.json");
+    expect(result.files).toContain(".sharkbay/manifest.json");
+    expect(result.files).toContain(".sharkbay/docs/product.md");
     const agents = await fs.readFile(path.join(target, "AGENTS.md"), "utf8");
-    const protocol = await fs.readFile(path.join(target, ".agent", "protocol.md"), "utf8");
+    const protocol = await fs.readFile(path.join(target, ".sharkbay", "protocol.md"), "utf8");
     expect(agents).toContain("Do not rely on chat memory");
     expect(agents).toContain("Continue autonomously across phases");
     expect(agents).toContain("do not leave completed harness initialization or phase work uncommitted");
     expect(protocol).toContain("Do not skip phase gates");
     expect(protocol).toContain("Default to autonomous forward progress");
     expect(protocol).toContain("checkpoint commits are required");
-    expect(await fs.readFile(path.join(target, "tasks", "t-001-initial-task", "status.md"), "utf8")).toContain("must commit the installed harness files");
-    expect(await fs.readFile(path.join(target, ".gitignore"), "utf8")).toContain(".agent/runner.json");
-    expect(await fs.readFile(path.join(target, ".agent", "template-sync.json"), "utf8")).toContain('"source": "sharkbay/templates/harness"');
-    expect(await fs.readFile(path.join(target, ".agent", "manifest.json"), "utf8")).toContain('"name": "New Project"');
+    expect(await fs.readFile(path.join(target, ".sharkbay", "tasks", "t-001-initial-task", "status.md"), "utf8")).toContain("must commit the installed harness files");
+    await expect(fs.access(path.join(target, ".gitignore"))).rejects.toThrow();
+    await expect(fs.access(path.join(target, ".agent"))).rejects.toThrow();
+    await expect(fs.access(path.join(target, "docs"))).rejects.toThrow();
+    await expect(fs.access(path.join(target, "tasks"))).rejects.toThrow();
+    expect(await fs.readFile(path.join(target, ".sharkbay", "template-sync.json"), "utf8")).toContain('"source": "sharkbay/templates/harness"');
+    expect(await fs.readFile(path.join(target, ".sharkbay", "manifest.json"), "utf8")).toContain('"name": "New Project"');
   });
 
   it("refuses non-empty targets and targets outside configured roots", async () => {
@@ -69,9 +72,9 @@ describe("template installer", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.files).toContain("AGENTS.md");
-    expect(result.files).toContain(".agent/manifest.json");
+    expect(result.files).toContain(".sharkbay/manifest.json");
     expect(await fs.readFile(path.join(target, "README.md"), "utf8")).toBe("# Existing\n");
-    expect(await fs.readFile(path.join(target, ".agent", "manifest.json"), "utf8")).toContain('"name": "Existing Project"');
+    expect(await fs.readFile(path.join(target, ".sharkbay", "manifest.json"), "utf8")).toContain('"name": "Existing Project"');
   });
 
   it("preserves existing project gitignore during existing directory setup", async () => {
@@ -91,10 +94,10 @@ describe("template installer", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.files).toContain("AGENTS.md");
-    expect(result.files).toContain(".agent/manifest.json");
+    expect(result.files).toContain(".sharkbay/manifest.json");
     expect(result.files).not.toContain(".gitignore");
     expect(await fs.readFile(path.join(target, ".gitignore"), "utf8")).toBe(originalGitignore);
-    expect(await fs.readFile(path.join(target, ".agent", "manifest.json"), "utf8")).toContain('"name": "Existing Gitignore"');
+    expect(await fs.readFile(path.join(target, ".sharkbay", "manifest.json"), "utf8")).toContain('"name": "Existing Gitignore"');
   });
 
   it("refuses existing harness files and template collisions during existing directory setup", async () => {
@@ -111,19 +114,30 @@ describe("template installer", () => {
     expect(existingHarness.ok).toBe(false);
     if (!existingHarness.ok) expect(existingHarness.reason).toBe("existing-harness");
 
-    const collision = path.join(root, "Collision");
-    await writeText(path.join(collision, "docs", "product.md"), "# Existing product\n");
+    const withSharkbay = path.join(root, "WithSharkbay");
+    await writeText(path.join(withSharkbay, ".sharkbay", "protocol.md"), "# Existing\n");
+    const existingContainedHarness = await createHarnessRepo({
+      targetDir: withSharkbay,
+      configuredRoots: [root],
+      projectName: "With Sharkbay",
+      allowExistingDirectory: true,
+    });
+    expect(existingContainedHarness.ok).toBe(false);
+    if (!existingContainedHarness.ok) expect(existingContainedHarness.reason).toBe("existing-harness");
+
+    const withPartialSharkbay = path.join(root, "PartialSharkbay");
+    await writeText(path.join(withPartialSharkbay, ".sharkbay", "docs", "product.md"), "# Existing product\n");
     const collided = await createHarnessRepo({
-      targetDir: collision,
+      targetDir: withPartialSharkbay,
       configuredRoots: [root],
       projectName: "Collision",
       allowExistingDirectory: true,
       templateDir: path.join(process.cwd(), "templates", "harness"),
     });
     expect(collided.ok).toBe(false);
-    if (!collided.ok) expect(collided.reason).toBe("file-collision");
-    expect(await fs.readFile(path.join(collision, "docs", "product.md"), "utf8")).toBe("# Existing product\n");
-    await expect(fs.access(path.join(collision, ".agent"))).rejects.toThrow();
+    if (!collided.ok) expect(collided.reason).toBe("existing-harness");
+    expect(await fs.readFile(path.join(withPartialSharkbay, ".sharkbay", "docs", "product.md"), "utf8")).toBe("# Existing product\n");
+    await expect(fs.access(path.join(withPartialSharkbay, ".sharkbay", "manifest.json"))).rejects.toThrow();
   });
 
   it("refuses to overwrite an existing root AGENTS.md during existing directory setup", async () => {
@@ -145,7 +159,7 @@ describe("template installer", () => {
       expect(result.message).toContain("AGENTS.md");
     }
     expect(await fs.readFile(path.join(target, "AGENTS.md"), "utf8")).toBe("# Existing local agent rules\n");
-    await expect(fs.access(path.join(target, ".agent"))).rejects.toThrow();
+    await expect(fs.access(path.join(target, ".sharkbay"))).rejects.toThrow();
   });
 
   it("runtime create uses persisted roots and rejects symlink targets", async () => {

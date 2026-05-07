@@ -1,5 +1,7 @@
 export type DetectionMode = "manifest" | "protocol-fallback";
 
+export type HarnessLayoutKind = "contained" | "legacy";
+
 export type GateStatus = "pass" | "pending" | "blocked" | "unknown";
 
 export type QueueSection = "active" | "backlog" | "done";

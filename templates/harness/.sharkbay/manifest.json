@@ -23,6 +23,6 @@
     "testUrl": "unknown"
   },
   "files": {
-    "development": ".agent/development.json"
+    "development": ".sharkbay/development.json"
   }
 }
