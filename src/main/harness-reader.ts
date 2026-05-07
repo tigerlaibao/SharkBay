@@ -64,8 +64,9 @@ export async function readProjectDetail(
 ): Promise<ProjectDetail> {
   const rawRepoPath = typeof first === "string" ? first : repoPathFromInput(second);
   const detection = typeof second === "string" ? second : second.detection ?? "manifest";
+  const readOptions = typeof first === "string" ? options : { ...options, templateDir: first.templateRoot };
   const configuredRoots = typeof first === "string"
-    ? options.configuredRoots ?? [rawRepoPath]
+    ? readOptions.configuredRoots ?? [rawRepoPath]
     : (await loadAppConfig(getRuntimeConfigPath(first))).configuredRoots;
   const errors: HarnessError[] = [];
   let repoPath: string;
@@ -101,10 +102,10 @@ export async function readProjectDetail(
   const urls = readUrls(state.ok, state.data, manifest.data);
   const name = readProjectName(manifest.data, repoPath);
   const repoUrl = readRepoUrl(state.data) || readRepoUrl(manifest.data) || git.githubUrl;
-  const harnessTemplate = await readHarnessTemplateSummary(repoPath, configuredRoots, options.templateDir, errors);
+  const harnessTemplate = await readHarnessTemplateSummary(repoPath, configuredRoots, readOptions.templateDir, errors);
   const legacyHarnessCleanup = await readLegacyHarnessCleanupSummary(repoPath, configuredRoots, errors);
-  const currentTask = options.includeArtifacts === false || !activeTask ? null : await readTaskArtifacts(repoPath, configuredRoots, layout, activeTask.taskId, errors);
-  const taskArtifacts = options.includeArtifacts === false ? {} : await readVisibleTaskArtifacts(repoPath, configuredRoots, layout, visibleQueue, errors);
+  const currentTask = readOptions.includeArtifacts === false || !activeTask ? null : await readTaskArtifacts(repoPath, configuredRoots, layout, activeTask.taskId, errors);
+  const taskArtifacts = readOptions.includeArtifacts === false ? {} : await readVisibleTaskArtifacts(repoPath, configuredRoots, layout, visibleQueue, errors);
   const recentDecisions = readRecentDecisions(state.data);
 
   return {

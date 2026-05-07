@@ -1,10 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T20:23:59+08:00",
+  "updatedAt": "2026-05-07T20:35:15+08:00",
   "active": [],
-  "backlog": [
-  ],
+  "backlog": [],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-049-packaged-app-blank-screen",
+      "title": "Fix packaged macOS app blank screen",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-07"
+    },
     {
       "priority": 1,
       "taskId": "t-048-macos-packaging-config",

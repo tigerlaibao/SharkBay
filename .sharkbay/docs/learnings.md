@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Packaged Electron Apps Cannot Rely On Dev Paths Or CWD
+
+**Problem**: The packaged macOS app first showed a blank white screen, then project detail diagnostics reported `ENOENT: no such file or directory, open '/templates/harness/AGENTS.md'`.
+
+**Cause**: Vite emitted absolute `/assets/...` renderer URLs that fail under Electron `file://` loading. Separately, project detail reads did not propagate the packaged `runtime.templateRoot`, so Finder-launched apps could fall back to `process.cwd()` and resolve templates as `/templates/harness`.
+
+**Solution**: Use Vite `base: "./"` for packaged renderer assets, and pass `runtime.templateRoot` through the `readProjectDetail` runtime overload.
+
+**Source**: `.sharkbay/tasks/t-049-packaged-app-blank-screen/implementation.md`, `vite.config.ts`, `src/main/harness-reader.ts`.
+
+---
+
 ### Hidden Terminal Surfaces Can Report Invalid Fit Dimensions
 
 **Problem**: Entering Settings could show `Error invoking remote method 'terminal:resize': Error: resizing must be done using positive cols and rows`.

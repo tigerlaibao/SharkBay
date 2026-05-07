@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T20:23:59+08:00",
+  "updatedAt": "2026-05-07T20:35:15+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -8,12 +8,12 @@
     "defaultBranch": "main",
     "remoteOrigin": "git@github.com:SharkUI/SharkBay.git",
     "githubUrl": "git@github.com:SharkUI/SharkBay.git",
-    "dirtyWorktree": false
+    "dirtyWorktree": true
   },
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "macOS packaging configuration is complete.",
+    "currentFocus": "Packaged macOS app path fixes are complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T048 macOS packaging verification.",
+    "nextAction": "Idle after T049 packaged app path verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-07T20:35:15+08:00",
+      "decision": "Completed t-049-packaged-app-blank-screen with relative Vite renderer assets and runtime templateRoot propagation for packaged project detail reads.",
+      "source": ".sharkbay/tasks/t-049-packaged-app-blank-screen/verification.md"
+    },
+    {
+      "date": "2026-05-07T20:29:37+08:00",
+      "decision": "Opened t-049-packaged-app-blank-screen because the built macOS app launches to a blank white screen.",
+      "source": ".sharkbay/tasks/t-049-packaged-app-blank-screen/status.md"
+    },
     {
       "date": "2026-05-07T20:23:59+08:00",
       "decision": "Completed t-048-macos-packaging-config with electron-builder macOS scripts/config, release output ignored, README packaging docs, and verified app/dmg/zip artifacts.",

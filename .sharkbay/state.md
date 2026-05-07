@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: macOS packaging configuration is complete.
+- Current focus: Packaged macOS app path fixes are complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -14,19 +14,21 @@
 - Default branch: main
 - Remote origin: `git@github.com:SharkUI/SharkBay.git`
 - GitHub repository: `git@github.com:SharkUI/SharkBay.git`
-- Dirty worktree: no
+- Dirty worktree: yes
 
 ## Current Task
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T048 macOS packaging verification.
+- Next action: Idle after T049 packaged app path verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-07T20:35:15+08:00 | Completed `t-049-packaged-app-blank-screen` with relative Vite renderer assets and runtime `templateRoot` propagation for packaged project detail reads. | `.sharkbay/tasks/t-049-packaged-app-blank-screen/verification.md` |
+| 2026-05-07T20:29:37+08:00 | Opened `t-049-packaged-app-blank-screen` because the built macOS app launches to a blank white screen. | `.sharkbay/tasks/t-049-packaged-app-blank-screen/status.md` |
 | 2026-05-07T20:23:59+08:00 | Completed `t-048-macos-packaging-config` with electron-builder macOS scripts/config, release output ignored, README packaging docs, and verified app/dmg/zip artifacts. | `.sharkbay/tasks/t-048-macos-packaging-config/verification.md` |
 | 2026-05-07T20:11:32+08:00 | Opened `t-048-macos-packaging-config` to add electron-builder macOS packaging scripts/config after the user installed electron-builder. | `.sharkbay/tasks/t-048-macos-packaging-config/status.md` |
 | 2026-05-07T20:05:07+08:00 | Completed `t-047-hide-xterm-custom-scrollbar` by hiding xterm's custom scrollbar/shadow DOM in the terminal panel with passing verification. | `.sharkbay/tasks/t-047-hide-xterm-custom-scrollbar/verification.md` |

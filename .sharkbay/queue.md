@@ -15,6 +15,7 @@
 | Task ID | Title | Completed |
 | --- | --- | --- |
 | `t-048-macos-packaging-config` | Add macOS packaging config | 2026-05-07 |
+| `t-049-packaged-app-blank-screen` | Fix packaged macOS app blank screen | 2026-05-07 |
 | `t-047-hide-xterm-custom-scrollbar` | Hide xterm custom scrollbar | 2026-05-07 |
 | `t-046-hide-terminal-scrollbars` | Hide terminal scrollbars | 2026-05-07 |
 | `t-045-workbench-column-inset-balance` | Balance workbench column top and bottom inset | 2026-05-07 |

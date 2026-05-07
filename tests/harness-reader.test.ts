@@ -22,6 +22,30 @@ describe("harness reader", () => {
     expect(detail.errors.some((error) => error.file.includes(".agent"))).toBe(false);
   });
 
+  it("uses runtime templateRoot during project detail reads", async () => {
+    const root = await makeTempRoot("reader-runtime-template-root");
+    const userDataPath = path.join(root, "user-data");
+    const templateRoot = path.join(root, "packaged-resources", "templates", "harness");
+    const repo = await createContainedHarnessFixture(root, "RuntimeTemplateRepo");
+
+    await writeText(path.join(templateRoot, "AGENTS.md"), "# Runtime Agents\n");
+    await writeText(path.join(templateRoot, ".sharkbay", "protocol.md"), "# Runtime Protocol\n");
+    await writeText(path.join(templateRoot, ".sharkbay", "quality-rules.md"), "# Runtime Quality\n");
+    await writeText(path.join(repo, "AGENTS.md"), "# Runtime Agents\n");
+    await writeText(path.join(repo, ".sharkbay", "protocol.md"), "# Runtime Protocol\n");
+    await writeText(path.join(repo, ".sharkbay", "quality-rules.md"), "# Runtime Quality\n");
+    await writeJson(path.join(userDataPath, "config.json"), {
+      schemaVersion: 1,
+      configuredRoots: [root],
+      updatedAt: "2026-05-07",
+    });
+
+    const detail = await readProjectDetail({ userDataPath, templateRoot }, { repoPath: repo, detection: "manifest" });
+
+    expect(detail.harnessTemplate?.status).toBe("current");
+    expect(detail.errors.some((error) => error.message.includes("templates/harness/AGENTS.md"))).toBe(false);
+  });
+
   it("prefers contained layout when legacy files are also present", async () => {
     const root = await makeTempRoot("reader-mixed");
     const repo = await createContainedHarnessFixture(root, "ContainedPreferredRepo");
