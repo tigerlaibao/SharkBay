@@ -23,6 +23,13 @@ export type WorkflowProjectSummary = {
 
 export type GateStatusCandidate = {
   gateStatus?: GateStatus | null;
+  taskStatus?: {
+    kind?: "active" | "ready" | "backlog" | "done" | "idle" | "unknown" | string | null;
+    label?: string | null;
+    taskId?: string | null;
+    title?: string | null;
+    phase?: string | null;
+  } | null;
   queue?: {
     backlog?: QueueTaskCandidate[];
     done?: QueueTaskCandidate[];
@@ -87,6 +94,11 @@ export function userActionReason(project: GateStatusCandidate): string | null {
     return runnerRegistrationReason;
   }
 
+  const runnerReason = runnerUserActionReason(project);
+  if (runnerReason) {
+    return runnerReason;
+  }
+
   const activeTask = project.activeTask;
   if (!activeTask?.taskId) {
     return null;
@@ -105,11 +117,6 @@ export function userActionReason(project: GateStatusCandidate): string | null {
 
   if (explicitReason) {
     return explicitReason;
-  }
-
-  const runnerReason = runnerUserActionReason(project);
-  if (runnerReason) {
-    return runnerReason;
   }
 
   if (displayGateStatus(project) === "blocked") {
@@ -140,6 +147,29 @@ export function agentHandoffReason(project: GateStatusCandidate): string | null 
   }
 
   return nextReadyBacklogTask(project) ? "Agent handoff needed" : null;
+}
+
+export function taskStatusLabel(project: GateStatusCandidate): string {
+  const explicit = project.taskStatus?.label?.trim();
+  if (explicit && explicit.toLowerCase() !== "unknown") {
+    return explicit;
+  }
+  const phase = project.activeTask?.phase?.trim();
+  if (phase) {
+    return phase;
+  }
+  return "unknown";
+}
+
+export function taskStatusKind(project: GateStatusCandidate): string {
+  const explicit = project.taskStatus?.kind?.trim().toLowerCase();
+  if (explicit) {
+    return explicit;
+  }
+  const phase = project.activeTask?.phase?.trim().toLowerCase();
+  if (phase === "done") return "done";
+  if (phase) return "active";
+  return "unknown";
 }
 
 export function nextReadyBacklogTask(project: GateStatusCandidate): QueueTaskCandidate | null {

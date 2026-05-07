@@ -10,6 +10,7 @@ import type {
   ProjectDetailInput,
   ProjectDetail,
   ProjectSummary,
+  ProjectTaskStatus,
   QueueSection,
   RecentDecision,
   RevisionMap,
@@ -95,6 +96,7 @@ export async function readProjectDetail(
   const queue = normalizeQueue(queueJson.data);
   const visibleQueue = await mergeTaskDirectoryQueue(repoPath, containingRoot, configuredRoots, layout, queue, errors);
   const activeTask = normalizeActiveTask(visibleQueue, state.data);
+  const taskStatus = summarizeProjectTaskStatus(visibleQueue, activeTask, state.data);
   const runner = annotateRunnerTaskRegistration(runnerMetadata, visibleQueue, readStateCurrentTaskId(state.data), repoPath, layout, errors);
   const urls = readUrls(state.ok, state.data, manifest.data);
   const name = readProjectName(manifest.data, repoPath);
@@ -114,6 +116,7 @@ export async function readProjectDetail(
     currentBranch: git.currentBranch,
     dirtyWorktree: git.dirtyWorktree,
     activeTask,
+    taskStatus,
     runner,
     localUrl: urls.localUrl,
     testUrl: urls.testUrl,
@@ -585,6 +588,84 @@ function normalizeActiveTask(queue: Record<QueueSection, TaskQueueItem[]>, state
   return null;
 }
 
+function summarizeProjectTaskStatus(queue: Record<QueueSection, TaskQueueItem[]>, activeTask: ActiveTaskSummary | null, state: unknown): ProjectTaskStatus {
+  const counts = {
+    active: queue.active.length,
+    backlog: queue.backlog.length,
+    done: queue.done.length,
+  };
+  const doneTaskIds = new Set(queue.done.map((item) => item.taskId));
+  const actionableBacklog = queue.backlog.filter((item) => item.phase.trim().toLowerCase() !== "unknown" && item.status.trim().toLowerCase() !== "unknown");
+  const readyBacklog = actionableBacklog.find((item) => item.dependsOn.every((taskId) => doneTaskIds.has(taskId)));
+  const firstBacklog = actionableBacklog[0] ?? null;
+  const latestDone = queue.done[0] ?? null;
+  const activeQueueTask = queue.active[0] ?? null;
+
+  if (activeQueueTask) {
+    return taskStatus("active", activeQueueTask.phase || "active", activeQueueTask, counts);
+  }
+
+  if (activeTask?.taskId && activeTask.phase.trim().toLowerCase() !== "done") {
+    return {
+      kind: "active",
+      label: activeTask.phase || "active",
+      taskId: activeTask.taskId,
+      title: activeTask.title,
+      phase: activeTask.phase,
+      counts,
+    };
+  }
+
+  if (readyBacklog) {
+    return taskStatus("ready", "ready", readyBacklog, counts);
+  }
+
+  if (firstBacklog) {
+    return taskStatus("backlog", "backlog", firstBacklog, counts);
+  }
+
+  if (latestDone) {
+    return taskStatus("done", "done", latestDone, counts);
+  }
+
+  if (activeTask?.taskId && activeTask.phase.trim().toLowerCase() === "done") {
+    return {
+      kind: "done",
+      label: "done",
+      taskId: activeTask.taskId,
+      title: activeTask.title,
+      phase: activeTask.phase,
+      counts,
+    };
+  }
+
+  const statePhase = readStateCurrentTaskPhase(state);
+  if (statePhase === "idle") {
+    return { kind: "idle", label: "idle", taskId: null, title: null, phase: statePhase, counts };
+  }
+
+  return { kind: "unknown", label: "unknown", taskId: null, title: null, phase: statePhase, counts };
+}
+
+function taskStatus(kind: ProjectTaskStatus["kind"], label: string, task: TaskQueueItem, counts: ProjectTaskStatus["counts"]): ProjectTaskStatus {
+  return {
+    kind,
+    label,
+    taskId: task.taskId,
+    title: task.title,
+    phase: task.phase,
+    counts,
+  };
+}
+
+function readStateCurrentTaskPhase(state: unknown): string | null {
+  if (!isRecord(state) || !isRecord(state.currentTask) || typeof state.currentTask.phase !== "string") {
+    return null;
+  }
+  const phase = state.currentTask.phase.trim().toLowerCase();
+  return phase || null;
+}
+
 function readGateStatus(task: TaskQueueItem): GateStatus {
   if (task.gateStatus === "pass" || task.gateStatus === "pending" || task.gateStatus === "blocked" || task.gateStatus === "unknown") {
     return task.gateStatus;
@@ -657,6 +738,14 @@ function unsafeProjectDetail(repoPath: string, detection: DetectionMode, message
     currentBranch: null,
     dirtyWorktree: null,
     activeTask: null,
+    taskStatus: {
+      kind: "unknown",
+      label: "unknown",
+      taskId: null,
+      title: null,
+      phase: null,
+      counts: { active: 0, backlog: 0, done: 0 },
+    },
     runner: emptyRunnerSummary(),
     localUrl: null,
     testUrl: null,

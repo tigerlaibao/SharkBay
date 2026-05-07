@@ -651,6 +651,7 @@ body.is-resizing-columns * {
 
 .phase-pill,
 .status-pill,
+.runner-pill,
 .worktree-pill,
 .harness-pill {
   display: inline-flex;
@@ -687,6 +688,7 @@ body.is-resizing-columns * {
 }
 
 .phase-done,
+.task-done,
 .status-pass {
   color: #285735;
   background: #dceddf;
@@ -694,10 +696,34 @@ body.is-resizing-columns * {
 }
 
 .phase-blocked,
+.runner-waiting_for_human,
+.runner-blocked,
 .status-blocked {
   color: #7e3028;
   background: #f3dad5;
   border-color: #e5b8af;
+}
+
+.task-active,
+.runner-running {
+  color: #ffffff;
+  background: #2f7d54;
+  border-color: #2f7d54;
+}
+
+.task-ready {
+  color: #6a4b17;
+  background: #f1e3c2;
+  border-color: #dfc98d;
+}
+
+.task-backlog,
+.task-idle,
+.task-unknown,
+.runner-stale {
+  color: #536064;
+  background: #e6e8e7;
+  border-color: #d3d7d6;
 }
 
 .status-pill {

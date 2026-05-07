@@ -24,7 +24,7 @@ import type {
   TerminalUpdateEvent,
   TaskQueueItem,
 } from "./types";
-import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, userActionReason } from "./workflow";
+import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, taskStatusKind, taskStatusLabel, userActionReason } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailMode = "overview" | "task";
@@ -308,7 +308,7 @@ async function generatePrompt(project: ProjectDetail, task?: PromptTask | null):
 }
 
 function phaseOf(project: ProjectSummary): string {
-  return project.activeTask?.phase || "unknown";
+  return taskStatusLabel(project);
 }
 
 function gateOf(project: ProjectSummary): GateStatus {
@@ -316,16 +316,16 @@ function gateOf(project: ProjectSummary): GateStatus {
 }
 
 function projectInProgress(project: ProjectSummary): boolean {
-  const phase = phaseOf(project);
-  return Boolean(project.activeTask) && !["done", "blocked", "verification"].includes(phase);
+  const kind = taskStatusKind(project);
+  return kind === "active" && !["done", "blocked", "verification"].includes(phaseOf(project));
 }
 
 function projectReadyToVerify(project: ProjectSummary): boolean {
-  return phaseOf(project) === "verification";
+  return taskStatusKind(project) === "active" && phaseOf(project) === "verification";
 }
 
 function projectDone(project: ProjectSummary): boolean {
-  return phaseOf(project) === "done";
+  return taskStatusKind(project) === "done";
 }
 
 function isEmptyValue(value: string | null | undefined): boolean {
@@ -369,6 +369,23 @@ function taskSequenceNumber(taskId: string): number {
 
 function phaseClass(value: string | null | undefined): string {
   return `phase-${(value || "unknown").toLowerCase().replace(/[^a-z0-9_-]/gi, "_")}`;
+}
+
+function taskStatusClass(project: ProjectSummary): string {
+  return `task-${taskStatusKind(project).replace(/[^a-z0-9_-]/gi, "_")}`;
+}
+
+function runnerStatusLabel(project: ProjectSummary): string | null {
+  const status = project.runner?.status;
+  if (status === "running") return "running";
+  if (status === "stale") return "stale";
+  if (status === "blocked") return "blocked";
+  if (status === "waiting_for_human") return "waiting";
+  return null;
+}
+
+function runnerStatusClass(project: ProjectSummary): string {
+  return `runner-${(project.runner?.status || "unknown").replace(/[^a-z0-9_-]/gi, "_")}`;
 }
 
 function cx(...names: Array<string | false | null | undefined>): string {
@@ -1450,6 +1467,8 @@ function ProjectTable({
           const phase = project ? phaseOf(project) : null;
           const gate = project ? gateOf(project) : null;
           const showGate = gate === "blocked";
+          const actionReason = project ? userActionReason(project) : null;
+          const runnerLabel = project ? runnerStatusLabel(project) : null;
           const harnessStatus = project?.harnessTemplate?.status;
           const showHarnessStatus = harnessStatus === "stale" || harnessStatus === "missing";
 
@@ -1462,7 +1481,9 @@ function ProjectTable({
               </span>
               {project ? (
                 <span className="project-row-status">
-                  {phase && phase !== "unknown" ? <span className={cx("phase-pill", phaseClass(phase))}>{phase}</span> : null}
+                  {phase && phase !== "unknown" ? <span className={cx("phase-pill", phaseClass(phase), taskStatusClass(project))}>{phase}</span> : null}
+                  {actionReason ? <span className="status-pill status-blocked" title={actionReason}>needs action</span> : null}
+                  {runnerLabel ? <span className={cx("runner-pill", runnerStatusClass(project))}>{runnerLabel}</span> : null}
                   {showGate && gate ? <StatusPill status={gate} /> : null}
                   {showHarnessStatus ? <span className={cx("harness-pill", harnessStatus === "missing" && "is-missing")}>harness {harnessStatus}</span> : null}
                   {project.dirtyWorktree !== false ? (
@@ -1937,7 +1958,7 @@ function ProjectFactsCard({ detail }: { detail: ProjectDetail }) {
     { label: "Branch", value: detail.currentBranch },
     { label: "Worktree", value: worktree, tone: detail.dirtyWorktree ? "warn" as const : undefined },
     { label: "Detection", value: detail.detection === "protocol-fallback" ? "Protocol fallback" : "Manifest" },
-    { label: "Active", value: activeTaskTitle(detail) },
+    { label: "Task status", value: taskStatusLabel(detail) },
   ].filter((fact): fact is { label: string; value: string; tone?: "warn" } => Boolean(fact.value));
 
   return (

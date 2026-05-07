@@ -75,6 +75,17 @@ export type ActiveTaskSummary = {
   userActionReason: string | null;
 };
 
+export type ProjectTaskStatusKind = "active" | "ready" | "backlog" | "done" | "idle" | "unknown";
+
+export type ProjectTaskStatus = {
+  kind: ProjectTaskStatusKind;
+  label: string;
+  taskId: string | null;
+  title: string | null;
+  phase: string | null;
+  counts: Record<QueueSection, number>;
+};
+
 export type RunnerStatus = "unknown" | "idle" | "running" | "stale" | "blocked" | "waiting_for_human";
 export type RunnerTaskRegistrationStatus = "none" | "active" | "inactive" | "missing" | "mismatched";
 
@@ -133,6 +144,7 @@ export type ProjectSummary = {
   currentBranch: string | null;
   dirtyWorktree: boolean | null;
   activeTask: ActiveTaskSummary | null;
+  taskStatus: ProjectTaskStatus;
   runner: RunnerSummary;
   localUrl: string | null;
   testUrl: string | null;
