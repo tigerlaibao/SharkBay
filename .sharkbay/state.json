@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T14:09:19+08:00",
+  "updatedAt": "2026-05-07T19:24:35+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Settings now uses a two-column settings page layout.",
+    "currentFocus": "Custom SharkBay app icon is wired from the provided shark.png asset.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T042 Settings two-column redesign verification.",
+    "nextAction": "Idle after T043 custom app icon verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-07T19:24:35+08:00",
+      "decision": "Completed t-043-custom-app-icon with repository icon assets, Electron BrowserWindow icon wiring, macOS Dock icon setup, and passing verification.",
+      "source": ".sharkbay/tasks/t-043-custom-app-icon/verification.md"
+    },
+    {
+      "date": "2026-05-07T19:22:07+08:00",
+      "decision": "Opened t-043-custom-app-icon to use the provided ~/Downloads/shark.png asset as the SharkBay Electron app icon.",
+      "source": ".sharkbay/tasks/t-043-custom-app-icon/status.md"
+    },
     {
       "date": "2026-05-07T14:09:19+08:00",
       "decision": "Completed t-042-settings-two-column-redesign with a left settings section selector, right content pane, preserved root controls, status section, and passing verification.",

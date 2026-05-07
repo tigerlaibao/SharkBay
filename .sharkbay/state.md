@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Settings now uses a two-column settings page layout.
-- Last controller run: 2026-05-07T14:01:02+08:00 opened `t-042-settings-two-column-redesign`
+- Current focus: Custom SharkBay app icon is wired from the provided `shark.png` asset.
+- Last controller run: 2026-05-07T19:22:07+08:00 opened `t-043-custom-app-icon`
 
 ## Repository Identity
 
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T042 Settings two-column redesign verification.
+- Next action: Idle after T043 custom app icon verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-07T19:24:35+08:00 | Completed `t-043-custom-app-icon` with repository icon assets, Electron BrowserWindow icon wiring, macOS Dock icon setup, and passing verification. | `.sharkbay/tasks/t-043-custom-app-icon/verification.md` |
+| 2026-05-07T19:22:07+08:00 | Opened `t-043-custom-app-icon` to use the provided `~/Downloads/shark.png` asset as the SharkBay Electron app icon. | `.sharkbay/tasks/t-043-custom-app-icon/status.md` |
 | 2026-05-07T14:09:19+08:00 | Completed `t-042-settings-two-column-redesign` with a left settings section selector, right content pane, preserved root controls, status section, and passing verification. | `.sharkbay/tasks/t-042-settings-two-column-redesign/verification.md` |
 | 2026-05-07T14:01:02+08:00 | Opened `t-042-settings-two-column-redesign` to convert Settings into a conventional two-column settings page. | `.sharkbay/tasks/t-042-settings-two-column-redesign/status.md` |
 | 2026-05-07T13:26:55+08:00 | Completed `t-041-settings-terminal-resize-guard` with renderer and backend terminal resize guards plus passing focused and full verification. | `.sharkbay/tasks/t-041-settings-terminal-resize-guard/verification.md` |

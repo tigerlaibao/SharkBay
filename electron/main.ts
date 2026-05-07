@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell } from "electron";
+import { app, BrowserWindow, Menu, nativeImage, shell } from "electron";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { closeAllTerminalSessions, registerIpcHandlers } from "./ipc.js";
@@ -12,6 +12,27 @@ const devServerUrl = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
 let mainWindow: BrowserWindow | null = null;
 
 app.setName("SharkBay");
+
+function getResourcePath(fileName: string): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, "resources", fileName)
+    : join(app.getAppPath(), "resources", fileName);
+}
+
+function getAppIconPath(): string {
+  return getResourcePath("shark.png");
+}
+
+function installDockIcon(): void {
+  if (process.platform !== "darwin" || !app.dock) {
+    return;
+  }
+
+  const icon = nativeImage.createFromPath(getAppIconPath());
+  if (!icon.isEmpty()) {
+    app.dock.setIcon(icon);
+  }
+}
 
 function sendOpenSettings(window: BrowserWindow): void {
   const send = () => {
@@ -54,12 +75,14 @@ function installApplicationMenu(): void {
 
 function createMainWindow(): BrowserWindow {
   const preload = join(currentDir, "preload.mjs");
+  const icon = getAppIconPath();
   const window = new BrowserWindow({
     width: 1500,
     height: 860,
     minWidth: 1180,
     minHeight: 680,
     title: "SharkBay",
+    icon,
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     show: false,
     backgroundColor: "#f7f8fa",
@@ -99,6 +122,7 @@ app.whenReady().then(() => {
   });
 
   installApplicationMenu();
+  installDockIcon();
   mainWindow = createMainWindow();
 
   app.on("activate", () => {
