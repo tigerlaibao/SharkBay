@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T19:53:20+08:00",
+  "updatedAt": "2026-05-07T19:57:22+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Workbench terminal/detail top and bottom insets are balanced.",
+    "currentFocus": "Terminal column scrollbars are hidden.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T045 workbench inset balance verification.",
+    "nextAction": "Idle after T046 terminal scrollbar verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-07T19:57:22+08:00",
+      "decision": "Completed t-046-hide-terminal-scrollbars with hidden xterm scrollbars, preserved scrollback, and passing verification.",
+      "source": ".sharkbay/tasks/t-046-hide-terminal-scrollbars/verification.md"
+    },
+    {
+      "date": "2026-05-07T19:55:51+08:00",
+      "decision": "Opened t-046-hide-terminal-scrollbars to hide the middle terminal column scrollbar while preserving terminal scrollback.",
+      "source": ".sharkbay/tasks/t-046-hide-terminal-scrollbars/status.md"
+    },
     {
       "date": "2026-05-07T19:53:20+08:00",
       "decision": "Completed t-045-workbench-column-inset-balance with equal top and bottom outer spacing for terminal/detail columns and passing verification.",

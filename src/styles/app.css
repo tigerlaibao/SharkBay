@@ -1621,7 +1621,14 @@ body.is-resizing-columns * {
 
 .xterm-surface .xterm-viewport,
 .xterm-surface .xterm-screen {
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+
+.xterm-surface .xterm-viewport::-webkit-scrollbar,
+.xterm-surface .xterm-screen::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .terminal-panel .empty-state {

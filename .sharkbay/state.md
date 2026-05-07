@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Workbench terminal/detail top and bottom insets are balanced.
+- Current focus: Terminal column scrollbars are hidden.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T045 workbench inset balance verification.
+- Next action: Idle after T046 terminal scrollbar verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-07T19:57:22+08:00 | Completed `t-046-hide-terminal-scrollbars` with hidden xterm scrollbars, preserved scrollback, and passing verification. | `.sharkbay/tasks/t-046-hide-terminal-scrollbars/verification.md` |
+| 2026-05-07T19:55:51+08:00 | Opened `t-046-hide-terminal-scrollbars` to hide the middle terminal column scrollbar while preserving terminal scrollback. | `.sharkbay/tasks/t-046-hide-terminal-scrollbars/status.md` |
 | 2026-05-07T19:53:20+08:00 | Completed `t-045-workbench-column-inset-balance` with equal top and bottom outer spacing for terminal/detail columns and passing verification. | `.sharkbay/tasks/t-045-workbench-column-inset-balance/verification.md` |
 | 2026-05-07T19:49:39+08:00 | Opened `t-045-workbench-column-inset-balance` to restore equal top and bottom outer spacing for the terminal and right detail columns while preserving left traffic-light avoidance. | `.sharkbay/tasks/t-045-workbench-column-inset-balance/status.md` |
 | 2026-05-07T19:45:49+08:00 | Completed `t-044-workbench-layout-polish` with left-column-only titlebar drag space, terminal bottom padding, taller right detail tabs, and passing verification. | `.sharkbay/tasks/t-044-workbench-layout-polish/verification.md` |
