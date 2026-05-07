@@ -13,6 +13,7 @@ coverage/
 /tasks/
 /docs/task.md
 /docs/learnings.md
+.sharkbay/runner.json
 
 *.log
 npm-debug.log*

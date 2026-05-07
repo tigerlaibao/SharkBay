@@ -1,0 +1,715 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-05-07T12:41:56+08:00",
+  "repository": {
+    "isGitRepository": true,
+    "gitRoot": "<repo-root>",
+    "currentBranch": "main",
+    "defaultBranch": "main",
+    "remoteOrigin": "git@github.com:SharkUI/SharkBay.git",
+    "githubUrl": "git@github.com:SharkUI/SharkBay.git",
+    "dirtyWorktree": false
+  },
+  "project": {
+    "name": "SharkBay",
+    "type": "local-first-macos-app",
+    "currentFocus": "Clarified project task, runner, and human waiting status display.",
+    "localUrl": "unknown",
+    "deploymentUrl": "unknown",
+    "testUrl": "unknown"
+  },
+  "currentTask": {
+    "taskId": "",
+    "phase": "done",
+    "nextAction": "Idle after T040 status model verification.",
+    "blockedBy": []
+  },
+  "recentDecisions": [
+    {
+      "date": "2026-05-07T12:41:56+08:00",
+      "decision": "Committed t-040-project-status-model product changes as e391eff Clarify project status model.",
+      "source": "git commit -m \"Clarify project status model\""
+    },
+    {
+      "date": "2026-05-07T12:41:56+08:00",
+      "decision": "Completed t-040-project-status-model with normalized taskStatus summaries, separate runner/status pills, Needs Action waiting fixes, and passing verification.",
+      "source": ".sharkbay/tasks/t-040-project-status-model/verification.md"
+    },
+    {
+      "date": "2026-05-07T12:37:17+08:00",
+      "decision": "Opened t-040-project-status-model to separate task queue state, runner execution state, and human waiting state in SharkBay project status display.",
+      "source": ".sharkbay/tasks/t-040-project-status-model/status.md"
+    },
+    {
+      "date": "2026-05-07T11:26:00+08:00",
+      "decision": "Committed T039 product changes as 9dd2d52 Add explicit legacy harness migration.",
+      "source": "git commit -m \"Add explicit legacy harness migration\""
+    },
+    {
+      "date": "2026-05-07T11:24:00+08:00",
+      "decision": "Completed T039 with explicit legacy harness migration, confirmed UI action, no silent cleanup, no .gitignore ownership, and passing verification.",
+      "source": "tasks/t-039-legacy-harness-file-cleanup/verification.md"
+    },
+    {
+      "date": "2026-05-07T11:12:00+08:00",
+      "decision": "Advanced T039 to coding with a contract that permits only explicit, confirmation-gated migration of recognized legacy harness files and forbids .gitignore changes.",
+      "source": "tasks/t-039-legacy-harness-file-cleanup/contract.md"
+    },
+    {
+      "date": "2026-05-07T11:08:00+08:00",
+      "decision": "Reviewed T038 and T039 against T037. T038 is satisfied by T037's setup behavior; T039 may proceed only as an explicit, human-gated legacy migration path that refuses mixed layouts and preserves unrelated root docs/tasks content.",
+      "source": "tasks/t-039-legacy-harness-file-cleanup/review.md"
+    },
+    {
+      "date": "2026-05-07T10:55:00+08:00",
+      "decision": "Completed t-037-contained-sharkbay-harness-layout with contained .sharkbay setup, legacy compatibility, no setup-owned .gitignore writes, passing checks, and product docs updated.",
+      "source": "tasks/t-037-contained-sharkbay-harness-layout/verification.md"
+    },
+    {
+      "date": "2026-05-07T10:47:00+08:00",
+      "decision": "Advanced t-037-contained-sharkbay-harness-layout to coding after recording a compatibility-first design, passing design review, and writing an implementation contract.",
+      "source": "tasks/t-037-contained-sharkbay-harness-layout/contract.md"
+    },
+    {
+      "date": "2026-05-07T10:28:00+08:00",
+      "decision": "Opened t-037-contained-sharkbay-harness-layout with follow-up backlog tasks t-038-gitignore-agent-owned-setup-guidance and t-039-legacy-harness-file-cleanup to reduce setup intrusion into external projects.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-07T00:07:00+08:00",
+      "decision": "Committed t-036-window-drag-region as 166ecec Restore window drag region.",
+      "source": "git commit -m \"Restore window drag region\""
+    },
+    {
+      "date": "2026-05-07T00:06:00+08:00",
+      "decision": "Completed t-036-window-drag-region with a renderer drag strip, workspace traffic-light inset, passing checks, and Electron visual confirmation.",
+      "source": "tasks/t-036-window-drag-region/verification.md"
+    },
+    {
+      "date": "2026-05-06T23:57:05+08:00",
+      "decision": "Opened t-036-window-drag-region to restore window drag/double-click affordance after hiding the native macOS title bar and to move left sidebar content below the traffic-light controls.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T23:55:00+08:00",
+      "decision": "Committed t-035-native-titlebar-removal as 2cd09cd Hide native macOS title bar.",
+      "source": "git commit -m \"Hide native macOS title bar\""
+    },
+    {
+      "date": "2026-05-06T23:52:00+08:00",
+      "decision": "Completed t-035-native-titlebar-removal by using Electron's hiddenInset macOS title bar style on the main BrowserWindow while preserving native window controls.",
+      "source": "tasks/t-035-native-titlebar-removal/verification.md"
+    },
+    {
+      "date": "2026-05-06T23:44:25+08:00",
+      "decision": "Opened t-035-native-titlebar-removal to hide the visible native macOS Electron title bar while keeping native window controls.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T23:37:13+08:00",
+      "decision": "Completed t-034-skip-existing-gitignore-setup by skipping only the setup-seeded .gitignore when it already exists during existing-directory setup while preserving all other collision protections.",
+      "source": "tasks/t-034-skip-existing-gitignore-setup/verification.md"
+    },
+    {
+      "date": "2026-05-06T23:35:57+08:00",
+      "decision": "Opened t-034-skip-existing-gitignore-setup because Ripple setup currently refuses to continue when an existing project has a .gitignore, even though .gitignore is project-owned and should be preserved.",
+      "source": "user screenshot"
+    },
+    {
+      "date": "2026-05-06T23:17:40+08:00",
+      "decision": "Committed t-033-remove-flat-side-panel-shells as 3dd44b0 Remove side panel shells.",
+      "source": "git commit -m \"Remove side panel shells\""
+    },
+    {
+      "date": "2026-05-06T23:16:30+08:00",
+      "decision": "Completed t-033-remove-flat-side-panel-shells by removing the generic panel shell from the left and right workbench columns while preserving resizing, scrolling, terminal framing, and sticky right detail tabs.",
+      "source": "tasks/t-033-remove-flat-side-panel-shells/verification.md"
+    },
+    {
+      "date": "2026-05-06T23:15:16+08:00",
+      "decision": "Opened t-033-remove-flat-side-panel-shells to remove the remaining invisible generic panel shells from the left project column and right detail column.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T23:12:04+08:00",
+      "decision": "Committed t-032-workbench-panel-visual-polish final CSS correction as 10bab09 Match detail tabs to window background.",
+      "source": "git commit -m \"Match detail tabs to window background\""
+    },
+    {
+      "date": "2026-05-06T23:10:00+08:00",
+      "decision": "Completed t-032-workbench-panel-visual-polish with transparent outer workbench panels, sticky right detail tabs, centered priority labels, and P0 display support.",
+      "source": "tasks/t-032-workbench-panel-visual-polish/verification.md"
+    },
+    {
+      "date": "2026-05-06T23:05:05+08:00",
+      "decision": "Opened t-032-workbench-panel-visual-polish to flatten left/right rounded panel backgrounds, keep right detail tabs fixed during detail scrolling, and improve task priority label alignment.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T23:04:53+08:00",
+      "decision": "Completed t-031-backlog-task-metadata-detail: artifact-less queue tasks now show queue metadata in task detail, and missing task artifact files no longer create harness error noise.",
+      "source": "tasks/t-031-backlog-task-metadata-detail/verification.md"
+    },
+    {
+      "date": "2026-05-06T22:59:36+08:00",
+      "decision": "Opened t-031-backlog-task-metadata-detail because AIGF backlog task t-008 has queue metadata but no task artifact directory, and SharkBay currently hides that metadata behind a no-detail empty state.",
+      "source": "user report"
+    },
+    {
+      "date": "2026-05-06T22:58:00+08:00",
+      "decision": "Verified concurrent .gitignore restore and harness template sync changes are consistent: .gitignore is project-owned, template sync allowlist excludes it, and managed projects scan as current.",
+      "source": "tasks/t-030-exclude-gitignore-from-template-sync/verification.md"
+    },
+    {
+      "date": "2026-05-06T22:25:00+08:00",
+      "decision": "Opened t-030-exclude-gitignore-from-template-sync because project .gitignore should be setup-seeded but not owned by harness template refresh.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T22:16:00+08:00",
+      "decision": "Committed t-029-harness-template-sync-ui as ba2d551 Surface harness template sync status.",
+      "source": "git commit -m \"Surface harness template sync status\""
+    },
+    {
+      "date": "2026-05-06T22:14:00+08:00",
+      "decision": "Completed t-029-harness-template-sync-ui with visible harness stale/missing project row pills and a confirmed per-project sync panel.",
+      "source": "tasks/t-029-harness-template-sync-ui/verification.md"
+    },
+    {
+      "date": "2026-05-06T22:05:00+08:00",
+      "decision": "Opened t-029-harness-template-sync-ui because harness template sync existed only as scan data and hidden IPC, so restarting SharkBay showed no visible prompt.",
+      "source": "user report"
+    },
+    {
+      "date": "2026-05-06T21:55:00+08:00",
+      "decision": "Committed t-028-harness-template-sync as dcecce4 Add harness template sync checks.",
+      "source": "git commit -m \"Add harness template sync checks\""
+    },
+    {
+      "date": "2026-05-06T21:52:00+08:00",
+      "decision": "Completed t-028-harness-template-sync with scan-visible template drift status and safe version-owned file update functions.",
+      "source": "tasks/t-028-harness-template-sync/verification.md"
+    },
+    {
+      "date": "2026-05-06T21:49:00+08:00",
+      "decision": "Implemented harness template sync as an explicit safe service plus scan-visible drift summary, without silent background mutation.",
+      "source": "tasks/t-028-harness-template-sync/verification.md"
+    },
+    {
+      "date": "2026-05-06T21:46:00+08:00",
+      "decision": "Classified AGENTS.md, .agent/protocol.md, .agent/quality-rules.md, and .gitignore as version-owned harness template files; project identity, queue/state, docs, and tasks remain project-owned and must not be overwritten by sync.",
+      "source": "tasks/t-028-harness-template-sync/spec.md"
+    },
+    {
+      "date": "2026-05-06T21:40:17+08:00",
+      "decision": "Opened t-028-harness-template-sync to keep installed Ripple harness files in managed projects current with SharkBay's tracked templates/harness source.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T21:10:09+08:00",
+      "decision": "Completed t-027-compact-right-detail-tabs with commit 6df7a30: compact right detail tabs, left-sidebar-scale tab typography, and the NOT SETUP divider removed.",
+      "source": "tasks/t-027-compact-right-detail-tabs/verification.md"
+    },
+    {
+      "date": "2026-05-06T21:09:30+08:00",
+      "decision": "Completed t-026-public-harness-cleanup with commit 06f89a2; push is pending user confirmation.",
+      "source": "git commit -m \"Stop tracking local harness state\""
+    },
+    {
+      "date": "2026-05-06T21:07:29+08:00",
+      "decision": "Opened t-027-compact-right-detail-tabs to replace the heavy right detail card tabs with a compact tab-strip treatment.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T21:04:00+08:00",
+      "decision": "Opened t-026-public-harness-cleanup to remove SharkBay local harness state from public tracking while preserving product harness templates.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T20:45:21+08:00",
+      "decision": "Pushed README refresh commit 0941329 to origin/main.",
+      "source": "git push origin main"
+    },
+    {
+      "date": "2026-05-06T20:42:52+08:00",
+      "decision": "Completed t-025-readme-publish with README.md refreshed for current SharkBay workbench capabilities and native terminal rebuild guidance.",
+      "source": "tasks/t-025-readme-publish/verification.md"
+    },
+    {
+      "date": "2026-05-06T20:41:15+08:00",
+      "decision": "Open t-025-readme-publish to refresh README.md and push the current main branch to origin.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T20:32:36+08:00",
+      "decision": "Completed the t-023-terminal-title-strategy revision so codex, claude, and terminal monitor foreground apps keep process titles and OSC color responses no longer pollute tab titles.",
+      "source": "tasks/t-023-terminal-title-strategy/verification.md"
+    },
+    {
+      "date": "2026-05-06T20:29:49+08:00",
+      "decision": "Reopened t-023-terminal-title-strategy because Codex/xterm OSC color responses and interactive app input could overwrite the intended foreground app tab title.",
+      "source": "user report"
+    },
+    {
+      "date": "2026-05-06T20:24:02+08:00",
+      "decision": "Completed t-024-project-aware-column-headings with the terminal column titled by selected project name and redundant right detail project name/path headers removed.",
+      "source": "tasks/t-024-project-aware-column-headings/verification.md"
+    },
+    {
+      "date": "2026-05-06T20:21:48+08:00",
+      "decision": "Open t-024-project-aware-column-headings to title the terminal column with the selected project name and remove the redundant project name/path header from the right detail column.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T20:16:12+08:00",
+      "decision": "Completed t-023-terminal-title-strategy with terminal tabs deriving titles from project-relative cwd or foreground occupying commands.",
+      "source": "tasks/t-023-terminal-title-strategy/verification.md"
+    },
+    {
+      "date": "2026-05-06T20:09:07+08:00",
+      "decision": "Open t-023-terminal-title-strategy to make terminal tabs show project-relative cwd by default and foreground occupying commands when more useful.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T20:05:19+08:00",
+      "decision": "Completed t-022-runner-task-registration with task-first runner protocol rules and SharkBay diagnostics for missing, inactive, or mismatched runner tasks.",
+      "source": "tasks/t-022-runner-task-registration/verification.md"
+    },
+    {
+      "date": "2026-05-06T19:58:01+08:00",
+      "decision": "Open t-022-runner-task-registration to prevent runner-only work from staying invisible when task queue/state registration is missing.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T19:51:41+08:00",
+      "decision": "Completed t-021-harness-behavioral-discipline with Behavioral Discipline rules applied to SharkBay, setup templates, AIBF, and AIGF.",
+      "source": "tasks/t-021-harness-behavioral-discipline/verification.md"
+    },
+    {
+      "date": "2026-05-06T19:44:38+08:00",
+      "decision": "Open t-021-harness-behavioral-discipline to add ambiguity, simplicity, traceability, and verification-mapping rules to SharkBay, templates, AIBF, and AIGF.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Initialized SharkBay from the project seed in init.md.",
+      "source": "init.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Orient SharkBay as a macOS local app rather than a browser-only web app.",
+      "source": "user answer"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Keep Codex edits scoped to the current project workspace; SharkBay will later manage only directories configured inside the app.",
+      "source": "user answer"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Initialized git in the repository on branch main.",
+      "source": "user approval"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Recorded intended GitHub repository URL git@github.com:SharkUI/sharkbay.git.",
+      "source": "user answer"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Configured git remote origin as git@github.com:SharkUI/sharkbay.git.",
+      "source": "controller"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Accepted Electron + React + TypeScript + Vite as the default MVP stack for the macOS local app.",
+      "source": "controller default after user asked to continue"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Completed the MVP design artifact and advanced task t-001-sharkbay-mvp-spec to design_review.",
+      "source": "controller"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Moved task t-001-sharkbay-mvp-spec to design_revision because design review found one major issue.",
+      "source": "design-review.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Revised the MVP design to address safe harness JSON writes, URL persistence, and safety verification findings.",
+      "source": "design.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Second design review passed with blocker=0 and major=0; advanced task t-001-sharkbay-mvp-spec to contract.",
+      "source": "design-review.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Implementation contract passed controller gate; advanced task t-001-sharkbay-mvp-spec to coding.",
+      "source": "contract.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Completed the first MVP coding slice and recorded command evidence; advanced task t-001-sharkbay-mvp-spec to code_review.",
+      "source": "implementation.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Moved task t-001-sharkbay-mvp-spec to code_revision because code review found one blocker and two major findings.",
+      "source": "code-review.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Revised configured-root authority, symlink read/create safety, and URL mirror mismatch findings; returned task t-001-sharkbay-mvp-spec to code_review.",
+      "source": "implementation.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Second code review passed with blocker=0 and major=0; advanced task t-001-sharkbay-mvp-spec to verification.",
+      "source": "code-review.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Verification passed for the first SharkBay MVP coding slice; advanced task t-001-sharkbay-mvp-spec to docs_update.",
+      "source": "verification.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Documentation updated and task t-001-sharkbay-mvp-spec marked done.",
+      "source": "status.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Created task t-002-self-hosting-ux and advanced it from spec to design.",
+      "source": "tasks/t-002-self-hosting-ux/spec.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Completed the t-002 self-hosting workflow design and advanced it to design_review.",
+      "source": "tasks/t-002-self-hosting-ux/design.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Moved t-002-self-hosting-ux to design_revision after design review found two major issues.",
+      "source": "tasks/t-002-self-hosting-ux/design-review.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Revised t-002 design and returned it to design_review.",
+      "source": "tasks/t-002-self-hosting-ux/design.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Design review passed for t-002-self-hosting-ux; contract written and coding opened.",
+      "source": "tasks/t-002-self-hosting-ux/contract.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Implemented t-002 self-hosting workflow polish and advanced it to code_review.",
+      "source": "tasks/t-002-self-hosting-ux/implementation.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Moved t-002-self-hosting-ux to code_revision after code review found a scan metadata issue.",
+      "source": "tasks/t-002-self-hosting-ux/code-review.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Revised t-002 scan metadata IPC and self-host marker test coverage; returned to code_review.",
+      "source": "tasks/t-002-self-hosting-ux/implementation.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Second code review passed for t-002-self-hosting-ux; advanced to verification.",
+      "source": "tasks/t-002-self-hosting-ux/code-review.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Verification passed for t-002-self-hosting-ux; advanced to docs_update.",
+      "source": "tasks/t-002-self-hosting-ux/verification.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Documentation updated and task t-002-self-hosting-ux marked done.",
+      "source": "tasks/t-002-self-hosting-ux/status.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Created task t-003-dogfood-self-hosting-flow for a real self-hosting dogfood pass and opened coding.",
+      "source": "tasks/t-003-dogfood-self-hosting-flow/status.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Implemented t-003 dogfood fixes and advanced the task to code_review.",
+      "source": "tasks/t-003-dogfood-self-hosting-flow/implementation.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Moved t-003-dogfood-self-hosting-flow to code_revision after review found one major and one minor issue.",
+      "source": "tasks/t-003-dogfood-self-hosting-flow/code-review.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Addressed t-003 code review findings and returned the task to code_review.",
+      "source": "tasks/t-003-dogfood-self-hosting-flow/code-review.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Second code review passed for t-003-dogfood-self-hosting-flow; advanced to verification.",
+      "source": "tasks/t-003-dogfood-self-hosting-flow/code-review.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Verification and docs update passed for t-003-dogfood-self-hosting-flow; marked done.",
+      "source": "tasks/t-003-dogfood-self-hosting-flow/verification.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Created t-004-user-centered-project-workbench as a UI-first project workbench redesign task.",
+      "source": "tasks/t-004-user-centered-project-workbench/status.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Added git checkpoint discipline to the controller protocol so each phase or coherent coding slice is committed.",
+      "source": ".agent/protocol.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Completed t-004-user-centered-project-workbench with a project-first UI, Settings-based setup controls, and verified checks.",
+      "source": "tasks/t-004-user-centered-project-workbench/status.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Opened t-005-root-child-discovery to list ordinary root child folders and show managed/not-setup status.",
+      "source": "tasks/t-005-root-child-discovery/status.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Designed t-005 around a read-only ProjectCandidate layer alongside existing managed ProjectSummary scanning.",
+      "source": "tasks/t-005-root-child-discovery/design.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Design review passed for t-005-root-child-discovery and coding opened with an additive candidates contract.",
+      "source": "tasks/t-005-root-child-discovery/contract.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Completed t-005-root-child-discovery with read-only root child candidates and managed/not-setup project rows.",
+      "source": "tasks/t-005-root-child-discovery/status.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Inserted t-006-autonomous-ux-polish before Ripple setup and moved the write-safety task to t-007-ripple-setup-flow.",
+      "source": "tasks/t-006-autonomous-ux-polish/status.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Completed t-006-autonomous-ux-polish with a self-reviewed UX cleanup of project rows, not-setup detail, and queue/detail signals.",
+      "source": "tasks/t-006-autonomous-ux-polish/verification.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Queued t-008-project-authored-url-metadata so project agents can later maintain local, test, and deploy URLs from project documents after setup or deployment.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Opened t-007-ripple-setup-flow as the active task.",
+      "source": ".agent/queue.json"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Advanced t-007-ripple-setup-flow to coding after spec, design review, and contract passed.",
+      "source": "tasks/t-007-ripple-setup-flow/contract.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Implemented t-007-ripple-setup-flow with confirmed existing-directory setup and no-overwrite template preflight.",
+      "source": "tasks/t-007-ripple-setup-flow/implementation.md"
+    },
+    {
+      "date": "2026-05-05",
+      "decision": "Completed t-007-ripple-setup-flow and left t-008-project-authored-url-metadata as the next backlog task.",
+      "source": "tasks/t-007-ripple-setup-flow/verification.md"
+    },
+    {
+      "date": "2026-05-05T18:46:51+08:00",
+      "decision": "Decision and Git history surfaces should show the latest five records in project detail, with full history opened inside the right detail column.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-05T18:53:18+08:00",
+      "decision": "History timestamps should be shown as readable relative times on each item, and backlog tasks must remain visible in the project detail queue.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-05T19:02:00+08:00",
+      "decision": "Expanded t-008 from URL metadata to project-authored developer metadata that keeps SharkBay project details read-only where possible.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-05T19:05:00+08:00",
+      "decision": "Use `.agent/development.json` for stable project-authored developer metadata and keep SharkBay's first display read-only and summary-focused.",
+      "source": "tasks/t-008-project-authored-url-metadata/design.md"
+    },
+    {
+      "date": "2026-05-05T19:15:00+08:00",
+      "decision": "Implemented the first read-only developer metadata slice with optional `.agent/development.json` reading and a compact Project Info summary.",
+      "source": "tasks/t-008-project-authored-url-metadata/implementation.md"
+    },
+    {
+      "date": "2026-05-05T19:16:00+08:00",
+      "decision": "Completed t-008-project-authored-url-metadata with verification passing.",
+      "source": "tasks/t-008-project-authored-url-metadata/verification.md"
+    },
+    {
+      "date": "2026-05-05T19:35:00+08:00",
+      "decision": "Treat Needs Action as a human intervention surface rather than a dirty-worktree or generic phase list.",
+      "source": "tasks/t-009-human-intervention-policy/spec.md"
+    },
+    {
+      "date": "2026-05-05T19:47:00+08:00",
+      "decision": "Completed t-009-human-intervention-policy after committing the implementation checkpoint first.",
+      "source": "tasks/t-009-human-intervention-policy/status.md"
+    },
+    {
+      "date": "2026-05-05T19:50:58+08:00",
+      "decision": "Opened t-010-agent-onboarding-instructions to define setup-time agent entrypoint instructions for Ripple projects.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-05T20:08:50+08:00",
+      "decision": "Synchronized SharkBay repository identity and git origin to git@github.com:SharkUI/SharkBay.git after the GitHub repository casing changed.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-05T20:14:48+08:00",
+      "decision": "Scrubbed public working-tree references to private local filesystem paths before publishing the repository.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-05T20:20:00+08:00",
+      "decision": "Advanced t-010-agent-onboarding-instructions from intake to spec with a Codex-first AGENTS.md onboarding policy and no-overwrite setup behavior.",
+      "source": "tasks/t-010-agent-onboarding-instructions/spec.md"
+    },
+    {
+      "date": "2026-05-05T21:10:47+08:00",
+      "decision": "Advanced t-010-agent-onboarding-instructions from spec to design with a root AGENTS.md template and no-overwrite setup behavior.",
+      "source": "tasks/t-010-agent-onboarding-instructions/design.md"
+    },
+    {
+      "date": "2026-05-05T21:11:54+08:00",
+      "decision": "Design review passed for t-010-agent-onboarding-instructions with blocker=0 and major=0.",
+      "source": "tasks/t-010-agent-onboarding-instructions/design-review.md"
+    },
+    {
+      "date": "2026-05-05T21:12:31+08:00",
+      "decision": "Contract passed for t-010-agent-onboarding-instructions; coding may begin because dependency t-009-human-intervention-policy is done.",
+      "source": "tasks/t-010-agent-onboarding-instructions/contract.md"
+    },
+    {
+      "date": "2026-05-05T21:13:17+08:00",
+      "decision": "Opened coding for t-010-agent-onboarding-instructions after confirming dependency t-009-human-intervention-policy is done.",
+      "source": "tasks/t-010-agent-onboarding-instructions/status.md"
+    },
+    {
+      "date": "2026-05-05T21:15:02+08:00",
+      "decision": "Implemented the t-010 AGENTS.md template and focused setup/prompt tests; required checks passed except dev startup is blocked by occupied port 5173 with an existing server returning HTTP 200.",
+      "source": "tasks/t-010-agent-onboarding-instructions/implementation.md"
+    },
+    {
+      "date": "2026-05-05T21:17:23+08:00",
+      "decision": "Code review passed for t-010-agent-onboarding-instructions with blocker=0 and major=0; one minor status-note issue was fixed.",
+      "source": "tasks/t-010-agent-onboarding-instructions/code-review.md"
+    },
+    {
+      "date": "2026-05-05T21:18:34+08:00",
+      "decision": "Verification passed for t-010-agent-onboarding-instructions; dev startup is blocked by occupied port 5173, and the existing server returns HTTP 200.",
+      "source": "tasks/t-010-agent-onboarding-instructions/verification.md"
+    },
+    {
+      "date": "2026-05-05T21:19:26+08:00",
+      "decision": "Documentation updated and task t-010-agent-onboarding-instructions marked done.",
+      "source": "tasks/t-010-agent-onboarding-instructions/status.md"
+    },
+    {
+      "date": "2026-05-05T21:25:00+08:00",
+      "decision": "Opened t-011-runner-lifecycle-heartbeat and designed a cooperative runner lease and heartbeat model separate from harness phase.",
+      "source": "tasks/t-011-runner-lifecycle-heartbeat/design.md"
+    },
+    {
+      "date": "2026-05-05T21:27:00+08:00",
+      "decision": "Design review passed for t-011-runner-lifecycle-heartbeat with blocker=0 and major=0; contract may begin.",
+      "source": "tasks/t-011-runner-lifecycle-heartbeat/design-review.md"
+    },
+    {
+      "date": "2026-05-05T21:29:00+08:00",
+      "decision": "Contract passed for t-011-runner-lifecycle-heartbeat; coding may begin on the first read-only runner lifecycle slice.",
+      "source": "tasks/t-011-runner-lifecycle-heartbeat/contract.md"
+    },
+    {
+      "date": "2026-05-05T21:51:00+08:00",
+      "decision": "Code review passed for t-011-runner-lifecycle-heartbeat after implementing runner metadata reading, handoff semantics, and protocol docs.",
+      "source": "tasks/t-011-runner-lifecycle-heartbeat/code-review.md"
+    },
+    {
+      "date": "2026-05-05T21:53:00+08:00",
+      "decision": "Verification passed for t-011-runner-lifecycle-heartbeat; runner lifecycle is now read from cooperative metadata instead of inferred from task phase.",
+      "source": "tasks/t-011-runner-lifecycle-heartbeat/verification.md"
+    },
+    {
+      "date": "2026-05-05T21:55:00+08:00",
+      "decision": "Completed t-011-runner-lifecycle-heartbeat with separate runner lifecycle metadata, Needs Action semantics, and protocol guidance.",
+      "source": "tasks/t-011-runner-lifecycle-heartbeat/status.md"
+    },
+    {
+      "date": "2026-05-05T22:49:00+08:00",
+      "decision": "Fixed task list visibility by matching SharkBay's queue reader to section-specific harness queue rules and adding read-only task directory fallback rows.",
+      "source": "tasks/t-012-task-directory-queue-fallback/status.md"
+    },
+    {
+      "date": "2026-05-05T23:00:00+08:00",
+      "decision": "Moved task artifacts out of the default project overview and added a full-column task drilldown from the Tasks list.",
+      "source": "tasks/t-013-task-detail-drilldown/status.md"
+    },
+    {
+      "date": "2026-05-06T16:47:19+08:00",
+      "decision": "Open SharkBay Settings from the macOS application menu instead of relying on an in-panel settings button.",
+      "source": "tasks/t-018-macos-settings-menu/implementation.md"
+    },
+    {
+      "date": "2026-05-06T16:53:27+08:00",
+      "decision": "Removed the left project panel's search, phase, Dirty, Blocked, refresh, and Settings controls.",
+      "source": "tasks/t-018-macos-settings-menu/implementation.md"
+    },
+    {
+      "date": "2026-05-06T17:01:51+08:00",
+      "decision": "Keep DashboardView mounted while Settings is open so terminal spaces, tabs, and xterm instances persist across Settings navigation.",
+      "source": "tasks/t-019-preserve-terminals-across-settings/implementation.md"
+    },
+    {
+      "date": "2026-05-06T18:50:09+08:00",
+      "decision": "Open t-020-right-detail-card-tabs to convert the right detail column into card-style tabs for Tasks, Decisions, Git, and Info, with handoff remaining inside Tasks.",
+      "source": "user request"
+    },
+    {
+      "date": "2026-05-06T18:57:51+08:00",
+      "decision": "Completed t-020-right-detail-card-tabs with card-style right detail tabs and Handoff scoped to Tasks.",
+      "source": "tasks/t-020-right-detail-card-tabs/verification.md"
+    },
+    {
+      "date": "2026-05-06T19:09:33+08:00",
+      "decision": "Repaired right detail card tabs to preserve tab-local state across switches and added explicit tab accessibility links and keyboard navigation.",
+      "source": "tasks/t-020-right-detail-card-tabs/implementation.md"
+    },
+    {
+      "date": "2026-05-06T19:29:24+08:00",
+      "decision": "Flattened right detail tab content: current task is the first task row, Decisions and Git show complete lists directly, repository facts moved to Git, and Info no longer shows Track URLs.",
+      "source": "tasks/t-020-right-detail-card-tabs/implementation.md"
+    }
+  ],
+  "openQuestions": []
+}
