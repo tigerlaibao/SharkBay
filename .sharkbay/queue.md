@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-045-workbench-column-inset-balance` | Balance workbench column top and bottom inset | 2026-05-07 |
 | `t-044-workbench-layout-polish` | Polish workbench titlebar, terminal, and detail tabs | 2026-05-07 |
 | `t-043-custom-app-icon` | Use shark image as SharkBay app icon | 2026-05-07 |
 | `t-042-settings-two-column-redesign` | Redesign Settings as a two-column settings page | 2026-05-07 |

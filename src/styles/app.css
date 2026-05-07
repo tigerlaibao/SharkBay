@@ -1,4 +1,5 @@
 :root {
+  --workbench-edge-inset: 14px;
   color: #1f2528;
   background: #f4f1eb;
   font-family:
@@ -254,7 +255,7 @@ textarea::placeholder {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: 0 14px 14px;
+  padding: 0 var(--workbench-edge-inset) var(--workbench-edge-inset);
 }
 
 .workspace-body {
@@ -302,6 +303,8 @@ textarea::placeholder {
 .column-resizer {
   display: grid;
   place-items: center;
+  height: calc(100% - var(--workbench-edge-inset));
+  margin-top: var(--workbench-edge-inset);
   min-width: 12px;
   cursor: col-resize;
   outline: none;
@@ -369,11 +372,15 @@ body.is-resizing-columns * {
 .detail-panel {
   display: flex;
   flex-direction: column;
+  height: calc(100% - var(--workbench-edge-inset));
+  margin-top: var(--workbench-edge-inset);
 }
 
 .terminal-panel {
   display: flex;
   flex-direction: column;
+  height: calc(100% - var(--workbench-edge-inset));
+  margin-top: var(--workbench-edge-inset);
   background: #172022;
   border-color: #263639;
   padding: 0;
