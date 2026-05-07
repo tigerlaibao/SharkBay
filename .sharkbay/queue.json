@@ -1,10 +1,19 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T19:57:22+08:00",
+  "updatedAt": "2026-05-07T20:05:07+08:00",
   "active": [],
   "backlog": [
   ],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-047-hide-xterm-custom-scrollbar",
+      "title": "Hide xterm custom scrollbar",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-07"
+    },
     {
       "priority": 1,
       "taskId": "t-046-hide-terminal-scrollbars",

@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Terminal column scrollbars are hidden.
+- Current focus: Xterm custom terminal scrollbar is hidden.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T046 terminal scrollbar verification.
+- Next action: Idle after T047 xterm custom scrollbar verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-07T20:05:07+08:00 | Completed `t-047-hide-xterm-custom-scrollbar` by hiding xterm's custom scrollbar/shadow DOM in the terminal panel with passing verification. | `.sharkbay/tasks/t-047-hide-xterm-custom-scrollbar/verification.md` |
+| 2026-05-07T20:03:32+08:00 | Opened `t-047-hide-xterm-custom-scrollbar` because xterm also renders a custom translucent scrollbar separate from native browser scrollbars. | `.sharkbay/tasks/t-047-hide-xterm-custom-scrollbar/status.md` |
 | 2026-05-07T19:57:22+08:00 | Completed `t-046-hide-terminal-scrollbars` with hidden xterm scrollbars, preserved scrollback, and passing verification. | `.sharkbay/tasks/t-046-hide-terminal-scrollbars/verification.md` |
 | 2026-05-07T19:55:51+08:00 | Opened `t-046-hide-terminal-scrollbars` to hide the middle terminal column scrollbar while preserving terminal scrollback. | `.sharkbay/tasks/t-046-hide-terminal-scrollbars/status.md` |
 | 2026-05-07T19:53:20+08:00 | Completed `t-045-workbench-column-inset-balance` with equal top and bottom outer spacing for terminal/detail columns and passing verification. | `.sharkbay/tasks/t-045-workbench-column-inset-balance/verification.md` |
