@@ -32,7 +32,7 @@ SharkBay expects managed projects to use a small file-based harness:
 
 The app is intentionally local-first. Project data stays in local repository files unless the user chooses to publish the repository.
 
-SharkBay still reads legacy projects that use `.agent/`, root `docs/`, and root `tasks/`. New setup uses the contained `.sharkbay/` layout to minimize interference with external projects.
+SharkBay still reads legacy projects that use `.agent/`, root `docs/`, and root `tasks/`. New setup uses the contained `.sharkbay/` layout to minimize interference with external projects. For legacy projects, the detail view can offer an explicit confirmed migration that moves only recognized harness files into `.sharkbay/`; it does not touch `.gitignore` or unrelated root `docs`/`tasks` content.
 
 The bundled source templates for that harness live in `templates/harness/` and are part of the public product repository. SharkBay's own local dogfood harness state under root `.agent/`, root `tasks/`, `docs/task.md`, and `docs/learnings.md` is intentionally ignored so forked copies do not inherit this repository's private work queue or run history.
 

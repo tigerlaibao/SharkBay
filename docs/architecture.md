@@ -126,6 +126,8 @@ Harness template sync has a separate allowlist for version-owned control files:
 
 The sync checker computes a content-hash version from those tracked template files, records new install metadata in harness `template-sync.json`, and exposes current/stale/missing status through project scan/detail data. It does not overwrite project-owned files such as manifest, state, queue, development metadata, `.gitignore`, docs, or tasks. Setup does not own or rewrite project ignore rules.
 
+Legacy harness cleanup is a separate explicit migration service. It reports readiness during project detail reads, but only writes after a confirmed IPC action. The migration refuses mixed `.agent` plus `.sharkbay` layouts, symlinked sources, destination conflicts, and unsafe task directory names. It moves only known harness files from `.agent`, known root docs, `_template`, and task directories with `status.md`; root `AGENTS.md`, `.gitignore`, and unrelated root `docs`/`tasks` entries stay in place.
+
 Create-repo writes only to an empty target inside configured roots and rejects non-empty targets, existing harness files, and symlink targets.
 
 Terminal sessions are writable process sessions, but their filesystem authority starts from the same configured-root boundary. The main process canonicalizes the requested cwd through `resolveRepoPath` before spawning a `node-pty` shell, and renderer payloads cannot open arbitrary paths outside configured roots. The renderer uses xterm terminal spaces keyed by project candidate so hidden project terminals remain alive while only the selected project's space is visible.

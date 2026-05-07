@@ -109,6 +109,21 @@ export type HarnessTemplateSyncSummary = {
   missingFiles: string[];
 };
 
+export type LegacyHarnessCleanupStatus = "not_needed" | "ready" | "blocked";
+
+export type LegacyHarnessCleanupMove = {
+  source: string;
+  target: string;
+  kind: "file" | "directory";
+};
+
+export type LegacyHarnessCleanupSummary = {
+  status: LegacyHarnessCleanupStatus;
+  message: string;
+  moves: LegacyHarnessCleanupMove[];
+  blockers: string[];
+};
+
 export type ProjectSummary = {
   id: string;
   name: string;
@@ -124,6 +139,7 @@ export type ProjectSummary = {
   deploymentUrl: string | null;
   errors: HarnessError[];
   harnessTemplate: HarnessTemplateSyncSummary | null;
+  legacyHarnessCleanup: LegacyHarnessCleanupSummary | null;
 };
 
 export type ProjectCandidate = {
@@ -424,6 +440,37 @@ export type HarnessTemplateSyncUpdateResult =
       ok: false;
       reason: "unsafe-path" | "template-missing" | "io-error";
       message: string;
+    };
+
+export type LegacyHarnessCleanupCheckInput = {
+  repoPath: string;
+  configuredRoots?: string[];
+};
+
+export type LegacyHarnessCleanupCheckResult =
+  | ({
+      ok: true;
+      repoPath: string;
+    } & LegacyHarnessCleanupSummary)
+  | {
+      ok: false;
+      reason: "unsafe-path" | "io-error";
+      message: string;
+    };
+
+export type LegacyHarnessCleanupMigrationResult =
+  | {
+      ok: true;
+      repoPath: string;
+      status: "migrated";
+      moves: LegacyHarnessCleanupMove[];
+      removedLegacyDirs: string[];
+    }
+  | {
+      ok: false;
+      reason: "unsafe-path" | "blocked" | "io-error";
+      message: string;
+      blockers?: string[];
     };
 
 export type PromptGenerationInput = {

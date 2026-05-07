@@ -6,6 +6,7 @@ import {
 } from "../src/main/config.js";
 import { readProjectDetail } from "../src/main/harness-reader.js";
 import { checkHarnessTemplateSync, updateHarnessTemplateFiles } from "../src/main/harness-template-sync.js";
+import { migrateLegacyHarnessToContained } from "../src/main/legacy-harness-cleanup.js";
 import {
   updateHarnessManifest,
   updateHarnessQueue,
@@ -25,6 +26,8 @@ import type {
   HarnessTemplateSyncCheckResult,
   HarnessTemplateSyncUpdateInput,
   HarnessTemplateSyncUpdateResult,
+  LegacyHarnessCleanupCheckInput,
+  LegacyHarnessCleanupMigrationResult,
   NextActionPromptInput,
   NextActionPromptResult,
   ProjectDetail,
@@ -61,6 +64,7 @@ export type SharkBayIpcServices = {
   updateHarnessQueue: (input: HarnessJsonPatchInput) => Promise<SafeWriteResult>;
   checkHarnessTemplateSync: (input: HarnessTemplateSyncCheckInput) => Promise<HarnessTemplateSyncCheckResult>;
   updateHarnessTemplateFiles: (input: HarnessTemplateSyncUpdateInput) => Promise<HarnessTemplateSyncUpdateResult>;
+  migrateLegacyHarness: (input: LegacyHarnessCleanupCheckInput) => Promise<LegacyHarnessCleanupMigrationResult>;
   createHarnessRepo: (input: CreateHarnessRepoInput) => Promise<CreateHarnessRepoResult>;
   nextActionPrompt: (input: NextActionPromptInput) => Promise<NextActionPromptResult>;
   createTerminal: (input: TerminalCreateInput) => Promise<TerminalSession>;
@@ -81,6 +85,7 @@ const channels = {
   updateHarnessQueue: "harness:updateQueue",
   checkHarnessTemplateSync: "harness:checkTemplateSync",
   updateHarnessTemplateFiles: "harness:updateTemplateFiles",
+  migrateLegacyHarness: "harness:migrateLegacy",
   createHarnessRepo: "projects:createHarnessRepo",
   nextActionPrompt: "prompts:nextAction",
   createTerminal: "terminal:create",
@@ -116,6 +121,10 @@ function createDefaultServices(runtime: IpcRuntime): SharkBayIpcServices {
     updateHarnessTemplateFiles: async (input) => {
       const configuredRoots = (await getConfiguredRoots(runtime)).configuredRoots;
       return updateHarnessTemplateFiles({ ...input, configuredRoots, templateDir: runtime.templateRoot });
+    },
+    migrateLegacyHarness: async (input) => {
+      const configuredRoots = (await getConfiguredRoots(runtime)).configuredRoots;
+      return migrateLegacyHarnessToContained({ ...input, configuredRoots });
     },
     createHarnessRepo: (input) => createHarnessRepo(runtime, input),
     nextActionPrompt: (input) => generateNextActionPrompt(runtime, input),
@@ -184,6 +193,9 @@ export function registerIpcHandlers(
   );
   handle<HarnessTemplateSyncUpdateInput, HarnessTemplateSyncUpdateResult>(channels.updateHarnessTemplateFiles, (payload) =>
     services.updateHarnessTemplateFiles(payload)
+  );
+  handle<LegacyHarnessCleanupCheckInput, LegacyHarnessCleanupMigrationResult>(channels.migrateLegacyHarness, (payload) =>
+    services.migrateLegacyHarness(payload)
   );
   handle<CreateHarnessRepoInput, CreateHarnessRepoResult>(channels.createHarnessRepo, (payload) =>
     services.createHarnessRepo(payload)

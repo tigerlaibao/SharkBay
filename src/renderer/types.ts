@@ -79,6 +79,7 @@ export type ProjectSummary = UrlFields & {
   gateStatus?: GateStatus;
   errors?: Array<string | { file?: string; message: string }>;
   harnessTemplate?: HarnessTemplateSyncSummary | null;
+  legacyHarnessCleanup?: LegacyHarnessCleanupSummary | null;
 };
 
 export type HarnessTemplateSyncStatus = "current" | "stale" | "missing" | "unknown";
@@ -89,6 +90,21 @@ export type HarnessTemplateSyncSummary = {
   installedVersion: string | null;
   staleFiles: string[];
   missingFiles: string[];
+};
+
+export type LegacyHarnessCleanupStatus = "not_needed" | "ready" | "blocked";
+
+export type LegacyHarnessCleanupMove = {
+  source: string;
+  target: string;
+  kind: "file" | "directory";
+};
+
+export type LegacyHarnessCleanupSummary = {
+  status: LegacyHarnessCleanupStatus;
+  message: string;
+  moves: LegacyHarnessCleanupMove[];
+  blockers: string[];
 };
 
 export type HarnessTemplateSyncCheckInput = {
@@ -135,6 +151,26 @@ export type HarnessTemplateSyncUpdateResult =
       ok: false;
       reason: "unsafe-path" | "template-missing" | "io-error";
       message: string;
+    };
+
+export type LegacyHarnessCleanupCheckInput = {
+  repoPath: string;
+  configuredRoots?: string[];
+};
+
+export type LegacyHarnessCleanupMigrationResult =
+  | {
+      ok: true;
+      repoPath: string;
+      status: "migrated";
+      moves: LegacyHarnessCleanupMove[];
+      removedLegacyDirs: string[];
+    }
+  | {
+      ok: false;
+      reason: "unsafe-path" | "blocked" | "io-error";
+      message: string;
+      blockers?: string[];
     };
 
 export type ProjectCandidate = {
@@ -372,6 +408,7 @@ export type SharkBayBridge = {
   harness?: {
     checkTemplateSync?: (input: HarnessTemplateSyncCheckInput) => Promise<HarnessTemplateSyncCheckResult>;
     updateTemplateFiles?: (input: HarnessTemplateSyncUpdateInput) => Promise<HarnessTemplateSyncUpdateResult>;
+    migrateLegacyHarness?: (input: LegacyHarnessCleanupCheckInput) => Promise<LegacyHarnessCleanupMigrationResult>;
   };
   terminal?: {
     create?: (input: TerminalCreateInput) => Promise<TerminalSession>;

@@ -23,6 +23,7 @@ import { getRuntimeConfigPath, loadAppConfig } from "./config.js";
 import { readGitHistory, readGitMetadata } from "./git.js";
 import { detectHarnessLayout, harnessJsonRelativePath, type HarnessLayout } from "./harness-layout.js";
 import { checkHarnessTemplateSync } from "./harness-template-sync.js";
+import { checkLegacyHarnessCleanup } from "./legacy-harness-cleanup.js";
 import { readJsonFile } from "./json-file.js";
 import { isPathInside, resolveReadableHarnessJsonFile, resolveReadableRepoFile, resolveRepoPath } from "./path-safety.js";
 
@@ -99,6 +100,7 @@ export async function readProjectDetail(
   const name = readProjectName(manifest.data, repoPath);
   const repoUrl = readRepoUrl(state.data) || readRepoUrl(manifest.data) || git.githubUrl;
   const harnessTemplate = await readHarnessTemplateSummary(repoPath, configuredRoots, options.templateDir, errors);
+  const legacyHarnessCleanup = await readLegacyHarnessCleanupSummary(repoPath, configuredRoots, errors);
   const currentTask = options.includeArtifacts === false || !activeTask ? null : await readTaskArtifacts(repoPath, configuredRoots, layout, activeTask.taskId, errors);
   const taskArtifacts = options.includeArtifacts === false ? {} : await readVisibleTaskArtifacts(repoPath, configuredRoots, layout, visibleQueue, errors);
   const recentDecisions = readRecentDecisions(state.data);
@@ -118,6 +120,7 @@ export async function readProjectDetail(
     deploymentUrl: urls.deploymentUrl,
     errors,
     harnessTemplate,
+    legacyHarnessCleanup,
     queue: visibleQueue,
     currentTask,
     taskArtifacts,
@@ -129,6 +132,25 @@ export async function readProjectDetail(
       state: state.revision,
       queue: queueJson.revision,
     },
+  };
+}
+
+async function readLegacyHarnessCleanupSummary(
+  repoPath: string,
+  configuredRoots: string[],
+  errors: HarnessError[],
+): Promise<ProjectSummary["legacyHarnessCleanup"]> {
+  const result = await checkLegacyHarnessCleanup({ repoPath, configuredRoots });
+  if (!result.ok) {
+    errors.push({ file: repoPath, message: `Legacy harness cleanup check failed: ${result.message}` });
+    return null;
+  }
+
+  return {
+    status: result.status,
+    message: result.message,
+    moves: result.moves,
+    blockers: result.blockers,
   };
 }
 
@@ -641,6 +663,7 @@ function unsafeProjectDetail(repoPath: string, detection: DetectionMode, message
     deploymentUrl: null,
     errors: [{ file: repoPath, message }],
     harnessTemplate: null,
+    legacyHarnessCleanup: null,
     queue: { active: [], backlog: [], done: [] },
     currentTask: null,
     taskArtifacts: {},

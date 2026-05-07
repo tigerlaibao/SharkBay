@@ -241,6 +241,14 @@ async function updateHarnessTemplateFiles(project: ProjectSummary | ProjectDetai
   return handler({ repoPath: project.path });
 }
 
+async function migrateLegacyHarness(project: ProjectSummary | ProjectDetail) {
+  const handler = getBridge().harness?.migrateLegacyHarness;
+  if (!handler) {
+    throw new Error("Legacy harness migration is not exposed by the preload API.");
+  }
+  return handler({ repoPath: project.path });
+}
+
 async function createTerminal(cwd: string, title?: string): Promise<TerminalSession> {
   const handler = getBridge().terminal?.create;
   if (!handler) {
@@ -1645,6 +1653,7 @@ function ProjectDetailPane({
   return (
     <div className="detail-layout">
       <HarnessTemplateSyncPanel detail={detailLike} setToast={setToast} onRefresh={onRefresh} />
+      <LegacyHarnessCleanupPanel detail={detailLike} setToast={setToast} onRefresh={onRefresh} />
       <div className="detail-tab-cards" role="tablist" aria-label="Project detail sections">
         {detailTabs.map((tab) => (
           <button
@@ -1707,6 +1716,91 @@ function ProjectDetailPane({
         <InfoDetailTab detail={detailLike} />
       </div>
     </div>
+  );
+}
+
+function LegacyHarnessCleanupPanel({
+  detail,
+  setToast,
+  onRefresh,
+}: {
+  detail: ProjectDetail;
+  setToast: (toast: Toast) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const [confirmed, setConfirmed] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const cleanup = detail.legacyHarnessCleanup;
+  const isReady = cleanup?.status === "ready";
+  const isBlocked = cleanup?.status === "blocked";
+
+  useEffect(() => {
+    setConfirmed(false);
+    setMigrating(false);
+  }, [detail.id, cleanup?.status, cleanup?.moves.map((move) => `${move.source}:${move.target}`).join("\n")]);
+
+  if (!cleanup || (!isReady && !isBlocked)) {
+    return null;
+  }
+
+  async function migrate() {
+    setMigrating(true);
+    try {
+      const result = await migrateLegacyHarness(detail);
+      if (!result.ok) {
+        throw new Error(result.message);
+      }
+      setConfirmed(false);
+      setToast({ tone: "success", message: "Legacy harness moved into .sharkbay." });
+      await onRefresh();
+    } catch (error) {
+      setToast({ tone: "error", message: asMessage(error) });
+    } finally {
+      setMigrating(false);
+    }
+  }
+
+  return (
+    <section className={cx("subpanel", "harness-sync-card", isBlocked && "is-missing")}>
+      <div className="panel-title-row">
+        <div>
+          <h4>{isBlocked ? "Legacy harness cleanup blocked" : "Legacy harness ready to move"}</h4>
+          <p className="summary-text">{cleanup.message}</p>
+        </div>
+      </div>
+      {cleanup.moves.length ? (
+        <div className="info-chip-row" aria-label="Legacy harness files to move">
+          {cleanup.moves.slice(0, 12).map((move) => (
+            <span className="info-chip mono-chip" key={`${move.source}:${move.target}`}>
+              {move.source}
+              {" -> "}
+              {move.target}
+            </span>
+          ))}
+          {cleanup.moves.length > 12 ? <span className="info-chip">+{cleanup.moves.length - 12}</span> : null}
+        </div>
+      ) : null}
+      {cleanup.blockers.length ? (
+        <ul className="diagnostic-list">
+          {cleanup.blockers.map((blocker) => (
+            <li key={blocker}>{blocker}</li>
+          ))}
+        </ul>
+      ) : null}
+      {isReady ? (
+        <div className="confirm-panel">
+          <label className="checkbox-row">
+            <input checked={confirmed} disabled={migrating} type="checkbox" onChange={(event) => setConfirmed(event.currentTarget.checked)} />
+            <span>Move only the listed legacy harness files</span>
+          </label>
+          <div className="button-row">
+            <button className="button compact" disabled={!confirmed || migrating} type="button" onClick={() => void migrate()}>
+              {migrating ? "Moving" : "Move to .sharkbay"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }
 

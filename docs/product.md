@@ -51,6 +51,7 @@ Key terms:
 | P1 | Ordinary folder discovery | Show all direct child folders under scan roots | User can see projects that are not managed yet and start one-click Ripple setup |
 | P1 | Project terminal | Open terminal tabs rooted at selected project directories | Selecting any managed or not-setup project opens a shell rooted at that project path |
 | P1 | Harness template sync | Detect when installed Ripple control files drift from SharkBay's tracked `templates/harness/` source | Managed project scan results include current/stale/missing harness template status and stale file names |
+| P1 | Legacy harness migration | Move old `.agent`/root docs/root tasks harness files into `.sharkbay/` only after explicit confirmation | Mixed layouts, conflicts, symlinks, and unrelated root content are preserved or blocked rather than changed silently |
 | P2 | Direct Codex invocation | Advance tasks from the UI through Codex CLI/MCP | Requires explicit user approval and visible logs |
 
 ## 5. Non-Goals

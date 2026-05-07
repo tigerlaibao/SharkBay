@@ -840,6 +840,23 @@ body.is-resizing-columns * {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
+.diagnostic-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: #653f37;
+  font-size: 12px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3e4d50;
+  font-size: 12px;
+}
+
 .runtime-link {
   color: #245b67;
   text-decoration: none;
