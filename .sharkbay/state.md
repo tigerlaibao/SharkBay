@@ -3,8 +3,8 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Guarded terminal resize during Settings navigation.
-- Last controller run: 2026-05-07T13:23:04+08:00 opened `t-041-settings-terminal-resize-guard`
+- Current focus: Settings now uses a two-column settings page layout.
+- Last controller run: 2026-05-07T14:01:02+08:00 opened `t-042-settings-two-column-redesign`
 
 ## Repository Identity
 
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T041 Settings terminal resize guard verification.
+- Next action: Idle after T042 Settings two-column redesign verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-07T14:09:19+08:00 | Completed `t-042-settings-two-column-redesign` with a left settings section selector, right content pane, preserved root controls, status section, and passing verification. | `.sharkbay/tasks/t-042-settings-two-column-redesign/verification.md` |
+| 2026-05-07T14:01:02+08:00 | Opened `t-042-settings-two-column-redesign` to convert Settings into a conventional two-column settings page. | `.sharkbay/tasks/t-042-settings-two-column-redesign/status.md` |
 | 2026-05-07T13:26:55+08:00 | Completed `t-041-settings-terminal-resize-guard` with renderer and backend terminal resize guards plus passing focused and full verification. | `.sharkbay/tasks/t-041-settings-terminal-resize-guard/verification.md` |
 | 2026-05-07T13:23:04+08:00 | Opened `t-041-settings-terminal-resize-guard` to fix terminal resize errors when entering Settings. | `.sharkbay/tasks/t-041-settings-terminal-resize-guard/status.md` |
 | 2026-05-07T12:41:56+08:00 | Committed `t-040-project-status-model` product changes as `e391eff Clarify project status model`. | `git commit -m "Clarify project status model"` |

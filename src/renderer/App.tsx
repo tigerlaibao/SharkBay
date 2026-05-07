@@ -29,6 +29,7 @@ import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredI
 type View = "dashboard" | "settings";
 type DetailMode = "overview" | "task";
 type DetailTab = "tasks" | "decisions" | "git" | "info";
+type SettingsSection = "project-roots" | "project-status";
 
 type Toast = {
   tone: "info" | "error" | "success";
@@ -81,6 +82,10 @@ const detailTabs: Array<{ id: DetailTab; label: string }> = [
   { id: "decisions", label: "Decisions" },
   { id: "git", label: "Git" },
   { id: "info", label: "Info" },
+];
+const settingsSections: Array<{ id: SettingsSection; label: string }> = [
+  { id: "project-roots", label: "Project roots" },
+  { id: "project-status", label: "Status" },
 ];
 
 const artifactOrder: ArtifactKey[] = [
@@ -2430,10 +2435,11 @@ function SettingsView({
   onRemove: (path: string) => Promise<void>;
 }) {
   const unavailableRootCount = roots.filter((root) => root.unavailable || root.available === false).length;
+  const [activeSection, setActiveSection] = useState<SettingsSection>("project-roots");
 
   return (
     <div className="settings-layout">
-      <div className="detail-header">
+      <div className="detail-header settings-header">
         <button aria-label="Back to projects" className="icon-button" title="Back to projects" type="button" onClick={onBack}>
           <ArrowLeftIcon />
         </button>
@@ -2444,22 +2450,142 @@ function SettingsView({
           </div>
         </div>
       </div>
-      <section className="panel settings-panel">
-        <RootWorkflowPanel
-          bridgeAvailable={bridgeAvailable}
-          lastScanAt={lastScanAt}
-          loading={loading}
-          projects={projects}
-          roots={roots}
-          scanErrors={scanErrors}
-          unavailableRootCount={unavailableRootCount}
-          onAdd={onAdd}
-          onRemove={onRemove}
-          onScan={onScan}
-          setToast={setToast}
-        />
-      </section>
+      <div className="settings-shell">
+        <aside className="settings-nav" aria-label="Settings sections">
+          {settingsSections.map((section) => {
+            const selected = section.id === activeSection;
+            const count = section.id === "project-roots"
+              ? roots.length
+              : actionProjects.length + unavailableRootCount + scanErrors.length;
+            const meta = section.id === "project-roots"
+              ? `${roots.length} root${roots.length === 1 ? "" : "s"}`
+              : count ? `${count} issue${count === 1 ? "" : "s"}` : "Clear";
+
+            return (
+              <button
+                aria-current={selected ? "page" : undefined}
+                className={cx("settings-nav-item", selected && "is-selected")}
+                key={section.id}
+                type="button"
+                onClick={() => setActiveSection(section.id)}
+              >
+                <span>{section.label}</span>
+                <small>{meta}</small>
+              </button>
+            );
+          })}
+        </aside>
+        <section className="settings-content" aria-label="Settings content">
+          <div className="settings-section-panel" hidden={activeSection !== "project-roots"}>
+            <div className="settings-section-heading">
+              <h4>Project roots</h4>
+              <span>{projects.length} project{projects.length === 1 ? "" : "s"}</span>
+            </div>
+            <RootWorkflowPanel
+              bridgeAvailable={bridgeAvailable}
+              lastScanAt={lastScanAt}
+              loading={loading}
+              projects={projects}
+              roots={roots}
+              scanErrors={scanErrors}
+              unavailableRootCount={unavailableRootCount}
+              onAdd={onAdd}
+              onRemove={onRemove}
+              onScan={onScan}
+              setToast={setToast}
+            />
+          </div>
+          <div className="settings-section-panel" hidden={activeSection !== "project-status"}>
+            <div className="settings-section-heading">
+              <h4>Status</h4>
+              <span>{lastScanAt ? `Last scan ${formatScanTime(lastScanAt)}` : "Not scanned"}</span>
+            </div>
+            <SettingsStatusPanel
+              actionProjects={actionProjects}
+              projects={projects}
+              roots={roots}
+              scanErrors={scanErrors}
+              unavailableRootCount={unavailableRootCount}
+            />
+          </div>
+        </section>
+      </div>
     </div>
+  );
+}
+
+function SettingsStatusPanel({
+  actionProjects,
+  projects,
+  roots,
+  scanErrors,
+  unavailableRootCount,
+}: {
+  actionProjects: ProjectSummary[];
+  projects: ProjectSummary[];
+  roots: RootRecord[];
+  scanErrors: string[];
+  unavailableRootCount: number;
+}) {
+  const unavailableRoots = roots.filter((root) => root.unavailable || root.available === false);
+
+  return (
+    <section className="workflow-panel settings-status-panel">
+      <div className="settings-facts-grid">
+        <Fact label="Roots" value={String(roots.length)} />
+        <Fact label="Projects" value={String(projects.length)} />
+        <Fact label="Needs action" value={String(actionProjects.length)} tone={actionProjects.length ? "warn" : undefined} />
+        <Fact label="Unavailable" value={String(unavailableRootCount)} tone={unavailableRootCount ? "warn" : undefined} />
+      </div>
+
+      {actionProjects.length ? (
+        <section className="subpanel settings-list-panel">
+          <h4>Needs action</h4>
+          <div className="settings-list">
+            {actionProjects.map((project) => (
+              <div className="settings-list-row" key={project.id}>
+                <span className="truncate">{project.name}</span>
+                <small className="truncate">{userActionReason(project) ?? "Action required"}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {unavailableRoots.length ? (
+        <section className="subpanel settings-list-panel">
+          <h4>Unavailable roots</h4>
+          <div className="settings-list">
+            {unavailableRoots.map((root) => (
+              <div className="settings-list-row" key={root.path}>
+                <span className="truncate">{root.path}</span>
+                <small className="truncate">{root.error ?? "Unavailable"}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {scanErrors.length ? (
+        <section className="subpanel settings-list-panel">
+          <h4>Scan issues</h4>
+          <div className="settings-list">
+            {scanErrors.map((error) => (
+              <div className="settings-list-row" key={error}>
+                <span className="truncate">{error}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {!actionProjects.length && !unavailableRoots.length && !scanErrors.length ? (
+        <div className="empty-state compact-title-row">
+          <strong>No issues</strong>
+          <span>Settings status is clear.</span>
+        </div>
+      ) : null}
+    </section>
   );
 }
 

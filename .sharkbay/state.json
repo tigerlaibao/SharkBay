@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T13:26:55+08:00",
+  "updatedAt": "2026-05-07T14:09:19+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Guarded terminal resize during Settings navigation.",
+    "currentFocus": "Settings now uses a two-column settings page layout.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T041 Settings terminal resize guard verification.",
+    "nextAction": "Idle after T042 Settings two-column redesign verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-07T14:09:19+08:00",
+      "decision": "Completed t-042-settings-two-column-redesign with a left settings section selector, right content pane, preserved root controls, status section, and passing verification.",
+      "source": ".sharkbay/tasks/t-042-settings-two-column-redesign/verification.md"
+    },
+    {
+      "date": "2026-05-07T14:01:02+08:00",
+      "decision": "Opened t-042-settings-two-column-redesign to convert Settings into a conventional two-column settings page.",
+      "source": ".sharkbay/tasks/t-042-settings-two-column-redesign/status.md"
+    },
     {
       "date": "2026-05-07T13:26:55+08:00",
       "decision": "Completed t-041-settings-terminal-resize-guard with renderer and backend terminal resize guards plus passing focused and full verification.",

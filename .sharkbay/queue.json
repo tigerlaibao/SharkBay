@@ -1,10 +1,19 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T13:26:55+08:00",
+  "updatedAt": "2026-05-07T14:09:19+08:00",
   "active": [],
   "backlog": [
   ],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-042-settings-two-column-redesign",
+      "title": "Redesign Settings as a two-column settings page",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-07"
+    },
     {
       "priority": 1,
       "taskId": "t-041-settings-terminal-resize-guard",
