@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T20:05:07+08:00",
+  "updatedAt": "2026-05-07T20:23:59+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Xterm custom terminal scrollbar is hidden.",
+    "currentFocus": "macOS packaging configuration is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T047 xterm custom scrollbar verification.",
+    "nextAction": "Idle after T048 macOS packaging verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-07T20:23:59+08:00",
+      "decision": "Completed t-048-macos-packaging-config with electron-builder macOS scripts/config, release output ignored, README packaging docs, and verified app/dmg/zip artifacts.",
+      "source": ".sharkbay/tasks/t-048-macos-packaging-config/verification.md"
+    },
+    {
+      "date": "2026-05-07T20:11:32+08:00",
+      "decision": "Opened t-048-macos-packaging-config to add electron-builder macOS packaging scripts/config after the user installed electron-builder.",
+      "source": ".sharkbay/tasks/t-048-macos-packaging-config/status.md"
+    },
     {
       "date": "2026-05-07T20:05:07+08:00",
       "decision": "Completed t-047-hide-xterm-custom-scrollbar by hiding xterm's custom scrollbar/shadow DOM in the terminal panel with passing verification.",

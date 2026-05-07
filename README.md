@@ -81,6 +81,22 @@ If Electron or native terminal dependencies change, rebuild native modules:
 npm run rebuild:native
 ```
 
+## Packaging
+
+Create an unpacked local macOS app for smoke testing:
+
+```bash
+npm run pack
+```
+
+Create distributable macOS artifacts:
+
+```bash
+npm run dist
+```
+
+Outputs are written to `release/`, including `release/mac-arm64/SharkBay.app`, a DMG, and a zip archive. Local builds use ad-hoc signing unless signing/notarization credentials are configured.
+
 ## Safety Notes
 
 SharkBay is designed around explicit local boundaries:
