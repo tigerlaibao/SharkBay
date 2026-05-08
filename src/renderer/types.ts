@@ -195,6 +195,26 @@ export type LegacyHarnessCleanupMigrationResult =
       blockers?: string[];
     };
 
+export type HarnessUninstallInput = {
+  repoPath: string;
+  configuredRoots?: string[];
+};
+
+export type HarnessUninstallResult =
+  | {
+      ok: true;
+      repoPath: string;
+      removedPaths: string[];
+      skippedPaths: string[];
+      gitignoreRemovedLines: string[];
+    }
+  | {
+      ok: false;
+      reason: "unsafe-path" | "blocked" | "io-error";
+      message: string;
+      blockers?: string[];
+    };
+
 export type ProjectCandidate = {
   id: string;
   name: string;
@@ -454,6 +474,7 @@ export type SharkBayBridge = {
     checkTemplateSync?: (input: HarnessTemplateSyncCheckInput) => Promise<HarnessTemplateSyncCheckResult>;
     updateTemplateFiles?: (input: HarnessTemplateSyncUpdateInput) => Promise<HarnessTemplateSyncUpdateResult>;
     migrateLegacyHarness?: (input: LegacyHarnessCleanupCheckInput) => Promise<LegacyHarnessCleanupMigrationResult>;
+    uninstall?: (input: HarnessUninstallInput) => Promise<HarnessUninstallResult>;
   };
   terminal?: {
     create?: (input: TerminalCreateInput) => Promise<TerminalSession>;

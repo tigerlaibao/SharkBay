@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Harness Uninstall Must Treat .gitignore As Project-Owned
+
+**Problem**: Removing a Ripple harness from a project also needs to remove old ignore rules, but `.gitignore` may contain unrelated project rules.
+
+**Cause**: Earlier setup history included harness-related ignore entries, while later contained setup stopped owning `.gitignore` broadly.
+
+**Solution**: Uninstall removes only exact harness-related ignore patterns and adjacent SharkBay/Ripple marker comments. It leaves unrelated lines and project-owned comments intact.
+
+**Source**: `.sharkbay/tasks/t-073-uninstall-harness-action/implementation.md`, `src/main/harness-uninstall.ts`, `tests/harness-uninstall.test.ts`.
+
+---
+
 ### Python CLI Web Services Need Virtualenv-Aware Discovery
 
 **Problem**: `../wechat-cli` starts as a Python console script inside `.venv`, so SharkBay's npm-only dev service discovery did not show a service pill for it.

@@ -6,6 +6,8 @@ import type {
   CreateHarnessRepoInput,
   CreateHarnessRepoResult,
   HarnessJsonPatchInput,
+  HarnessUninstallInput,
+  HarnessUninstallResult,
   HarnessTemplateSyncCheckInput,
   HarnessTemplateSyncCheckResult,
   HarnessTemplateSyncUpdateInput,
@@ -47,6 +49,7 @@ const channels = {
   checkHarnessTemplateSync: "harness:checkTemplateSync",
   updateHarnessTemplateFiles: "harness:updateTemplateFiles",
   migrateLegacyHarness: "harness:migrateLegacy",
+  uninstallHarness: "harness:uninstall",
   createHarnessRepo: "projects:createHarnessRepo",
   nextActionPrompt: "prompts:nextAction",
   createTerminal: "terminal:create",
@@ -127,7 +130,9 @@ const sharkBayApi = {
     updateTemplateFiles: (input: HarnessTemplateSyncUpdateInput) =>
       invoke<HarnessTemplateSyncUpdateResult>(channels.updateHarnessTemplateFiles, input),
     migrateLegacyHarness: (input: LegacyHarnessCleanupCheckInput) =>
-      invoke<LegacyHarnessCleanupMigrationResult>(channels.migrateLegacyHarness, input)
+      invoke<LegacyHarnessCleanupMigrationResult>(channels.migrateLegacyHarness, input),
+    uninstall: (input: HarnessUninstallInput) =>
+      invoke<HarnessUninstallResult>(channels.uninstallHarness, input)
   },
   prompts: {
     nextAction: (input: NextActionPromptInput) =>

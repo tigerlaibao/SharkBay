@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-073-uninstall-harness-action` | Add uninstall harness action | 2026-05-08 |
 | `t-072-wechat-cli-service-command` | Cover wechat-cli web service startup | 2026-05-08 |
 | `t-071-avatar-milk-background` | Use milk project background for avatar circles | 2026-05-08 |
 | `t-070-favicon-first-monorepo-icons` | Prefer favicons for monorepo web package icons | 2026-05-08 |

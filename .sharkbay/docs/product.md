@@ -54,6 +54,7 @@ Key terms:
 | P1 | Dev service controls | Start and stop discovered `dev` services from the terminal header | Projects with root `dev`/`dev:*` scripts or direct-child `scripts.dev` show script-labeled pills; starting creates a service log terminal tab and stopping removes it |
 | P1 | Harness template sync | Detect when installed Ripple control files drift from SharkBay's tracked `templates/harness/` source | Managed project scan results include current/stale/missing harness template status and stale file names |
 | P1 | Legacy harness migration | Move old `.agent`/root docs/root tasks harness files into `.sharkbay/` only after explicit confirmation | Mixed layouts, conflicts, symlinks, and unrelated root content are preserved or blocked rather than changed silently |
+| P1 | Harness uninstall | Remove Ripple harness files from a managed project after explicit confirmation | Right-clicking a managed project exposes an uninstall action that removes recognized harness files and only matching `.gitignore` lines |
 | P2 | Direct agent/tool invocation | Advance tasks from the UI through an approved agent or tool | Requires explicit user approval and visible logs |
 
 ## 5. Non-Goals

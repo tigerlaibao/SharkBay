@@ -79,6 +79,7 @@ Local filesystem repositories
 | Path safety | Canonicalize paths, enforce configured-root containment, reject symlink escapes | Use string-prefix checks as an authority boundary |
 | Template installer | Create new harness repos from templates | Overwrite existing files blindly |
 | Harness template sync | Compare/update version-owned Ripple control files from tracked `templates/harness/` | Overwrite project-owned identity, queue, state, docs, tasks, or runtime history |
+| Harness uninstall | Remove recognized Ripple harness files after explicit user confirmation | Delete arbitrary project files, trust renderer paths as authority, or broadly rewrite `.gitignore` |
 | Application menu | Expose macOS-native app actions such as Settings | Perform repository reads or writes directly |
 | Dashboard UI | Display project and task lifecycle state | Execute destructive repo operations |
 | Prompt generator | Produce next-action prompts for agents or tools | Pretend execution happened |
@@ -131,6 +132,8 @@ Harness template sync has a separate allowlist for version-owned control files:
 The sync checker computes a content-hash version from those tracked template files, records new install metadata in harness `template-sync.json`, and exposes current/stale/missing status through project scan/detail data. It does not overwrite project-owned files such as manifest, state, queue, development metadata, `.gitignore`, docs, or tasks. Setup does not own or rewrite project ignore rules.
 
 Legacy harness cleanup is a separate explicit migration service. It reports readiness during project detail reads, but only writes after a confirmed IPC action. The migration refuses mixed `.agent` plus `.sharkbay` layouts, symlinked sources, destination conflicts, and unsafe task directory names. It moves only known harness files from `.agent`, known root docs, `_template`, and task directories with `status.md`; root `AGENTS.md`, `.gitignore`, and unrelated root `docs`/`tasks` entries stay in place.
+
+Harness uninstall is also explicit and confirmation-gated from the UI. The backend reloads configured roots from app config, resolves the selected project through `resolveRepoPath`, rejects symlinked harness paths, removes recognized contained `.sharkbay` and legacy `.agent`/root docs/root tasks artifacts, and edits `.gitignore` only by deleting exact harness-related ignore entries plus adjacent SharkBay/Ripple marker comments.
 
 Create-repo writes only to an empty target inside configured roots and rejects non-empty targets, existing harness files, and symlink targets.
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties, FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal as XTerm } from "@xterm/xterm";
@@ -12,6 +12,7 @@ import type {
   CreateHarnessRepoResult,
   GateStatus,
   HarnessTemplateSyncUpdateResult,
+  HarnessUninstallResult,
   NextActionPromptResult,
   ProjectCandidate,
   ProjectDetail,
@@ -332,6 +333,14 @@ async function migrateLegacyHarness(project: ProjectSummary | ProjectDetail) {
   return handler({ repoPath: project.path });
 }
 
+async function uninstallHarness(project: ProjectSummary): Promise<HarnessUninstallResult> {
+  const handler = getBridge().harness?.uninstall;
+  if (!handler) {
+    throw new Error("Harness uninstall is not exposed by the preload API.");
+  }
+  return handler({ repoPath: project.path });
+}
+
 async function createTerminal(
   cwd: string,
   title?: string,
@@ -582,7 +591,7 @@ export function App() {
     setRoots(await listRoots());
   }
 
-  async function refreshProjects(options: RefreshOptions = {}) {
+  async function refreshProjects(options: RefreshOptions = {}): Promise<{ projects: ProjectSummary[]; candidates: ProjectCandidate[] }> {
     const showToast = options.showToast ?? false;
     const setBusy = options.setBusy ?? true;
 
@@ -628,10 +637,12 @@ export function App() {
 
         return preferredInitialCandidate(nextCandidates)?.id ?? null;
       });
+      return { projects: nextProjects, candidates: nextCandidates };
     } catch (error) {
       if (showToast || setBusy) {
         setToast({ tone: "error", message: asMessage(error) });
       }
+      return { projects, candidates };
     } finally {
       if (setBusy) {
         setLoading(false);
@@ -679,9 +690,11 @@ export function App() {
 
     refreshInFlight.current = true;
     try {
-      await refreshProjects(options);
-      if (selectedProject) {
+      const refreshed = await refreshProjects(options);
+      if (selectedProject && refreshed.projects.some((project) => project.id === selectedProject.id)) {
         await refreshDetail(selectedProject, options);
+      } else if (selectedProject) {
+        setDetail(null);
       }
     } finally {
       refreshInFlight.current = false;
@@ -773,7 +786,9 @@ export function App() {
                 scanErrors={scanErrors}
                 setToast={setToast}
                 onBack={() => setView("dashboard")}
-                onScan={() => refreshProjects({ showToast: true })}
+                onScan={async () => {
+                  await refreshProjects({ showToast: true });
+                }}
                 onAdd={async (path) => {
                   await addRoot(path);
                   await refreshRoots();
@@ -838,6 +853,11 @@ function DashboardView({
   const [detailColumnWidth, setDetailColumnWidth] = useState(() =>
     storedColumnWidth(detailColumnStorageKey, defaultDetailColumnWidth, minDetailColumnWidth),
   );
+  const [projectMenu, setProjectMenu] = useState<{
+    project: ProjectSummary;
+    x: number;
+    y: number;
+  } | null>(null);
 
   function normalizeColumnWidths(projectWidth: number, detailWidth: number, gridWidth: number) {
     const availableWidth = gridWidth - resizerColumnWidth * 2;
@@ -940,6 +960,44 @@ function DashboardView({
     return () => observer.disconnect();
   }, [detailColumnWidth, projectColumnWidth]);
 
+  useEffect(() => {
+    if (!projectMenu) {
+      return;
+    }
+    const close = () => setProjectMenu(null);
+    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setProjectMenu(null);
+      }
+    };
+    window.addEventListener("click", close);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [projectMenu]);
+
+  async function handleUninstallHarness(project: ProjectSummary) {
+    setProjectMenu(null);
+    const confirmed = window.confirm(`Uninstall the Ripple harness from ${project.name}?\n\nThis removes harness files and only matching .gitignore lines from the project workspace.`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const result = await uninstallHarness(project);
+      if (!result.ok) {
+        const blockers = result.blockers?.length ? ` ${result.blockers.join(" ")}` : "";
+        throw new Error(`${result.message}${blockers}`);
+      }
+      setToast({ tone: "success", message: `Harness uninstalled from ${project.name}.` });
+      await onRefresh();
+    } catch (error) {
+      setToast({ tone: "error", message: asMessage(error) });
+    }
+  }
+
   const gridStyle = {
     gridTemplateColumns: `${projectColumnWidth}px ${resizerColumnWidth}px minmax(${minTerminalColumnWidth}px, 1fr) ${resizerColumnWidth}px ${detailColumnWidth}px`,
   } satisfies CSSProperties;
@@ -965,6 +1023,10 @@ function DashboardView({
             selectedId={selectedCandidate?.id ?? null}
             title="Managed"
             onSelect={setSelectedId}
+            onContextMenu={(project, event) => {
+              event.preventDefault();
+              setProjectMenu({ project, x: event.clientX, y: event.clientY });
+            }}
           />
           <ProjectTable
             candidates={notSetupCandidates}
@@ -976,6 +1038,24 @@ function DashboardView({
             onSelect={setSelectedId}
           />
         </div>
+        {projectMenu ? (
+          <div
+            className="project-context-menu"
+            role="menu"
+            style={{ left: projectMenu.x, top: projectMenu.y }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              autoFocus
+              className="project-context-menu-item is-danger"
+              role="menuitem"
+              type="button"
+              onClick={() => void handleUninstallHarness(projectMenu.project)}
+            >
+              Uninstall Harness
+            </button>
+          </div>
+        ) : null}
       </section>
 
       <div
@@ -1655,6 +1735,7 @@ function ProjectTable({
   runningServiceProjectIds,
   selectedId,
   title,
+  onContextMenu,
   onSelect,
 }: {
   candidates: ProjectCandidate[];
@@ -1664,6 +1745,7 @@ function ProjectTable({
   selectedId: string | null;
   title: string;
   onSelect: (id: string) => void;
+  onContextMenu?: (project: ProjectSummary, event: ReactMouseEvent<HTMLButtonElement>) => void;
 }) {
   if (!candidates.length) {
     return null;
@@ -1688,7 +1770,12 @@ function ProjectTable({
           const hasRunningService = runningServiceProjectIds.has(candidate.id);
 
           return (
-            <button className={cx("project-row", candidate.status === "not_setup" && "is-not-setup", selectedId === candidate.id && "is-selected")} key={candidate.id} onClick={() => onSelect(candidate.id)}>
+            <button
+              className={cx("project-row", candidate.status === "not_setup" && "is-not-setup", selectedId === candidate.id && "is-selected")}
+              key={candidate.id}
+              onClick={() => onSelect(candidate.id)}
+              onContextMenu={project && onContextMenu ? (event) => onContextMenu(project, event) : undefined}
+            >
               <ProjectIcon name={candidate.name} sources={candidate.iconSources ?? project?.iconSources ?? []} />
               <span className="project-row-main">
                 <span className="cell-title">

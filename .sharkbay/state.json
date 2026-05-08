@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T20:13:47+08:00",
+  "updatedAt": "2026-05-08T20:42:13+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,18 +13,33 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "wechat-cli virtualenv web startup is covered by service controls.",
+    "currentFocus": "Confirmation-gated harness uninstall from project context menus is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
   },
   "currentTask": {
-    "taskId": "",
-    "phase": "done",
-    "nextAction": "Idle after T072 wechat-cli service startup coverage.",
+    "taskId": "none",
+    "phase": "idle",
+    "nextAction": "Await the next user-requested task.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T20:42:13+08:00",
+      "decision": "Completed t-073-uninstall-harness-action by adding a confirmation-gated Managed-project context menu action, safe harness file removal, exact .gitignore cleanup, and focused verification.",
+      "source": ".sharkbay/tasks/t-073-uninstall-harness-action/verification.md"
+    },
+    {
+      "date": "2026-05-08T20:29:48+08:00",
+      "decision": "Advanced t-073-uninstall-harness-action to coding with configured-root containment, confirmation gate, and line-preserving .gitignore cleanup constraints.",
+      "source": ".sharkbay/tasks/t-073-uninstall-harness-action/status.md"
+    },
+    {
+      "date": "2026-05-08T20:29:48+08:00",
+      "decision": "Opened t-073-uninstall-harness-action to add a confirmation-gated right-click project action that removes harness files and only matching .gitignore lines.",
+      "source": ".sharkbay/tasks/t-073-uninstall-harness-action/contract.md"
+    },
     {
       "date": "2026-05-08T20:13:47+08:00",
       "decision": "Completed t-072-wechat-cli-service-command by adding narrow Python virtualenv CLI web service discovery and verifying the real ../wechat-cli command.",

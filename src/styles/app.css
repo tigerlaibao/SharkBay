@@ -626,6 +626,44 @@ body.is-resizing-columns * {
   border-style: dashed;
 }
 
+.project-context-menu {
+  position: fixed;
+  z-index: 30;
+  min-width: 178px;
+  padding: 5px;
+  background: #fffdfa;
+  border: 1px solid #d7d2c8;
+  border-radius: 7px;
+  box-shadow: 0 16px 40px rgba(38, 48, 52, 0.18);
+}
+
+.project-context-menu-item {
+  width: 100%;
+  min-height: 32px;
+  color: #263034;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  padding: 7px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.project-context-menu-item:hover,
+.project-context-menu-item:focus-visible {
+  background: #eef5f3;
+}
+
+.project-context-menu-item.is-danger {
+  color: #a53b35;
+}
+
+.project-context-menu-item.is-danger:hover,
+.project-context-menu-item.is-danger:focus-visible {
+  background: #f7e7e4;
+}
+
 .project-row-main,
 .project-row-status {
   min-width: 0;
@@ -1888,6 +1926,30 @@ body.is-resizing-columns * {
 .app-shell[data-theme="night"] .project-row.is-not-setup {
   background: #151f21;
   border-color: #31474b;
+}
+
+.app-shell[data-theme="night"] .project-context-menu {
+  background: #182426;
+  border-color: #32474b;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+}
+
+.app-shell[data-theme="night"] .project-context-menu-item {
+  color: #d9e5df;
+}
+
+.app-shell[data-theme="night"] .project-context-menu-item:hover,
+.app-shell[data-theme="night"] .project-context-menu-item:focus-visible {
+  background: #223235;
+}
+
+.app-shell[data-theme="night"] .project-context-menu-item.is-danger {
+  color: #f0a39a;
+}
+
+.app-shell[data-theme="night"] .project-context-menu-item.is-danger:hover,
+.app-shell[data-theme="night"] .project-context-menu-item.is-danger:focus-visible {
+  background: rgba(165, 59, 53, 0.18);
 }
 
 .app-shell[data-theme="night"] .project-section-title h4 {

@@ -509,6 +509,26 @@ export type LegacyHarnessCleanupMigrationResult =
       blockers?: string[];
     };
 
+export type HarnessUninstallInput = {
+  repoPath: string;
+  configuredRoots?: string[];
+};
+
+export type HarnessUninstallResult =
+  | {
+      ok: true;
+      repoPath: string;
+      removedPaths: string[];
+      skippedPaths: string[];
+      gitignoreRemovedLines: string[];
+    }
+  | {
+      ok: false;
+      reason: "unsafe-path" | "blocked" | "io-error";
+      message: string;
+      blockers?: string[];
+    };
+
 export type PromptGenerationInput = {
   project: Pick<ProjectDetail, "name" | "path" | "activeTask" | "currentTask">;
   taskId?: string;
