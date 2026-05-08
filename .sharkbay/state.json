@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T15:00:00+08:00",
+  "updatedAt": "2026-05-08T15:12:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Night mode pill, project icon fill, and terminal title contrast polish is complete.",
+    "currentFocus": "Night detail chips, project counts, and avatar scale polish is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T057 Night pill/icon verification.",
+    "nextAction": "Idle after T058 Night detail chip verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T15:12:00+08:00",
+      "decision": "Completed t-058-night-detail-chip-polish by softening Night priority badges, Info chips, project count bubbles, and reducing project avatar scaling from 118% to 108%.",
+      "source": ".sharkbay/tasks/t-058-night-detail-chip-polish/verification.md"
+    },
+    {
+      "date": "2026-05-08T15:10:02+08:00",
+      "decision": "Opened t-058-night-detail-chip-polish to soften Night right-column priority/info chips, restyle project count bubbles, and reduce project avatar scaling from 118%.",
+      "source": ".sharkbay/tasks/t-058-night-detail-chip-polish/contract.md"
+    },
     {
       "date": "2026-05-08T15:00:00+08:00",
       "decision": "Completed t-057-night-pill-icon-polish with translucent Night pills, visible fallback project icons, filled bundled Shark project avatars, and readable Night terminal titles.",

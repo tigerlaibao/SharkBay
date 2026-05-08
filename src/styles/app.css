@@ -674,8 +674,8 @@ body.is-resizing-columns * {
 
 .project-icon.is-default img,
 .project-icon.is-shark-app img {
-  width: 118%;
-  height: 118%;
+  width: 108%;
+  height: 108%;
 }
 
 .cell-title {
@@ -1830,6 +1830,12 @@ body.is-resizing-columns * {
   color: #9fb0ac;
 }
 
+.app-shell[data-theme="night"] .project-section-title span {
+  color: rgba(217, 229, 223, 0.7);
+  background: rgba(217, 229, 223, 0.07);
+  border-color: rgba(217, 229, 223, 0.12);
+}
+
 .app-shell[data-theme="night"] .project-icon {
   background: #223235;
   border-color: #3a5054;
@@ -1909,6 +1915,24 @@ body.is-resizing-columns * {
   color: rgba(190, 205, 200, 0.7);
   background: rgba(217, 229, 223, 0.07);
   border-color: rgba(217, 229, 223, 0.12);
+}
+
+.app-shell[data-theme="night"] .queue-priority {
+  color: rgba(217, 229, 223, 0.68);
+  background: rgba(217, 229, 223, 0.07);
+  border: 1px solid rgba(217, 229, 223, 0.11);
+}
+
+.app-shell[data-theme="night"] .info-chip {
+  color: rgba(217, 229, 223, 0.72);
+  background: rgba(217, 229, 223, 0.07);
+  border-color: rgba(217, 229, 223, 0.12);
+}
+
+.app-shell[data-theme="night"] .runtime-link.info-chip {
+  color: rgba(183, 229, 194, 0.78);
+  background: rgba(111, 210, 140, 0.1);
+  border-color: rgba(111, 210, 140, 0.16);
 }
 
 .app-shell[data-theme="night"] .history-time {

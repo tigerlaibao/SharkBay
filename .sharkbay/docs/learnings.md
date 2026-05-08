@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Night Mode Needs Every Small Badge Audited
+
+**Problem**: After softening the obvious project pills, smaller UI badges such as task priority, Info chips, and project-section counts still looked too bright in Night mode.
+
+**Cause**: Those controls used separate base classes from the project status pills, so the first Night polish did not reach them.
+
+**Solution**: Audit Night mode by visual role rather than one class family. Add scoped Night overrides for `.queue-priority`, `.info-chip`, `.runtime-link.info-chip`, and `.project-section-title span`.
+
+**Source**: `.sharkbay/tasks/t-058-night-detail-chip-polish/implementation.md`, `src/styles/app.css`.
+
+---
+
 ### Fallback Icons Need Theme-Aware Treatment
 
 **Problem**: The default project icon was a black transparent line drawing, which became hard to read in Night mode.
