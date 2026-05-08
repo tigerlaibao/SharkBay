@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Avatar backgrounds support transparent icons.
+- Current focus: `wechat-cli` virtualenv web startup is covered by service controls.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,16 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T071 avatar milk background.
+- Next action: Idle after T072 `wechat-cli` service startup coverage.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T20:13:47+08:00 | Completed `t-072-wechat-cli-service-command` by adding narrow Python virtualenv CLI web service discovery and verifying the real `../wechat-cli` command. | `.sharkbay/tasks/t-072-wechat-cli-service-command/verification.md` |
+| 2026-05-08T20:08:12+08:00 | Advanced `t-072-wechat-cli-service-command` to coding after a narrow contract for `wechat-cli` virtualenv CLI service discovery and startup. | `.sharkbay/tasks/t-072-wechat-cli-service-command/status.md` |
+| 2026-05-08T20:08:12+08:00 | Opened `t-072-wechat-cli-service-command` to make SharkBay service controls cover the `../wechat-cli` virtualenv CLI web startup command. | `.sharkbay/tasks/t-072-wechat-cli-service-command/contract.md` |
 | 2026-05-08T19:53:42+08:00 | Completed `t-071-avatar-milk-background` by setting base project avatar circles to `#fffdfa` and Night avatar circles to translucent milk-white rgba values for transparent PNG readability. | `.sharkbay/tasks/t-071-avatar-milk-background/verification.md` |
 | 2026-05-08T19:52:35+08:00 | Opened `t-071-avatar-milk-background` to make project avatar circles use milk-white project background color and a translucent Night variant for transparent PNG readability. | `.sharkbay/tasks/t-071-avatar-milk-background/contract.md` |
 | 2026-05-08T19:50:29+08:00 | Completed `t-070-favicon-first-monorepo-icons` by reordering monorepo web package icon candidates so `favicon.ico/png` win over `apple-touch-icon`, `icon-512`, and logo assets, with real ItsMyLife verification. | `.sharkbay/tasks/t-070-favicon-first-monorepo-icons/verification.md` |

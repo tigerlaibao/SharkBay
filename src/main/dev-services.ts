@@ -7,6 +7,10 @@ type PackageJson = {
   scripts?: unknown;
 };
 
+type PyProject = {
+  scripts: Record<string, string>;
+};
+
 const ignoredServiceDirectories = new Set([
   ".git",
   ".next",
@@ -21,6 +25,7 @@ const ignoredServiceDirectories = new Set([
 
 export async function discoverProjectDevServices(projectPath: string): Promise<ProjectDevService[]> {
   const services = await servicesFromPackage(projectPath, "root");
+  services.push(...await servicesFromPythonCliWeb(projectPath));
   const children = await directChildDirectories(projectPath);
 
   for (const childPath of children) {
@@ -74,6 +79,41 @@ async function servicesFromPackage(projectPath: string, idPrefix: string): Promi
   return services;
 }
 
+async function servicesFromPythonCliWeb(projectPath: string): Promise<ProjectDevService[]> {
+  const pyProject = await readPyProject(projectPath);
+  if (!pyProject) return [];
+
+  const services: ProjectDevService[] = [];
+  for (const [scriptName, entrypoint] of Object.entries(pyProject.scripts)) {
+    if (!await fileExists(path.join(projectPath, ".venv", "bin", scriptName))) {
+      continue;
+    }
+    if (!await hasRegisteredPythonWebCommand(projectPath, entrypoint)) {
+      continue;
+    }
+
+    const webModulePath = await webCommandModulePath(projectPath, entrypoint);
+    const defaults = webModulePath ? await readPythonWebDefaults(webModulePath) : null;
+    if (!defaults) {
+      continue;
+    }
+    const host = defaults.host;
+    const port = defaults.port;
+    const noToken = defaults.supportsNoToken ? " --no-token" : "";
+    const command = `source .venv/bin/activate && ${shellToken(scriptName)} web --host ${shellToken(host)} --port ${port}${noToken}`;
+
+    services.push({
+      id: `python:${scriptName}:web`,
+      label: `web: ${scriptName}`,
+      command,
+      script: `${scriptName} web`,
+      cwd: projectPath,
+    });
+  }
+
+  return services;
+}
+
 async function readPackageJson(projectPath: string): Promise<PackageJson | null> {
   try {
     const raw = await fs.readFile(path.join(projectPath, "package.json"), "utf8");
@@ -82,6 +122,108 @@ async function readPackageJson(projectPath: string): Promise<PackageJson | null>
   } catch {
     return null;
   }
+}
+
+async function readPyProject(projectPath: string): Promise<PyProject | null> {
+  let raw: string;
+  try {
+    raw = await fs.readFile(path.join(projectPath, "pyproject.toml"), "utf8");
+  } catch {
+    return null;
+  }
+
+  let section = "";
+  const scripts: Record<string, string> = {};
+
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = stripTomlComment(line).trim();
+    if (!trimmed) continue;
+
+    const sectionMatch = trimmed.match(/^\[([^\]]+)\]$/);
+    if (sectionMatch) {
+      section = sectionMatch[1]?.trim() ?? "";
+      continue;
+    }
+
+    const assignment = trimmed.match(/^([A-Za-z0-9_.-]+)\s*=\s*"([^"]+)"\s*$/);
+    if (!assignment) continue;
+
+    const [, key, value] = assignment;
+    if (section === "project.scripts" && key && value) {
+      scripts[key] = value;
+    }
+  }
+
+  return Object.keys(scripts).length ? { scripts } : null;
+}
+
+async function hasRegisteredPythonWebCommand(projectPath: string, entrypoint: string): Promise<boolean> {
+  const entrypointPath = moduleFilePath(projectPath, entrypoint.split(":")[0] ?? "");
+  if (!entrypointPath) return false;
+
+  let raw: string;
+  try {
+    raw = await fs.readFile(entrypointPath, "utf8");
+  } catch {
+    return false;
+  }
+
+  return /from\s+\.\s*web\s+import\s+web/.test(raw) && /\.add_command\(\s*web\s*\)/.test(raw);
+}
+
+async function webCommandModulePath(projectPath: string, entrypoint: string): Promise<string | null> {
+  const entryModule = entrypoint.split(":")[0] ?? "";
+  const packageModule = entryModule.split(".")[0] ?? "";
+  if (!packageModule) return null;
+
+  const candidate = path.join(projectPath, packageModule, "web.py");
+  return await fileExists(candidate) ? candidate : null;
+}
+
+async function readPythonWebDefaults(filePath: string): Promise<{ host: string; port: number; supportsNoToken: boolean } | null> {
+  let raw: string;
+  try {
+    raw = await fs.readFile(filePath, "utf8");
+  } catch {
+    return null;
+  }
+
+  if (!/@click\.command\(\s*["']web["']\s*\)/.test(raw)) return null;
+
+  const host = raw.match(/@click\.option\(\s*["']--host["'][\s\S]*?default\s*=\s*["']([^"']+)["']/)?.[1] ?? "127.0.0.1";
+  const portRaw = raw.match(/@click\.option\(\s*["']--port["'][\s\S]*?default\s*=\s*(\d+)/)?.[1];
+  const port = portRaw ? Number.parseInt(portRaw, 10) : 8765;
+  const supportsNoToken = /@click\.option\(\s*["']--no-token["']/.test(raw);
+  return { host, port: Number.isInteger(port) && port > 0 ? port : 8765, supportsNoToken };
+}
+
+function moduleFilePath(projectPath: string, moduleName: string): string | null {
+  if (!moduleName || !/^[A-Za-z_][A-Za-z0-9_.]*$/.test(moduleName)) return null;
+  return path.join(projectPath, ...moduleName.split(".")) + ".py";
+}
+
+function stripTomlComment(line: string): string {
+  let quoted = false;
+  let escaped = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === "\\" && quoted) {
+      escaped = !escaped;
+      continue;
+    }
+    if (char === "\"" && !escaped) {
+      quoted = !quoted;
+    }
+    if (char === "#" && !quoted) {
+      return line.slice(0, index);
+    }
+    escaped = false;
+  }
+  return line;
+}
+
+function shellToken(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : `'${value.replace(/'/g, "'\\''")}'`;
 }
 
 async function fileExists(filePath: string): Promise<boolean> {

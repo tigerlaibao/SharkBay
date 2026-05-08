@@ -83,6 +83,62 @@ describe("project dev service discovery", () => {
     ]);
   });
 
+  it("discovers Python virtualenv CLI web commands", async () => {
+    const repo = await makeTempRoot("dev-service-python-cli-web");
+    await fs.mkdir(path.join(repo, ".venv", "bin"), { recursive: true });
+    await fs.mkdir(path.join(repo, "wechat_cli"), { recursive: true });
+    await fs.writeFile(path.join(repo, ".venv", "bin", "wechat-cli"), "#!/usr/bin/env python\n");
+    await fs.writeFile(path.join(repo, "pyproject.toml"), [
+      "[project]",
+      "name = \"wechat-cli\"",
+      "",
+      "[project.scripts]",
+      "wechat-cli = \"wechat_cli.main:cli\"",
+      "",
+    ].join("\n"));
+    await fs.writeFile(path.join(repo, "wechat_cli", "main.py"), [
+      "from .web import web",
+      "",
+      "cli.add_command(web)",
+      "",
+    ].join("\n"));
+    await fs.writeFile(path.join(repo, "wechat_cli", "web.py"), [
+      "import click",
+      "",
+      "@click.command(\"web\")",
+      "@click.option(\"--host\", default=\"127.0.0.1\", show_default=True)",
+      "@click.option(\"--port\", default=8765, show_default=True)",
+      "@click.option(\"--no-token\", is_flag=True)",
+      "def web(host, port, no_token):",
+      "    pass",
+      "",
+    ].join("\n"));
+
+    await expect(discoverProjectDevServices(repo)).resolves.toEqual([
+      {
+        id: "python:wechat-cli:web",
+        label: "web: wechat-cli",
+        command: "source .venv/bin/activate && wechat-cli web --host 127.0.0.1 --port 8765 --no-token",
+        script: "wechat-cli web",
+        cwd: repo,
+      },
+    ]);
+  });
+
+  it("does not expose Python CLI web commands without an installed virtualenv script", async () => {
+    const repo = await makeTempRoot("dev-service-python-cli-web-no-venv");
+    await fs.mkdir(path.join(repo, "wechat_cli"), { recursive: true });
+    await fs.writeFile(path.join(repo, "pyproject.toml"), [
+      "[project.scripts]",
+      "wechat-cli = \"wechat_cli.main:cli\"",
+      "",
+    ].join("\n"));
+    await fs.writeFile(path.join(repo, "wechat_cli", "main.py"), "from .web import web\ncli.add_command(web)\n");
+    await fs.writeFile(path.join(repo, "wechat_cli", "web.py"), "@click.command(\"web\")\ndef web():\n    pass\n");
+
+    await expect(discoverProjectDevServices(repo)).resolves.toEqual([]);
+  });
+
   it("uses package manager metadata and lockfiles for the dev command", async () => {
     const pnpmRepo = await makeTempRoot("dev-service-pnpm");
     await writeJson(path.join(pnpmRepo, "package.json"), { packageManager: "pnpm@9.0.0" });

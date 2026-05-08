@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T19:53:42+08:00",
+  "updatedAt": "2026-05-08T20:13:47+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Avatar backgrounds support transparent icons.",
+    "currentFocus": "wechat-cli virtualenv web startup is covered by service controls.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,25 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T071 avatar milk background.",
+    "nextAction": "Idle after T072 wechat-cli service startup coverage.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T20:13:47+08:00",
+      "decision": "Completed t-072-wechat-cli-service-command by adding narrow Python virtualenv CLI web service discovery and verifying the real ../wechat-cli command.",
+      "source": ".sharkbay/tasks/t-072-wechat-cli-service-command/verification.md"
+    },
+    {
+      "date": "2026-05-08T20:08:12+08:00",
+      "decision": "Advanced t-072-wechat-cli-service-command to coding after a narrow contract for wechat-cli virtualenv CLI service discovery and startup.",
+      "source": ".sharkbay/tasks/t-072-wechat-cli-service-command/status.md"
+    },
+    {
+      "date": "2026-05-08T20:08:12+08:00",
+      "decision": "Opened t-072-wechat-cli-service-command to make SharkBay service controls cover the ../wechat-cli virtualenv CLI web startup command.",
+      "source": ".sharkbay/tasks/t-072-wechat-cli-service-command/contract.md"
+    },
     {
       "date": "2026-05-08T19:53:42+08:00",
       "decision": "Completed t-071-avatar-milk-background by setting base project avatar circles to #fffdfa and Night avatar circles to translucent milk-white rgba values for transparent PNG readability.",

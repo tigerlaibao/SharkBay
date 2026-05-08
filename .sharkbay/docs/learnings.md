@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Python CLI Web Services Need Virtualenv-Aware Discovery
+
+**Problem**: `../wechat-cli` starts as a Python console script inside `.venv`, so SharkBay's npm-only dev service discovery did not show a service pill for it.
+
+**Cause**: The existing service scanner only looked for root `package.json` `dev`/`dev:*` scripts and direct-child `scripts.dev`.
+
+**Solution**: For Python projects, read root `pyproject.toml` `[project.scripts]`, require an installed `.venv/bin/<script>`, require the entrypoint to register a Click `web` command, and build a service command that sources `.venv/bin/activate` before running the CLI web command.
+
+**Source**: `.sharkbay/tasks/t-072-wechat-cli-service-command/implementation.md`, `src/main/dev-services.ts`, `tests/dev-services.test.ts`.
+
+---
+
 ### Transparent Project Icons Need Their Own Avatar Ground
 
 **Problem**: Transparent PNG project icons became unclear in Night mode when their transparent areas showed the dark project row background directly.
