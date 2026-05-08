@@ -7,6 +7,7 @@ import "@xterm/xterm/css/xterm.css";
 import defaultProjectIconUrl from "./assets/shark-fin.png";
 import type {
   AppConfig,
+  AppearanceTheme,
   CreateHarnessRepoInput,
   CreateHarnessRepoResult,
   GateStatus,
@@ -89,6 +90,42 @@ const settingsSections: Array<{ id: SettingsSection; label: string }> = [
   { id: "project-status", label: "Status" },
 ];
 
+const appearanceThemes: Array<{ id: AppearanceTheme; label: string }> = [
+  { id: "day", label: "Day" },
+  { id: "night", label: "Night" },
+];
+
+const terminalThemes: Record<AppearanceTheme, NonNullable<ConstructorParameters<typeof XTerm>[0]>["theme"]> = {
+  day: {
+    background: "#f8fbff",
+    foreground: "#24323b",
+    cursor: "#0f80d7",
+    selectionBackground: "#b9ddff",
+    black: "#1f2528",
+    blue: "#1676c8",
+    cyan: "#0b809c",
+    green: "#2f8c5b",
+    magenta: "#7a60b5",
+    red: "#c34f44",
+    white: "#f4f7f8",
+    yellow: "#9a6b16",
+  },
+  night: {
+    background: "#0b1328",
+    foreground: "#dbe7ff",
+    cursor: "#9cc8ff",
+    selectionBackground: "#274a7a",
+    black: "#101626",
+    blue: "#79b8ff",
+    cyan: "#79d5ee",
+    green: "#7ddc9f",
+    magenta: "#b9a4ff",
+    red: "#ff8f8b",
+    white: "#eef4ff",
+    yellow: "#ffd37a",
+  },
+};
+
 const artifactOrder: ArtifactKey[] = [
   "statusMarkdown",
   "contractMarkdown",
@@ -134,6 +171,10 @@ function isAppConfig(value: unknown): value is AppConfig {
   return Boolean(value && typeof value === "object" && "configuredRoots" in value);
 }
 
+function normalizeAppearanceTheme(value: unknown): AppearanceTheme {
+  return value === "night" ? "night" : "day";
+}
+
 function normalizeRoots(raw: AppConfig | RootRecord[] | string[] | undefined): RootRecord[] {
   if (!raw) {
     return [];
@@ -176,6 +217,17 @@ async function listRoots(): Promise<RootRecord[]> {
   }
 
   return normalizeRoots(await handler());
+}
+
+async function updateAppearanceTheme(theme: AppearanceTheme): Promise<AppConfig> {
+  const bridge = getBridge();
+  const handler = bridge.config?.setAppearanceTheme ?? bridge.setAppearanceTheme;
+
+  if (!handler) {
+    throw new Error("Appearance theme settings are not exposed by the preload API.");
+  }
+
+  return handler({ theme });
 }
 
 async function addRoot(path: string): Promise<void> {
@@ -474,6 +526,7 @@ export function App() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [scanErrors, setScanErrors] = useState<string[]>([]);
   const [lastScanAt, setLastScanAt] = useState<string | null>(null);
+  const [appearanceTheme, setAppearanceTheme] = useState<AppearanceTheme>("day");
   const refreshInFlight = useRef(false);
 
   const bridgeAvailable = typeof window !== "undefined" && Boolean(window.sharkBay);
@@ -504,7 +557,16 @@ export function App() {
     setScanErrors([]);
 
     try {
-      const [rootList, scan] = await Promise.all([listRoots(), scanProjects()]);
+      const bridge = getBridge();
+      const configHandler = bridge.config?.listRoots ?? bridge.listRoots;
+      if (!configHandler) {
+        throw new Error("Root listing is not exposed by the preload API.");
+      }
+      const [rootConfig, scan] = await Promise.all([configHandler(), scanProjects()]);
+      const rootList = normalizeRoots(rootConfig);
+      if (isAppConfig(rootConfig)) {
+        setAppearanceTheme(normalizeAppearanceTheme(rootConfig.appearanceTheme));
+      }
       const nextProjects = scan.projects ?? [];
       const nextCandidates = scan.candidates ?? nextProjects.map(projectToCandidate);
       const normalizedRootErrors = normalizeRoots(scan.rootErrors);
@@ -629,7 +691,7 @@ export function App() {
   const actionProjects = projects.filter(projectNeedsUserAction);
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-theme={appearanceTheme}>
       <main className="workspace">
         <div className="workspace-body">
           {toast ? (
@@ -646,6 +708,7 @@ export function App() {
             className={cx("view-surface", view !== "dashboard" && "is-hidden")}
           >
             <DashboardView
+              appearanceTheme={appearanceTheme}
               bridgeAvailable={bridgeAvailable}
               configuredRoots={roots.map((root) => root.path)}
               detail={detail}
@@ -665,6 +728,7 @@ export function App() {
           {view === "settings" ? (
             <div className="view-surface settings-surface">
               <SettingsView
+                appearanceTheme={appearanceTheme}
                 roots={roots}
                 bridgeAvailable={bridgeAvailable}
                 actionProjects={actionProjects}
@@ -685,6 +749,10 @@ export function App() {
                   await refreshRoots();
                   await refreshProjects({ showToast: true });
                 }}
+                onThemeChange={async (theme) => {
+                  const config = await updateAppearanceTheme(theme);
+                  setAppearanceTheme(normalizeAppearanceTheme(config.appearanceTheme));
+                }}
               />
             </div>
           ) : null}
@@ -695,6 +763,7 @@ export function App() {
 }
 
 function DashboardView({
+  appearanceTheme,
   bridgeAvailable,
   configuredRoots,
   detail,
@@ -709,6 +778,7 @@ function DashboardView({
   setToast,
   onRefresh,
 }: {
+  appearanceTheme: AppearanceTheme;
   bridgeAvailable: boolean;
   configuredRoots: string[];
   detail: ProjectDetail | null;
@@ -882,6 +952,7 @@ function DashboardView({
 
       <section className="panel terminal-panel">
         <TerminalPane
+          appearanceTheme={appearanceTheme}
           candidate={selectedCandidate}
           bridgeAvailable={bridgeAvailable}
           isVisible={isVisible}
@@ -926,11 +997,13 @@ function DashboardView({
 }
 
 function TerminalPane({
+  appearanceTheme,
   bridgeAvailable,
   candidate,
   isVisible,
   setToast,
 }: {
+  appearanceTheme: AppearanceTheme;
   bridgeAvailable: boolean;
   candidate: ProjectCandidate | null;
   isVisible: boolean;
@@ -947,6 +1020,14 @@ function TerminalPane({
   useEffect(() => {
     spacesRef.current = spaces;
   }, [spaces]);
+
+  useEffect(() => {
+    for (const space of Object.values(spacesRef.current)) {
+      for (const tab of space.tabs) {
+        tab.terminal.options.theme = terminalThemes[appearanceTheme];
+      }
+    }
+  }, [appearanceTheme]);
 
   useEffect(() => {
     if (!bridgeAvailable) {
@@ -1020,7 +1101,7 @@ function TerminalPane({
   async function openProjectTab(projectId: string, cwd: string, projectName: string, quiet = false) {
     try {
       const session = await createTerminal(cwd, projectName);
-      const terminal = createXTerm(session.id, setToast);
+      const terminal = createXTerm(session.id, appearanceTheme, setToast);
       const tab: TerminalTab = {
         session,
         terminal: terminal.instance,
@@ -1252,19 +1333,14 @@ function XTermSurface({
   );
 }
 
-function createXTerm(sessionId: string, setToast: (toast: Toast) => void): { instance: XTerm; fitAddon: FitAddon; disposables: Disposable[] } {
+function createXTerm(sessionId: string, appearanceTheme: AppearanceTheme, setToast: (toast: Toast) => void): { instance: XTerm; fitAddon: FitAddon; disposables: Disposable[] } {
   const instance = new XTerm({
     allowTransparency: false,
     cursorBlink: true,
     fontFamily: 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace',
     fontSize: 12,
     scrollback: 5000,
-    theme: {
-      background: "#101719",
-      foreground: "#d9e5df",
-      cursor: "#93d7a4",
-      selectionBackground: "#38575d",
-    },
+    theme: terminalThemes[appearanceTheme],
   });
   const fitAddon = new FitAddon();
   instance.loadAddon(fitAddon);
@@ -2436,6 +2512,7 @@ function Diagnostics({ detail }: { detail: ProjectDetail }) {
 
 function SettingsView({
   actionProjects,
+  appearanceTheme,
   roots,
   bridgeAvailable,
   lastScanAt,
@@ -2447,8 +2524,10 @@ function SettingsView({
   onScan,
   onAdd,
   onRemove,
+  onThemeChange,
 }: {
   actionProjects: ProjectSummary[];
+  appearanceTheme: AppearanceTheme;
   roots: RootRecord[];
   bridgeAvailable: boolean;
   lastScanAt: string | null;
@@ -2460,6 +2539,7 @@ function SettingsView({
   onScan: () => Promise<void>;
   onAdd: (path: string) => Promise<void>;
   onRemove: (path: string) => Promise<void>;
+  onThemeChange: (theme: AppearanceTheme) => Promise<void>;
 }) {
   const unavailableRootCount = roots.filter((root) => root.unavailable || root.available === false).length;
   const [activeSection, setActiveSection] = useState<SettingsSection>("project-roots");
@@ -2508,6 +2588,11 @@ function SettingsView({
               <h4>Project roots</h4>
               <span>{projects.length} project{projects.length === 1 ? "" : "s"}</span>
             </div>
+            <AppearanceSettingsPanel
+              appearanceTheme={appearanceTheme}
+              setToast={setToast}
+              onThemeChange={onThemeChange}
+            />
             <RootWorkflowPanel
               bridgeAvailable={bridgeAvailable}
               lastScanAt={lastScanAt}
@@ -2538,6 +2623,61 @@ function SettingsView({
         </section>
       </div>
     </div>
+  );
+}
+
+function AppearanceSettingsPanel({
+  appearanceTheme,
+  setToast,
+  onThemeChange,
+}: {
+  appearanceTheme: AppearanceTheme;
+  setToast: (toast: Toast) => void;
+  onThemeChange: (theme: AppearanceTheme) => Promise<void>;
+}) {
+  const [savingTheme, setSavingTheme] = useState<AppearanceTheme | null>(null);
+
+  async function chooseTheme(theme: AppearanceTheme) {
+    if (theme === appearanceTheme || savingTheme) {
+      return;
+    }
+
+    setSavingTheme(theme);
+    try {
+      await onThemeChange(theme);
+    } catch (error) {
+      setToast({ tone: "error", message: asMessage(error) });
+    } finally {
+      setSavingTheme(null);
+    }
+  }
+
+  return (
+    <section className="subpanel appearance-panel">
+      <div className="compact-title-row">
+        <h4>Appearance</h4>
+        <span className="path-line">{appearanceTheme === "night" ? "Night icon and colors" : "Day icon and colors"}</span>
+      </div>
+      <div className="segmented-control" role="radiogroup" aria-label="Appearance theme">
+        {appearanceThemes.map((theme) => {
+          const selected = theme.id === appearanceTheme;
+          return (
+            <button
+              aria-checked={selected}
+              className={cx("segmented-option", selected && "is-selected")}
+              disabled={Boolean(savingTheme)}
+              key={theme.id}
+              role="radio"
+              type="button"
+              onClick={() => void chooseTheme(theme.id)}
+            >
+              <span className={cx("theme-swatch", `theme-swatch-${theme.id}`)} aria-hidden="true" />
+              <span>{savingTheme === theme.id ? "Saving" : theme.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

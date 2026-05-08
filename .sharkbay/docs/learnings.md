@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Terminal Colors Are First-Class xterm Theme Data
+
+**Problem**: SharkBay needed day/night color schemes, and the question was whether the embedded terminal could follow app appearance.
+
+**Cause**: The terminal is an xterm.js instance, so its palette is not controlled by ordinary CSS alone. The existing terminal colors lived in the xterm constructor theme object.
+
+**Solution**: Store terminal palettes as xterm theme objects, pass the selected app theme into new terminal instances, and update existing instances through `terminal.options.theme` when Settings changes.
+
+**Source**: `.sharkbay/tasks/t-051-day-night-theme-icons/implementation.md`, `src/renderer/App.tsx`.
+
+---
+
 ### Project Icons Should Be Ordered Candidates, Not Cached Downloads
 
 **Problem**: SharkBay needs recognizable project icons, but projects can be local apps, web apps, or plain folders, and not every project has a single authoritative icon file.

@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-051-day-night-theme-icons` | Add day and night app themes with matching icons | 2026-05-08 |
 | `t-050-project-icons` | Add project icons to the left project list | 2026-05-08 |
 | `t-048-macos-packaging-config` | Add macOS packaging config | 2026-05-07 |
 | `t-049-packaged-app-blank-screen` | Fix packaged macOS app blank screen | 2026-05-07 |

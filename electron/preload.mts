@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import { appChannels } from "../src/shared/app-events.js";
 import type {
   AppConfig,
+  AppearanceThemeInput,
   CreateHarnessRepoInput,
   CreateHarnessRepoResult,
   HarnessJsonPatchInput,
@@ -36,6 +37,7 @@ const channels = {
   listRoots: "config:listRoots",
   addRoot: "config:addRoot",
   removeRoot: "config:removeRoot",
+  setAppearanceTheme: "config:setAppearanceTheme",
   scanProjects: "projects:scan",
   getProjectDetail: "projects:getDetail",
   updateProjectUrls: "projects:updateUrls",
@@ -88,6 +90,7 @@ const sharkBayApi = {
   listRoots: () => invoke<AppConfig>(channels.listRoots),
   addRoot: (input: RootConfigInput) => invoke<AppConfig>(channels.addRoot, input),
   removeRoot: (input: RemoveRootInput) => invoke<AppConfig>(channels.removeRoot, input),
+  setAppearanceTheme: (input: AppearanceThemeInput) => invoke<AppConfig>(channels.setAppearanceTheme, input),
   scanProjects: (input?: ProjectScanInput) => invoke<ScanProjectsResult>(channels.scanProjects, input),
   getProjectDetail: (input: ProjectDetailInput) =>
     invoke<ProjectDetail>(channels.getProjectDetail, input),
@@ -100,7 +103,8 @@ const sharkBayApi = {
   config: {
     listRoots: () => invoke<AppConfig>(channels.listRoots),
     addRoot: (input: RootConfigInput) => invoke<AppConfig>(channels.addRoot, input),
-    removeRoot: (input: RemoveRootInput) => invoke<AppConfig>(channels.removeRoot, input)
+    removeRoot: (input: RemoveRootInput) => invoke<AppConfig>(channels.removeRoot, input),
+    setAppearanceTheme: (input: AppearanceThemeInput) => invoke<AppConfig>(channels.setAppearanceTheme, input)
   },
   projects: {
     scan: (input?: ProjectScanInput) => invoke<ScanProjectsResult>(channels.scanProjects, input),

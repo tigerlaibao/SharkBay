@@ -17,9 +17,12 @@ export type UrlFields = Record<UrlField, string | null>;
 
 export type RevisionToken = string;
 
+export type AppearanceTheme = "day" | "night";
+
 export type AppConfig = {
   schemaVersion: 1;
   configuredRoots: string[];
+  appearanceTheme: AppearanceTheme;
   updatedAt: string;
 };
 
@@ -34,6 +37,10 @@ export type RootConfigInput = {
 };
 
 export type RemoveRootInput = RootConfigInput;
+
+export type AppearanceThemeInput = {
+  theme: AppearanceTheme;
+};
 
 export type ProjectScanInput = {
   configuredRoots?: string[];

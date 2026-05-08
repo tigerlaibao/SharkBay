@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Project icon UI is complete.
+- Current focus: Day and night app theme/icon selection is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,14 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T050 project icon verification.
+- Next action: Idle after T051 day/night theme and icon verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T13:25:41+08:00 | Completed `t-051-day-night-theme-icons` with day/night app icons, persisted Settings theme selection, matching UI palettes, terminal theme integration, and packaged day icon verification. | `.sharkbay/tasks/t-051-day-night-theme-icons/verification.md` |
 | 2026-05-08T10:38:02+08:00 | Completed `t-050-project-icons` with local app icon data URLs, URL-derived favicon candidates, circular left-list rendering, and bundled shark-fin fallback. | `.sharkbay/tasks/t-050-project-icons/verification.md` |
 | 2026-05-08T10:32:14+08:00 | Opened `t-050-project-icons` to add circular left-list project icons with local app icon, web favicon, and bundled shark-fin fallback resolution. | `.sharkbay/tasks/t-050-project-icons/contract.md` |
 | 2026-05-07T20:35:15+08:00 | Completed `t-049-packaged-app-blank-screen` with relative Vite renderer assets and runtime `templateRoot` propagation for packaged project detail reads. | `.sharkbay/tasks/t-049-packaged-app-blank-screen/verification.md` |

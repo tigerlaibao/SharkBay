@@ -3,13 +3,16 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { closeAllTerminalSessions, registerIpcHandlers } from "./ipc.js";
 import { createApplicationMenuTemplate } from "../src/main/application-menu.js";
+import { getRuntimeConfigPath, loadAppConfig } from "../src/main/config.js";
 import { appChannels } from "../src/shared/app-events.js";
+import type { AppearanceTheme } from "../src/shared/types.js";
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = dirname(currentFile);
 const devServerUrl = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
 
 let mainWindow: BrowserWindow | null = null;
+let appearanceTheme: AppearanceTheme = "day";
 
 app.setName("SharkBay");
 
@@ -19,19 +22,24 @@ function getResourcePath(fileName: string): string {
     : join(app.getAppPath(), "resources", fileName);
 }
 
-function getAppIconPath(): string {
-  return getResourcePath("shark.png");
+function getAppIconPath(theme = appearanceTheme): string {
+  return getResourcePath(theme === "night" ? "shark-night.png" : "shark-day.png");
 }
 
-function installDockIcon(): void {
+function installDockIcon(theme = appearanceTheme): void {
   if (process.platform !== "darwin" || !app.dock) {
     return;
   }
 
-  const icon = nativeImage.createFromPath(getAppIconPath());
+  const icon = nativeImage.createFromPath(getAppIconPath(theme));
   if (!icon.isEmpty()) {
     app.dock.setIcon(icon);
   }
+}
+
+function setAppearanceTheme(theme: AppearanceTheme): void {
+  appearanceTheme = theme;
+  installDockIcon(theme);
 }
 
 function sendOpenSettings(window: BrowserWindow): void {
@@ -85,7 +93,7 @@ function createMainWindow(): BrowserWindow {
     icon,
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     show: false,
-    backgroundColor: "#f7f8fa",
+    backgroundColor: appearanceTheme === "night" ? "#081226" : "#f7f8fa",
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -113,12 +121,18 @@ function createMainWindow(): BrowserWindow {
   return window;
 }
 
-app.whenReady().then(() => {
-  registerIpcHandlers({
+app.whenReady().then(async () => {
+  const runtime = {
     userDataPath: app.getPath("userData"),
     templateRoot: app.isPackaged
       ? join(process.resourcesPath, "templates", "harness")
       : join(app.getAppPath(), "templates", "harness")
+  };
+  const config = await loadAppConfig(getRuntimeConfigPath(runtime));
+  appearanceTheme = config.appearanceTheme;
+
+  registerIpcHandlers(runtime, undefined, {
+    onAppearanceThemeChanged: setAppearanceTheme,
   });
 
   installApplicationMenu();

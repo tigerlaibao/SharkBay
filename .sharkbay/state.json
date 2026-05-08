@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T10:38:02+08:00",
+  "updatedAt": "2026-05-08T13:25:41+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Project icon UI is complete.",
+    "currentFocus": "Day and night app theme/icon selection is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,15 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T050 project icon verification.",
+    "nextAction": "Idle after T051 day/night theme and icon verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T13:25:41+08:00",
+      "decision": "Completed t-051-day-night-theme-icons with day/night app icons, persisted Settings theme selection, matching UI palettes, terminal theme integration, and packaged day icon verification.",
+      "source": ".sharkbay/tasks/t-051-day-night-theme-icons/verification.md"
+    },
     {
       "date": "2026-05-08T10:38:02+08:00",
       "decision": "Completed t-050-project-icons with local app icon data URLs, URL-derived favicon candidates, circular left-list rendering, and bundled shark-fin fallback.",

@@ -2,7 +2,8 @@ import { BrowserWindow, ipcMain } from "electron";
 import {
   addConfiguredRoot,
   getConfiguredRoots,
-  removeConfiguredRoot
+  removeConfiguredRoot,
+  setAppearanceTheme
 } from "../src/main/config.js";
 import { readProjectDetail } from "../src/main/harness-reader.js";
 import { checkHarnessTemplateSync, updateHarnessTemplateFiles } from "../src/main/harness-template-sync.js";
@@ -19,6 +20,8 @@ import { createHarnessRepo } from "../src/main/template-installer.js";
 import { TerminalManager } from "../src/main/terminal.js";
 import type {
   AppConfig,
+  AppearanceTheme,
+  AppearanceThemeInput,
   CreateHarnessRepoInput,
   CreateHarnessRepoResult,
   HarnessJsonPatchInput,
@@ -52,10 +55,15 @@ export type IpcRuntime = {
   templateRoot: string;
 };
 
+export type IpcCallbacks = {
+  onAppearanceThemeChanged?: (theme: AppearanceTheme) => void;
+};
+
 export type SharkBayIpcServices = {
   listRoots: () => Promise<AppConfig>;
   addRoot: (input: RootConfigInput) => Promise<AppConfig>;
   removeRoot: (input: RemoveRootInput) => Promise<AppConfig>;
+  setAppearanceTheme: (input: AppearanceThemeInput) => Promise<AppConfig>;
   scanProjects: (input?: ProjectScanInput) => Promise<ScanProjectsResult>;
   getProjectDetail: (input: ProjectDetailInput) => Promise<ProjectDetail>;
   updateProjectUrls: (input: UpdateProjectUrlsInput) => Promise<SafeWriteResult>;
@@ -77,6 +85,7 @@ const channels = {
   listRoots: "config:listRoots",
   addRoot: "config:addRoot",
   removeRoot: "config:removeRoot",
+  setAppearanceTheme: "config:setAppearanceTheme",
   scanProjects: "projects:scan",
   getProjectDetail: "projects:getDetail",
   updateProjectUrls: "projects:updateUrls",
@@ -108,6 +117,7 @@ function createDefaultServices(runtime: IpcRuntime): SharkBayIpcServices {
     listRoots: () => getConfiguredRoots(runtime),
     addRoot: (input) => addConfiguredRoot(runtime, input),
     removeRoot: (input) => removeConfiguredRoot(runtime, input),
+    setAppearanceTheme: (input) => setAppearanceTheme(runtime, input),
     scanProjects: (input) => scanProjects(runtime, input),
     getProjectDetail: (input) => readProjectDetail(runtime, input),
     updateProjectUrls: (input) => updateProjectUrls(runtime, input),
@@ -145,7 +155,8 @@ function handle<Payload, Result>(
 
 export function registerIpcHandlers(
   runtime: IpcRuntime,
-  services: SharkBayIpcServices = createDefaultServices(runtime)
+  services: SharkBayIpcServices = createDefaultServices(runtime),
+  callbacks: IpcCallbacks = {}
 ): void {
   terminalManager.removeAllListeners("data");
   terminalManager.removeAllListeners("update");
@@ -169,6 +180,12 @@ export function registerIpcHandlers(
   handle<RootConfigInput, AppConfig>(channels.addRoot, (payload) => services.addRoot(payload));
   handle<RemoveRootInput, AppConfig>(channels.removeRoot, (payload) =>
     services.removeRoot(payload)
+  );
+  handle<AppearanceThemeInput, AppConfig>(channels.setAppearanceTheme, (payload) =>
+    services.setAppearanceTheme(payload).then((config) => {
+      callbacks.onAppearanceThemeChanged?.(config.appearanceTheme);
+      return config;
+    })
   );
   handle<ProjectScanInput | undefined, ScanProjectsResult>(channels.scanProjects, (payload) =>
     services.scanProjects(payload)

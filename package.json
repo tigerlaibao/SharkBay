@@ -67,7 +67,7 @@
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
-      "icon": "resources/shark.icns",
+      "icon": "resources/shark-day.icns",
       "target": [
         "dmg",
         "zip"

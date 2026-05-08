@@ -2,6 +2,8 @@ export type GateStatus = "pass" | "pending" | "blocked" | "unknown";
 
 export type DetectionMode = "manifest" | "protocol-fallback";
 
+export type AppearanceTheme = "day" | "night";
+
 export type RootRecord = {
   path: string;
   inputPath?: string;
@@ -13,6 +15,7 @@ export type RootRecord = {
 export type AppConfig = {
   schemaVersion?: number;
   configuredRoots: string[];
+  appearanceTheme?: AppearanceTheme;
   updatedAt?: string;
 };
 
@@ -406,6 +409,7 @@ export type SharkBayBridge = {
   listRoots?: () => Promise<AppConfig | RootRecord[] | string[]>;
   addRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
   removeRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
+  setAppearanceTheme?: (input: { theme: AppearanceTheme }) => Promise<AppConfig>;
   scanProjects?: () => Promise<ScanResult | ProjectSummary[]>;
   getProjectDetail?: (input: { projectId?: string; repoPath?: string } | string) => Promise<ProjectDetail>;
   updateProjectUrls?: (input: UpdateProjectUrlsInput) => Promise<UpdateProjectUrlsResult>;
@@ -415,6 +419,7 @@ export type SharkBayBridge = {
     listRoots?: () => Promise<AppConfig | RootRecord[] | string[]>;
     addRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
     removeRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
+    setAppearanceTheme?: (input: { theme: AppearanceTheme }) => Promise<AppConfig>;
   };
   projects?: {
     scan?: () => Promise<ScanResult | ProjectSummary[]>;

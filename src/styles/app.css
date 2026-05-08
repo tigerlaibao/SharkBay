@@ -60,6 +60,13 @@ textarea::placeholder {
   height: 100%;
   min-height: 0;
   overflow: hidden;
+  color: #1f2528;
+  background: #f4f1eb;
+}
+
+.app-shell[data-theme="night"] {
+  color: #dbe7ff;
+  background: #081226;
 }
 
 .project-window-drag-strip {
@@ -1403,6 +1410,65 @@ body.is-resizing-columns * {
   gap: 10px;
 }
 
+.appearance-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.segmented-control {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 4px;
+  width: min(100%, 300px);
+  padding: 4px;
+  background: #edeae2;
+  border: 1px solid #d8d4ca;
+  border-radius: 8px;
+}
+
+.segmented-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 32px;
+  color: #4c595c;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 680;
+}
+
+.segmented-option:hover,
+.segmented-option:focus-visible {
+  color: #172528;
+  background: rgba(255, 255, 255, 0.64);
+  outline: none;
+}
+
+.segmented-option.is-selected {
+  color: #172528;
+  background: #fffdfa;
+  border-color: #d5d0c5;
+}
+
+.theme-swatch {
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(23, 37, 40, 0.2);
+  border-radius: 4px;
+}
+
+.theme-swatch-day {
+  background: linear-gradient(135deg, #ff5948 0 48%, #5aaaf7 48% 100%);
+}
+
+.theme-swatch-night {
+  background: linear-gradient(135deg, #071636 0 48%, #4258b4 48% 100%);
+}
+
 .settings-facts-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1667,6 +1733,158 @@ body.is-resizing-columns * {
 
 .terminal-panel .empty-state strong {
   color: #d9e5df;
+}
+
+.app-shell[data-theme="night"] .workspace,
+.app-shell[data-theme="night"] .view-surface {
+  background: #081226;
+}
+
+.app-shell[data-theme="night"] .panel,
+.app-shell[data-theme="night"] .subpanel,
+.app-shell[data-theme="night"] .settings-content {
+  color: #dbe7ff;
+  background: rgba(15, 28, 58, 0.86);
+  border-color: #263b68;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.28);
+}
+
+.app-shell[data-theme="night"] .project-panel,
+.app-shell[data-theme="night"] .detail-panel {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.app-shell[data-theme="night"] .terminal-panel {
+  background: #071020;
+  border-color: #203155;
+}
+
+.app-shell[data-theme="night"] .terminal-space-stack,
+.app-shell[data-theme="night"] .xterm-surface {
+  background: #0b1328;
+}
+
+.app-shell[data-theme="night"] .detail-header h3,
+.app-shell[data-theme="night"] .workflow-copy h3,
+.app-shell[data-theme="night"] .subpanel h4,
+.app-shell[data-theme="night"] .settings-section-heading h4,
+.app-shell[data-theme="night"] .cell-title,
+.app-shell[data-theme="night"] .empty-state strong,
+.app-shell[data-theme="night"] .root-state {
+  color: #f2f6ff;
+}
+
+.app-shell[data-theme="night"] .path-line,
+.app-shell[data-theme="night"] .workflow-copy p,
+.app-shell[data-theme="night"] .settings-section-heading span,
+.app-shell[data-theme="night"] .settings-list-row small,
+.app-shell[data-theme="night"] .cell-subtitle,
+.app-shell[data-theme="night"] .decision-meta,
+.app-shell[data-theme="night"] .form-note,
+.app-shell[data-theme="night"] .eyebrow,
+.app-shell[data-theme="night"] .section-heading {
+  color: #95a8ca;
+}
+
+.app-shell[data-theme="night"] .settings-nav,
+.app-shell[data-theme="night"] .project-card,
+.app-shell[data-theme="night"] .settings-list-row,
+.app-shell[data-theme="night"] .queue-item,
+.app-shell[data-theme="night"] .artifact-card,
+.app-shell[data-theme="night"] .url-card,
+.app-shell[data-theme="night"] .root-card,
+.app-shell[data-theme="night"] .empty-state,
+.app-shell[data-theme="night"] .muted-row {
+  color: #dbe7ff;
+  background: rgba(17, 32, 64, 0.82);
+  border-color: #2b4373;
+}
+
+.app-shell[data-theme="night"] .settings-nav-item {
+  color: #cbd9f7;
+}
+
+.app-shell[data-theme="night"] .settings-nav-item:hover,
+.app-shell[data-theme="night"] .settings-nav-item:focus-visible {
+  background: rgba(80, 112, 172, 0.18);
+  border-color: #385485;
+}
+
+.app-shell[data-theme="night"] .settings-nav-item.is-selected,
+.app-shell[data-theme="night"] .segmented-option.is-selected {
+  color: #ffffff;
+  background: #16284f;
+  border-color: #486aa4;
+}
+
+.app-shell[data-theme="night"] .settings-nav-item small,
+.app-shell[data-theme="night"] .terminal-header .path-line,
+.app-shell[data-theme="night"] .terminal-tab-close {
+  color: #91a4c8;
+}
+
+.app-shell[data-theme="night"] input,
+.app-shell[data-theme="night"] textarea,
+.app-shell[data-theme="night"] select {
+  color: #e7efff;
+  background: #0e1d3a;
+  border-color: #35527f;
+}
+
+.app-shell[data-theme="night"] input::placeholder,
+.app-shell[data-theme="night"] textarea::placeholder {
+  color: #7d8fb1;
+}
+
+.app-shell[data-theme="night"] .button-primary {
+  color: #071020;
+  background: #83c9ff;
+  border-color: #83c9ff;
+}
+
+.app-shell[data-theme="night"] .button-secondary,
+.app-shell[data-theme="night"] .icon-button,
+.app-shell[data-theme="night"] .segmented-control {
+  color: #dbe7ff;
+  background: #102143;
+  border-color: #2d4775;
+}
+
+.app-shell[data-theme="night"] .button-secondary:hover,
+.app-shell[data-theme="night"] .icon-button:hover,
+.app-shell[data-theme="night"] .icon-button:focus-visible,
+.app-shell[data-theme="night"] .segmented-option:hover,
+.app-shell[data-theme="night"] .segmented-option:focus-visible {
+  color: #ffffff;
+  background: #18305d;
+  border-color: #496da6;
+}
+
+.app-shell[data-theme="night"] .segmented-option {
+  color: #cbd9f7;
+}
+
+.app-shell[data-theme="night"] .terminal-header {
+  border-bottom-color: #203155;
+}
+
+.app-shell[data-theme="night"] .terminal-actions .icon-button,
+.app-shell[data-theme="night"] .terminal-tab {
+  color: #cbd9f7;
+  background: #111d37;
+  border-color: #273c66;
+}
+
+.app-shell[data-theme="night"] .terminal-tab.is-active {
+  color: #ffffff;
+  background: #193263;
+  border-color: #5577b0;
+}
+
+.app-shell[data-theme="night"] .terminal-tabs {
+  border-bottom-color: #203155;
 }
 
 .muted-row {

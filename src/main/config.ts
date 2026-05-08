@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { AppConfig, IpcRuntimeLike, RemoveRootInput, RootConfigInput } from "../shared/types.js";
+import type { AppearanceTheme, AppearanceThemeInput, AppConfig, IpcRuntimeLike, RemoveRootInput, RootConfigInput } from "../shared/types.js";
 import { isRecord } from "../shared/schema.js";
 import { writeJsonAtomic, readJsonFile } from "./json-file.js";
 
@@ -19,6 +19,7 @@ export function createDefaultConfig(): AppConfig {
   return {
     schemaVersion: 1,
     configuredRoots: [],
+    appearanceTheme: "day",
     updatedAt: today(),
   };
 }
@@ -71,6 +72,18 @@ export async function removeConfiguredRoot(first: string | IpcRuntimeLike, secon
   return config;
 }
 
+export async function setAppearanceTheme(theme: AppearanceTheme, configPath?: string): Promise<AppConfig>;
+export async function setAppearanceTheme(runtime: IpcRuntimeLike, input: AppearanceThemeInput): Promise<AppConfig>;
+export async function setAppearanceTheme(first: AppearanceTheme | IpcRuntimeLike, second?: string | AppearanceThemeInput): Promise<AppConfig> {
+  const theme = typeof first === "string" ? first : themeFromInput(second);
+  const configPath = typeof first === "string" ? second as string | undefined : getRuntimeConfigPath(first);
+  const config = await loadAppConfig(configPath);
+  config.appearanceTheme = normalizeAppearanceTheme(theme);
+  config.updatedAt = today();
+  await saveAppConfig(config, configPath);
+  return config;
+}
+
 function rootFromInput(input: string | RootConfigInput | RemoveRootInput | undefined): string {
   if (typeof input === "string") return input;
   const rootPath = input?.path || input?.rootPath;
@@ -87,8 +100,19 @@ function normalizeAppConfig(value: unknown): AppConfig {
     configuredRoots: Array.isArray(value.configuredRoots)
       ? [...new Set(value.configuredRoots.filter((item): item is string => typeof item === "string").map((item) => path.resolve(item)))]
       : [],
+    appearanceTheme: normalizeAppearanceTheme(value.appearanceTheme),
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : today(),
   };
+}
+
+function normalizeAppearanceTheme(value: unknown): AppearanceTheme {
+  return value === "night" ? "night" : "day";
+}
+
+function themeFromInput(input: string | AppearanceThemeInput | undefined): AppearanceTheme {
+  if (input === "day" || input === "night") return input;
+  if (typeof input === "object") return normalizeAppearanceTheme(input.theme);
+  return "day";
 }
 
 function today(): string {
