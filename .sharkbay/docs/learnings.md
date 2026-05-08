@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Classic Theme Preserves The Original Split Mood
+
+**Problem**: After adding day/night themes, the original SharkBay look was no longer selectable. That original look was not fully light or fully dark: left/right workspace surfaces were light, while the middle terminal column stayed dark.
+
+**Cause**: The first theme model only had day and night, so changing the day terminal to a warm light palette removed the previous mixed layout option.
+
+**Solution**: Treat `classic` as a first-class manual appearance theme. It persists in app config, keeps the light workspace defaults, and scopes old dark terminal chrome/xterm colors to `data-theme="classic"`.
+
+**Source**: `.sharkbay/tasks/t-053-classic-theme-and-night-panels/implementation.md`, `src/renderer/App.tsx`, `src/styles/app.css`.
+
+---
+
 ### App Icon Shape Belongs In The PNG Alpha For Runtime Dock Icons
 
 **Problem**: Electron development showed the day/night app icon as a large square even though macOS app icons are expected to read as rounded rectangles.

@@ -93,6 +93,7 @@ const settingsSections: Array<{ id: SettingsSection; label: string }> = [
 const appearanceThemes: Array<{ id: AppearanceTheme; label: string }> = [
   { id: "day", label: "Day" },
   { id: "night", label: "Night" },
+  { id: "classic", label: "Classic" },
 ];
 
 const terminalThemes: Record<AppearanceTheme, NonNullable<ConstructorParameters<typeof XTerm>[0]>["theme"]> = {
@@ -123,6 +124,12 @@ const terminalThemes: Record<AppearanceTheme, NonNullable<ConstructorParameters<
     red: "#e58b7e",
     white: "#edf2ef",
     yellow: "#d7bd78",
+  },
+  classic: {
+    background: "#101719",
+    foreground: "#d9e5df",
+    cursor: "#93d7a4",
+    selectionBackground: "#38575d",
   },
 };
 
@@ -172,6 +179,7 @@ function isAppConfig(value: unknown): value is AppConfig {
 }
 
 function normalizeAppearanceTheme(value: unknown): AppearanceTheme {
+  if (value === "classic") return "classic";
   return value === "night" ? "night" : "day";
 }
 
@@ -512,6 +520,12 @@ function formatRelativeTime(value: string): string {
   const [unit, secondsPerUnit] = units.find(([, seconds]) => absSeconds >= seconds) ?? ["second", 1];
   const valueInUnits = Math.round(diffSeconds / secondsPerUnit);
   return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(valueInUnits, unit);
+}
+
+function appearanceDescription(theme: AppearanceTheme): string {
+  if (theme === "night") return "Night icon and dark colors";
+  if (theme === "classic") return "Light workspace with original dark terminal";
+  return "Day icon and colors";
 }
 
 export function App() {
@@ -2656,7 +2670,7 @@ function AppearanceSettingsPanel({
     <section className="subpanel appearance-panel">
       <div className="compact-title-row">
         <h4>Appearance</h4>
-        <span className="path-line">{appearanceTheme === "night" ? "Night icon and colors" : "Day icon and colors"}</span>
+        <span className="path-line">{appearanceDescription(appearanceTheme)}</span>
       </div>
       <div className="segmented-control" role="radiogroup" aria-label="Appearance theme">
         {appearanceThemes.map((theme) => {

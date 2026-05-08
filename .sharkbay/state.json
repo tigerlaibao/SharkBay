@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T13:51:50+08:00",
+  "updatedAt": "2026-05-08T14:08:39+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Day/night icon shape and theme polish is complete.",
+    "currentFocus": "Classic theme and night panel coverage is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,15 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T052 theme/icon polish verification.",
+    "nextAction": "Idle after T053 Classic theme and night panel verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T14:08:39+08:00",
+      "decision": "Completed t-053-classic-theme-and-night-panels with persisted Classic theme selection, original dark terminal styling for Classic, and night-mode Decisions/Git panel coverage.",
+      "source": ".sharkbay/tasks/t-053-classic-theme-and-night-panels/verification.md"
+    },
     {
       "date": "2026-05-08T13:51:50+08:00",
       "decision": "Completed t-052-theme-icon-polish with rounded full-bleed app icons, warmer day terminal palette, original-inspired dark teal night terminal palette, and night-mode coverage for project rows and detail tabs.",

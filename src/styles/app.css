@@ -1417,9 +1417,9 @@ body.is-resizing-columns * {
 
 .segmented-control {
   display: inline-grid;
-  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  grid-template-columns: repeat(3, minmax(96px, 1fr));
   gap: 4px;
-  width: min(100%, 300px);
+  width: min(100%, 392px);
   padding: 4px;
   background: #edeae2;
   border: 1px solid #d8d4ca;
@@ -1466,7 +1466,11 @@ body.is-resizing-columns * {
 }
 
 .theme-swatch-night {
-  background: linear-gradient(135deg, #071636 0 48%, #4258b4 48% 100%);
+  background: linear-gradient(135deg, #101719 0 48%, #2b4448 48% 100%);
+}
+
+.theme-swatch-classic {
+  background: linear-gradient(135deg, #f4f1eb 0 48%, #101719 48% 100%);
 }
 
 .settings-facts-grid {
@@ -1792,7 +1796,9 @@ body.is-resizing-columns * {
 .app-shell[data-theme="night"] .project-row,
 .app-shell[data-theme="night"] .settings-list-row,
 .app-shell[data-theme="night"] .queue-item,
+.app-shell[data-theme="night"] .decision-item,
 .app-shell[data-theme="night"] .artifact-card,
+.app-shell[data-theme="night"] .artifact-panel,
 .app-shell[data-theme="night"] .url-card,
 .app-shell[data-theme="night"] .root-card,
 .app-shell[data-theme="night"] .empty-state,
@@ -1820,6 +1826,10 @@ body.is-resizing-columns * {
 .app-shell[data-theme="night"] .project-icon {
   background: #223235;
   border-color: #3a5054;
+}
+
+.app-shell[data-theme="night"] .history-time {
+  color: #8fa09c;
 }
 
 .app-shell[data-theme="night"] .settings-nav-item {
@@ -1948,6 +1958,81 @@ body.is-resizing-columns * {
 }
 
 .app-shell[data-theme="night"] .terminal-panel .empty-state strong {
+  color: #d9e5df;
+}
+
+.app-shell[data-theme="classic"] .terminal-panel {
+  color: #d9e5df;
+  background: #172022;
+  border-color: #263639;
+}
+
+.app-shell[data-theme="classic"] .terminal-layout {
+  color: #d9e5df;
+}
+
+.app-shell[data-theme="classic"] .terminal-header {
+  border-bottom-color: #2b3f42;
+}
+
+.app-shell[data-theme="classic"] .terminal-header .path-line {
+  color: #8fa09c;
+}
+
+.app-shell[data-theme="classic"] .terminal-actions .icon-button {
+  color: #b7c7c2;
+  background: #223235;
+  border-color: #31474b;
+}
+
+.app-shell[data-theme="classic"] .terminal-actions .icon-button:hover,
+.app-shell[data-theme="classic"] .terminal-actions .icon-button:focus-visible {
+  color: #ffffff;
+  background: #2d4448;
+}
+
+.app-shell[data-theme="classic"] .terminal-tabs {
+  border-bottom-color: #263639;
+}
+
+.app-shell[data-theme="classic"] .terminal-tab {
+  color: #b9c9c4;
+  background: #1d2a2d;
+  border-color: #2c3c3f;
+}
+
+.app-shell[data-theme="classic"] .terminal-tab.is-active {
+  color: #ffffff;
+  background: #2b4448;
+  border-color: #4e6d73;
+}
+
+.app-shell[data-theme="classic"] .terminal-state {
+  background: #6fd28c;
+}
+
+.app-shell[data-theme="classic"] .terminal-tab-close {
+  color: #91a09c;
+}
+
+.app-shell[data-theme="classic"] .terminal-tab-close:hover,
+.app-shell[data-theme="classic"] .terminal-tab-close:focus-visible {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.app-shell[data-theme="classic"] .terminal-space-stack,
+.app-shell[data-theme="classic"] .xterm-surface {
+  background: #101719;
+}
+
+.app-shell[data-theme="classic"] .terminal-panel .empty-state {
+  color: #9cada8;
+  background: #182426;
+  border-color: #32474b;
+}
+
+.app-shell[data-theme="classic"] .terminal-panel .empty-state strong {
   color: #d9e5df;
 }
 

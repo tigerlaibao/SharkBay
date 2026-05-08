@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Day/night icon shape and theme polish is complete.
+- Current focus: Classic theme and night panel coverage is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,14 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T052 theme/icon polish verification.
+- Next action: Idle after T053 Classic theme and night panel verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T14:08:39+08:00 | Completed `t-053-classic-theme-and-night-panels` with persisted Classic theme selection, original dark terminal styling for Classic, and night-mode Decisions/Git panel coverage. | `.sharkbay/tasks/t-053-classic-theme-and-night-panels/verification.md` |
 | 2026-05-08T13:51:50+08:00 | Completed `t-052-theme-icon-polish` with rounded full-bleed app icons, warmer day terminal palette, original-inspired dark teal night terminal palette, and night-mode coverage for project rows and detail tabs. | `.sharkbay/tasks/t-052-theme-icon-polish/verification.md` |
 | 2026-05-08T13:25:41+08:00 | Completed `t-051-day-night-theme-icons` with day/night app icons, persisted Settings theme selection, matching UI palettes, terminal theme integration, and packaged day icon verification. | `.sharkbay/tasks/t-051-day-night-theme-icons/verification.md` |
 | 2026-05-08T10:38:02+08:00 | Completed `t-050-project-icons` with local app icon data URLs, URL-derived favicon candidates, circular left-list rendering, and bundled shark-fin fallback. | `.sharkbay/tasks/t-050-project-icons/verification.md` |
