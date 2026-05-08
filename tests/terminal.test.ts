@@ -78,6 +78,14 @@ describe("terminal cwd validation", () => {
       foregroundProcess: "claude",
       activeCommandLine: "fix this file",
     })).toBe("claude");
+    expect(terminalDisplayTitle({
+      projectRoot: root,
+      currentCwd: root,
+      shell: "/bin/zsh",
+      foregroundProcess: "node",
+      activeCommandLine: "pnpm dev",
+      serviceLabel: "dev",
+    })).toBe("dev");
   });
 
   it("tracks submitted command lines from terminal input", () => {
@@ -197,6 +205,43 @@ describe("terminal cwd validation", () => {
     try {
       manager.input({ sessionId: session.id, data: "printf 'sharkbay-terminal-ok\\n'\n" });
       await expect(output).resolves.toContain("sharkbay-terminal-ok");
+    } finally {
+      manager.close({ sessionId: session.id });
+    }
+  });
+
+  it("can start a service session with an initial command and service metadata", async () => {
+    const userDataPath = await makeTempRoot("terminal-service-config");
+    const root = await makeTempRoot("terminal-service-root");
+    const repo = await createHarnessFixture(root, "TerminalServiceRepo");
+    await writeJson(getRuntimeConfigPath({ userDataPath }), {
+      schemaVersion: 1,
+      configuredRoots: [root],
+      updatedAt: "2026-05-08",
+    });
+
+    const manager = new TerminalManager();
+    let sessionId: string | null = null;
+    const output = new Promise<string>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("service terminal output timed out")), 3000);
+      manager.on("data", (event) => {
+        if ((!sessionId || event.sessionId === sessionId) && event.data.includes("sharkbay-service-ok")) {
+          clearTimeout(timeout);
+          resolve(event.data);
+        }
+      });
+    });
+    const session = await manager.create({ userDataPath }, {
+      cwd: repo,
+      initialCommand: "printf 'sharkbay-service-ok\\n'",
+      service: { id: "dev", label: "dev", command: "npm run dev" },
+    });
+    sessionId = session.id;
+
+    try {
+      expect(session.title).toBe("dev");
+      expect(session.service).toEqual({ id: "dev", label: "dev", command: "npm run dev" });
+      await expect(output).resolves.toContain("sharkbay-service-ok");
     } finally {
       manager.close({ sessionId: session.id });
     }

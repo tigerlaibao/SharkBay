@@ -82,7 +82,7 @@ Local filesystem repositories
 | Application menu | Expose macOS-native app actions such as Settings | Perform repository reads or writes directly |
 | Dashboard UI | Display project and task lifecycle state | Execute destructive repo operations |
 | Prompt generator | Produce next-action prompts for agents or tools | Pretend execution happened |
-| Terminal manager | Spawn user-driven `node-pty` shell tabs inside configured project roots | Treat renderer-supplied cwd as filesystem authority or run outside configured roots |
+| Terminal manager | Spawn user-driven `node-pty` shell tabs and service-bound dev tabs inside configured project roots | Treat renderer-supplied cwd as filesystem authority or run outside configured roots |
 | Runner, future | Invoke approved agents or tools with approval | Run without logs or user-visible evidence |
 
 ## 5. Self-Hosting Requirement
@@ -134,7 +134,7 @@ Legacy harness cleanup is a separate explicit migration service. It reports read
 
 Create-repo writes only to an empty target inside configured roots and rejects non-empty targets, existing harness files, and symlink targets.
 
-Terminal sessions are writable process sessions, but their filesystem authority starts from the same configured-root boundary. The main process canonicalizes the requested cwd through `resolveRepoPath` before spawning a `node-pty` shell, and renderer payloads cannot open arbitrary paths outside configured roots. The renderer uses xterm terminal spaces keyed by project candidate so hidden project terminals remain alive while only the selected project's space is visible.
+Terminal sessions are writable process sessions, but their filesystem authority starts from the same configured-root boundary. The main process canonicalizes the requested cwd through `resolveRepoPath` before spawning a `node-pty` shell, and renderer payloads cannot open arbitrary paths outside configured roots. The renderer uses xterm terminal spaces keyed by project candidate so hidden project terminals remain alive while only the selected project's space is visible. The first dev-service control reuses the terminal manager by attaching service metadata and an initial command to a safe PTY session discovered from root `package.json` `scripts.dev`.
 
 ## 8. Constraints
 

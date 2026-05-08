@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { DetectionMode, IpcRuntimeLike, ProjectCandidate, ProjectScanInput, ProjectSummary, ScanProjectsResult } from "../shared/types.js";
 import { loadAppConfig, getRuntimeConfigPath } from "./config.js";
+import { discoverProjectDevServices } from "./dev-services.js";
 import { detectHarnessLayout } from "./harness-layout.js";
 import { readProjectSummary } from "./harness-reader.js";
 import { isPathInside, resolveConfiguredRoots } from "./path-safety.js";
@@ -58,6 +59,7 @@ export async function scanConfiguredRoots(configuredRoots: string[], options: Sc
         status: project ? "managed" : "not_setup",
         managedProjectId: project?.id ?? null,
         detection: project?.detection ?? null,
+        services: await discoverProjectDevServices(candidate.path),
       };
     })))
     .sort((a, b) => a.name.localeCompare(b.name) || a.path.localeCompare(b.path));
@@ -150,6 +152,7 @@ function candidateFromPath(candidatePath: string, rootPath: string): Omit<Projec
     path: candidatePath,
     rootPath,
     iconSources: [],
+    services: [],
   };
 }
 

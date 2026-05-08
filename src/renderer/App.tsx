@@ -22,6 +22,7 @@ import type {
   TaskArtifacts,
   TerminalDataEvent,
   TerminalExitEvent,
+  TerminalCreateInput,
   TerminalSession,
   TerminalUpdateEvent,
   TaskQueueItem,
@@ -331,12 +332,16 @@ async function migrateLegacyHarness(project: ProjectSummary | ProjectDetail) {
   return handler({ repoPath: project.path });
 }
 
-async function createTerminal(cwd: string, title?: string): Promise<TerminalSession> {
+async function createTerminal(
+  cwd: string,
+  title?: string,
+  options: Pick<TerminalCreateInput, "initialCommand" | "service"> = {},
+): Promise<TerminalSession> {
   const handler = getBridge().terminal?.create;
   if (!handler) {
     throw new Error("Terminal sessions are not exposed by the preload API.");
   }
-  return handler({ cwd, title });
+  return handler({ cwd, title, ...options });
 }
 
 async function sendTerminalInput(sessionId: string, data: string): Promise<void> {
@@ -1044,8 +1049,11 @@ function TerminalPane({
   const spacesRef = useRef<Record<string, TerminalSpace>>({});
   const creatingProjects = useRef(new Set<string>());
   const activeSpace = activeProjectId ? spaces[activeProjectId] ?? null : null;
-  const activeTab = activeSpace?.tabs.find((tab) => tab.session.id === activeSpace.activeId) ?? activeSpace?.tabs[0] ?? null;
+  const selectedSpace = candidate?.id ? spaces[candidate.id] ?? null : null;
+  const visibleSpace = selectedSpace ?? activeSpace;
+  const activeTab = visibleSpace?.tabs.find((tab) => tab.session.id === visibleSpace.activeId) ?? visibleSpace?.tabs[0] ?? null;
   const canCreate = bridgeAvailable && Boolean(candidate?.path);
+  const services = candidate?.services ?? [];
 
   useEffect(() => {
     spacesRef.current = spaces;
@@ -1128,9 +1136,15 @@ function TerminalPane({
     await openProjectTab(candidate.id, candidate.path, candidate.name);
   }
 
-  async function openProjectTab(projectId: string, cwd: string, projectName: string, quiet = false) {
+  async function openProjectTab(
+    projectId: string,
+    cwd: string,
+    projectName: string,
+    quiet = false,
+    options: Pick<TerminalCreateInput, "initialCommand" | "service"> = {},
+  ) {
     try {
-      const session = await createTerminal(cwd, projectName);
+      const session = await createTerminal(cwd, projectName, options);
       const terminal = createXTerm(session.id, appearanceTheme, setToast);
       const tab: TerminalTab = {
         session,
@@ -1166,6 +1180,25 @@ function TerminalPane({
     }
   }
 
+  async function toggleService(service: NonNullable<ProjectCandidate["services"]>[number]) {
+    if (!candidate?.path) {
+      return;
+    }
+    const existing = selectedSpace?.tabs.find((tab) => tab.session.service?.id === service.id && tab.session.status === "running");
+    if (existing) {
+      await closeTab(existing.session.id);
+      return;
+    }
+    await openProjectTab(candidate.id, candidate.path, candidate.name, false, {
+      initialCommand: service.command,
+      service: {
+        id: service.id,
+        label: service.label,
+        command: service.command,
+      },
+    });
+  }
+
   function appendTerminalOutput(event: TerminalDataEvent) {
     const tab = findTerminalTab(spacesRef.current, event.sessionId);
     tab?.terminal.write(event.data);
@@ -1173,8 +1206,14 @@ function TerminalPane({
 
   function markTerminalExit(event: TerminalExitEvent) {
     const message = `\r\n[process exited${event.exitCode === null ? "" : ` with code ${event.exitCode}`}${event.signal ? `, signal ${event.signal}` : ""}]\r\n`;
-    const tab = findTerminalTab(spacesRef.current, event.sessionId);
-    tab?.terminal.write(message);
+    const match = findTerminalTabWithSpace(spacesRef.current, event.sessionId);
+    if (match?.tab.session.service) {
+      match.tab.terminal.write(message);
+      void closeTerminal(event.sessionId).catch(() => undefined);
+      removeTerminalTab(event.sessionId, match);
+      return;
+    }
+    match?.tab.terminal.write(message);
     setSpaces((current) => mapTerminalTab(current, event.sessionId, (currentTab) => ({
       ...currentTab,
       session: { ...currentTab.session, status: "exited" },
@@ -1195,29 +1234,33 @@ function TerminalPane({
     } catch (error) {
       setToast({ tone: "error", message: asMessage(error) });
     } finally {
-      match?.tab.disposables.forEach((disposable) => disposable.dispose());
-      match?.tab.terminal.dispose();
-      setSpaces((current) => {
-        if (!match) {
-          return current;
-        }
-        const space = current[match.space.projectId];
-        if (!space) {
-          return current;
-        }
-        const nextTabs = space.tabs.filter((tab) => tab.session.id !== sessionId);
-        const closingActive = space.activeId === sessionId;
-        const fallback = nextTabs[match.index] ?? nextTabs[match.index - 1] ?? null;
-        return {
-          ...current,
-          [space.projectId]: {
-            ...space,
-            tabs: nextTabs,
-            activeId: closingActive ? fallback?.session.id ?? null : space.activeId,
-          },
-        };
-      });
+      removeTerminalTab(sessionId, match);
     }
+  }
+
+  function removeTerminalTab(sessionId: string, match: ReturnType<typeof findTerminalTabWithSpace>) {
+    match?.tab.disposables.forEach((disposable) => disposable.dispose());
+    match?.tab.terminal.dispose();
+    setSpaces((current) => {
+      if (!match) {
+        return current;
+      }
+      const space = current[match.space.projectId];
+      if (!space) {
+        return current;
+      }
+      const nextTabs = space.tabs.filter((tab) => tab.session.id !== sessionId);
+      const closingActive = space.activeId === sessionId;
+      const fallback = nextTabs[match.index] ?? nextTabs[match.index - 1] ?? null;
+      return {
+        ...current,
+        [space.projectId]: {
+          ...space,
+          tabs: nextTabs,
+          activeId: closingActive ? fallback?.session.id ?? null : space.activeId,
+        },
+      };
+    });
   }
 
   const terminalHeading = candidate?.name ?? "Terminal";
@@ -1227,8 +1270,29 @@ function TerminalPane({
       <div className="terminal-header">
         <div>
           <h3>{terminalHeading}</h3>
-          <div className="path-line">{activeSpace?.path ?? candidate?.path ?? "Select a project"}</div>
+          <div className="path-line">{selectedSpace?.path ?? candidate?.path ?? "Select a project"}</div>
         </div>
+        {services.length ? (
+          <div className="service-actions" aria-label="Project services">
+            {services.map((service) => {
+              const running = Boolean(selectedSpace?.tabs.some((tab) => tab.session.service?.id === service.id && tab.session.status === "running"));
+              return (
+                <button
+                  aria-label={`${running ? "Stop" : "Start"} ${service.label}`}
+                  className={cx("service-pill", running && "is-running")}
+                  disabled={!canCreate}
+                  key={service.id}
+                  title={`${running ? "Stop" : "Start"} ${service.command}`}
+                  type="button"
+                  onClick={() => void toggleService(service)}
+                >
+                  <span className="service-dot" aria-hidden="true" />
+                  <span>{service.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
 
       <div className="terminal-space-stack">

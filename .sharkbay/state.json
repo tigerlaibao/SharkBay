@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T17:32:35+08:00",
+  "updatedAt": "2026-05-08T18:46:12+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Ripple harness language is agent-neutral.",
+    "currentFocus": "Dev service pill MVP is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,25 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T063 sidebar and terminal tabs UI polish.",
+    "nextAction": "Idle after T064 dev service pill MVP.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T18:46:12+08:00",
+      "decision": "Completed t-064-dev-service-pill-mvp with root package.json dev service discovery, terminal-header service pills, service-bound terminal tabs, stop-to-close behavior, and passing typecheck, tests, build, diff, and JSON checks.",
+      "source": ".sharkbay/tasks/t-064-dev-service-pill-mvp/verification.md"
+    },
+    {
+      "date": "2026-05-08T18:43:00+08:00",
+      "decision": "Advanced t-064-dev-service-pill-mvp to coding after scoping the first slice to root package.json scripts.dev with no URL detection, editing UI, run history, or monorepo scanning.",
+      "source": ".sharkbay/tasks/t-064-dev-service-pill-mvp/contract.md"
+    },
+    {
+      "date": "2026-05-08T18:39:13+08:00",
+      "decision": "Opened t-064-dev-service-pill-mvp to add a scoped dev-service control: discover root package.json scripts.dev, show a terminal-header status pill, start a service terminal tab, and close it on stop.",
+      "source": ".sharkbay/tasks/t-064-dev-service-pill-mvp/contract.md"
+    },
     {
       "date": "2026-05-08T17:32:35+08:00",
       "decision": "Completed t-063-sidebar-counts-terminal-add-button by removing left sidebar section counts and moving the new-terminal plus button into the terminal tabs row with passing typecheck, build, diff, and JSON checks.",

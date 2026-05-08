@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Ripple harness language is agent-neutral.
+- Current focus: Dev service pill MVP is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,16 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T063 sidebar and terminal tabs UI polish.
+- Next action: Idle after T064 dev service pill MVP.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T18:46:12+08:00 | Completed `t-064-dev-service-pill-mvp` with root `package.json` dev service discovery, terminal-header service pills, service-bound terminal tabs, stop-to-close behavior, and passing typecheck, tests, build, diff, and JSON checks. | `.sharkbay/tasks/t-064-dev-service-pill-mvp/verification.md` |
+| 2026-05-08T18:43:00+08:00 | Advanced `t-064-dev-service-pill-mvp` to coding after scoping the first slice to root `package.json` `scripts.dev` with no URL detection, editing UI, run history, or monorepo scanning. | `.sharkbay/tasks/t-064-dev-service-pill-mvp/contract.md` |
+| 2026-05-08T18:39:13+08:00 | Opened `t-064-dev-service-pill-mvp` to add a scoped dev-service control: discover root `package.json` `scripts.dev`, show a terminal-header status pill, start a service terminal tab, and close it on stop. | `.sharkbay/tasks/t-064-dev-service-pill-mvp/contract.md` |
 | 2026-05-08T17:32:35+08:00 | Completed `t-063-sidebar-counts-terminal-add-button` by removing left sidebar section counts and moving the new-terminal plus button into the terminal tabs row with passing typecheck, build, diff, and JSON checks. | `.sharkbay/tasks/t-063-sidebar-counts-terminal-add-button/verification.md` |
 | 2026-05-08T17:30:00+08:00 | Advanced `t-063-sidebar-counts-terminal-add-button` to coding after a narrow contract with no blockers or major risks. | `.sharkbay/tasks/t-063-sidebar-counts-terminal-add-button/status.md` |
 | 2026-05-08T17:28:35+08:00 | Opened `t-063-sidebar-counts-terminal-add-button` to remove Managed/Not setup counts from the left sidebar and move the new-terminal plus button into the terminal tabs row. | `.sharkbay/tasks/t-063-sidebar-counts-terminal-add-button/contract.md` |

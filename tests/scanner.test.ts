@@ -48,6 +48,30 @@ describe("scanner", () => {
     expect(candidate?.iconSources[0]).toEqual(expect.objectContaining({ kind: "local", label: "icon.png" }));
   });
 
+  it("adds root package.json dev services to project candidates", async () => {
+    const root = await makeTempRoot("scanner-dev-services");
+    const plainRepo = path.join(root, "PlainRepo");
+    await fs.mkdir(plainRepo, { recursive: true });
+    await writeJson(path.join(plainRepo, "package.json"), {
+      packageManager: "pnpm@9.0.0",
+      scripts: {
+        dev: "vite",
+      },
+    });
+
+    const result = await scanConfiguredRoots([root]);
+    const candidate = result.candidates.find((item) => item.name === "PlainRepo");
+
+    expect(candidate?.services).toEqual([
+      {
+        id: "dev",
+        label: "dev",
+        command: "pnpm dev",
+        script: "vite",
+      },
+    ]);
+  });
+
   it("prefers semantic project icons over app icons for project rows", async () => {
     const root = await makeTempRoot("scanner-project-icon");
     const plainRepo = path.join(root, "PlainRepo");

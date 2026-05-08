@@ -51,6 +51,7 @@ export type TerminalTitleInput = {
   shell: string;
   foregroundProcess?: string | null;
   activeCommandLine?: string | null;
+  serviceLabel?: string | null;
 };
 
 export const terminalShellEnvironment = {
@@ -105,11 +106,13 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
         shell,
         foregroundProcess,
         activeCommandLine: null,
+        serviceLabel: input.service?.label,
       }),
       shell,
       pid: ptyProcess.pid ?? null,
       status: "running",
       createdAt: new Date().toISOString(),
+      service: input.service,
       pty: ptyProcess,
       projectRoot: cwd,
       currentCwd: cwd,
@@ -132,6 +135,13 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
       this.emit("exit", { sessionId: id, exitCode, signal: signal === undefined ? null : String(signal) });
     });
     this.startTitleInspection(session);
+    const initialCommand = normalizeTerminalCommandLine(input.initialCommand);
+    if (initialCommand) {
+      session.activeCommandLine = initialCommand;
+      session.commandSubmittedAt = this.now();
+      session.foregroundCommandObserved = false;
+      ptyProcess.write(`${initialCommand}\r`);
+    }
 
     return publicSession(session);
   }
@@ -269,6 +279,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
         shell: session.shell,
         foregroundProcess: session.foregroundProcess,
         activeCommandLine: session.activeCommandLine,
+        serviceLabel: session.service?.label,
       });
       if (nextTitle !== session.title) {
         session.title = nextTitle;
@@ -302,6 +313,11 @@ function positiveTerminalDimension(value: number | null | undefined): number | n
 }
 
 export function terminalDisplayTitle(input: TerminalTitleInput): string {
+  const serviceLabel = input.serviceLabel?.trim();
+  if (serviceLabel) {
+    return serviceLabel;
+  }
+
   const foregroundProcess = normalizeForegroundProcess(input.foregroundProcess);
   if (foregroundProcess && !isShellForeground(foregroundProcess, input.shell)) {
     if (isInteractiveForegroundProcess(foregroundProcess)) {
@@ -477,5 +493,6 @@ function publicSession(session: TerminalRecord | TerminalSession): TerminalSessi
     pid: session.pid,
     status: session.status,
     createdAt: session.createdAt,
+    service: session.service,
   };
 }

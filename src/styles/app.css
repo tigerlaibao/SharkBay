@@ -1555,6 +1555,48 @@ body.is-resizing-columns * {
   color: #6b7672;
 }
 
+.service-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.service-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  color: #4f5c5f;
+  background: #e5ded1;
+  border: 1px solid #d1c8b8;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.service-pill:hover,
+.service-pill:focus-visible {
+  color: #263235;
+  background: #d8cfbf;
+  outline: none;
+}
+
+.service-dot {
+  width: 7px;
+  height: 7px;
+  background: #8b9693;
+  border-radius: 999px;
+}
+
+.service-pill.is-running .service-dot {
+  background: #4c845d;
+  box-shadow: 0 0 0 3px rgba(76, 132, 93, 0.14);
+}
+
 .terminal-tabs {
   display: flex;
   align-items: center;
@@ -2010,6 +2052,24 @@ body.is-resizing-columns * {
   color: #f4faf6;
 }
 
+.app-shell[data-theme="night"] .service-pill {
+  color: #cbd9f7;
+  background: #1d2a2d;
+  border-color: #2c3c3f;
+}
+
+.app-shell[data-theme="night"] .service-pill:hover,
+.app-shell[data-theme="night"] .service-pill:focus-visible {
+  color: #ffffff;
+  background: #2d4448;
+  border-color: #4e6d73;
+}
+
+.app-shell[data-theme="night"] .service-pill.is-running .service-dot {
+  background: #93d7a4;
+  box-shadow: 0 0 0 3px rgba(147, 215, 164, 0.14);
+}
+
 .app-shell[data-theme="night"] .terminal-tab-add,
 .app-shell[data-theme="night"] .terminal-tab {
   color: #cbd9f7;
@@ -2092,6 +2152,23 @@ body.is-resizing-columns * {
 
 .app-shell[data-theme="morning"] .terminal-header .path-line {
   color: #8fa09c;
+}
+
+.app-shell[data-theme="morning"] .service-pill {
+  color: #b7c7c2;
+  background: #223235;
+  border-color: #31474b;
+}
+
+.app-shell[data-theme="morning"] .service-pill:hover,
+.app-shell[data-theme="morning"] .service-pill:focus-visible {
+  color: #ffffff;
+  background: #2d4448;
+}
+
+.app-shell[data-theme="morning"] .service-pill.is-running .service-dot {
+  background: #6fd28c;
+  box-shadow: 0 0 0 3px rgba(111, 210, 140, 0.14);
 }
 
 .app-shell[data-theme="morning"] .terminal-tab-add {

@@ -204,6 +204,14 @@ export type ProjectCandidate = {
   status: "managed" | "not_setup";
   managedProjectId: string | null;
   detection: DetectionMode | null;
+  services?: ProjectDevService[];
+};
+
+export type ProjectDevService = {
+  id: string;
+  label: string;
+  command: string;
+  script: string;
 };
 
 export type TaskArtifacts = {
@@ -357,6 +365,12 @@ export type TerminalSessionStatus = "running" | "exited";
 export type TerminalCreateInput = {
   cwd: string;
   title?: string;
+  initialCommand?: string;
+  service?: {
+    id: string;
+    label: string;
+    command: string;
+  };
   cols?: number;
   rows?: number;
 };
@@ -369,6 +383,11 @@ export type TerminalSession = {
   pid: number | null;
   status: TerminalSessionStatus;
   createdAt: string;
+  service?: {
+    id: string;
+    label: string;
+    command: string;
+  };
 };
 
 export type TerminalInput = {
