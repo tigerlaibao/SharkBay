@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-071-avatar-milk-background` | Use milk project background for avatar circles | 2026-05-08 |
 | `t-070-favicon-first-monorepo-icons` | Prefer favicons for monorepo web package icons | 2026-05-08 |
 | `t-069-monorepo-project-icons` | Resolve monorepo web package project icons | 2026-05-08 |
 | `t-068-project-service-running-dot` | Show running service dot in project list | 2026-05-08 |

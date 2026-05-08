@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Transparent Project Icons Need Their Own Avatar Ground
+
+**Problem**: Transparent PNG project icons became unclear in Night mode when their transparent areas showed the dark project row background directly.
+
+**Cause**: Night mode changed avatar circles to a dark background, which gave transparent icon assets no light surface to read against.
+
+**Solution**: Use the project-card milk-white family for avatar circle backgrounds. In Night mode, use the same milk-white color with transparency so it lifts transparent icons without becoming an opaque light disc.
+
+**Source**: `.sharkbay/tasks/t-071-avatar-milk-background/implementation.md`, `src/styles/app.css`.
+
+---
+
 ### Web Package Favicons Should Beat Generic PWA Icons
 
 **Problem**: After adding monorepo package icon discovery, ItsMyLife selected `icon-512.png` before the favicon.
