@@ -4,6 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal as XTerm } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
+import defaultProjectIconUrl from "./assets/shark-fin.png";
 import type {
   AppConfig,
   CreateHarnessRepoInput,
@@ -1485,6 +1486,7 @@ function ProjectTable({
 
           return (
             <button className={cx("project-row", candidate.status === "not_setup" && "is-not-setup", selectedId === candidate.id && "is-selected")} key={candidate.id} onClick={() => onSelect(candidate.id)}>
+              <ProjectIcon name={candidate.name} sources={candidate.iconSources ?? project?.iconSources ?? []} />
               <span className="project-row-main">
                 <span className="cell-title">{candidate.name}</span>
                 {taskTitle ? <span className="cell-subtitle truncate">{taskTitle}</span> : null}
@@ -1509,6 +1511,31 @@ function ProjectTable({
         })}
       </div>
     </section>
+  );
+}
+
+function ProjectIcon({ name, sources }: { name: string; sources: NonNullable<ProjectCandidate["iconSources"]> }) {
+  const signature = sources.map((source) => source.url).join("|");
+  const [failedCount, setFailedCount] = useState(0);
+
+  useEffect(() => {
+    setFailedCount(0);
+  }, [signature]);
+
+  const source = sources[failedCount];
+  const imageUrl = source?.url ?? defaultProjectIconUrl;
+
+  return (
+    <span className="project-icon" aria-hidden="true" title={`${name} icon`}>
+      <img
+        alt=""
+        draggable={false}
+        src={imageUrl}
+        onError={() => {
+          setFailedCount((current) => (current < sources.length ? current + 1 : current));
+        }}
+      />
+    </span>
   );
 }
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T20:35:15+08:00",
+  "updatedAt": "2026-05-08T10:38:02+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Packaged macOS app path fixes are complete.",
+    "currentFocus": "Project icon UI is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T049 packaged app path verification.",
+    "nextAction": "Idle after T050 project icon verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T10:38:02+08:00",
+      "decision": "Completed t-050-project-icons with local app icon data URLs, URL-derived favicon candidates, circular left-list rendering, and bundled shark-fin fallback.",
+      "source": ".sharkbay/tasks/t-050-project-icons/verification.md"
+    },
+    {
+      "date": "2026-05-08T10:32:14+08:00",
+      "decision": "Opened t-050-project-icons to add circular left-list project icons with local app icon, web favicon, and bundled shark-fin fallback resolution.",
+      "source": ".sharkbay/tasks/t-050-project-icons/contract.md"
+    },
     {
       "date": "2026-05-07T20:35:15+08:00",
       "decision": "Completed t-049-packaged-app-blank-screen with relative Vite renderer assets and runtime templateRoot propagation for packaged project detail reads.",

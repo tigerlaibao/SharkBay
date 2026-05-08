@@ -77,11 +77,18 @@ export type UrlFields = {
   deploymentUrl: string | null;
 };
 
+export type ProjectIconSource = {
+  kind: "local" | "favicon";
+  url: string;
+  label: string;
+};
+
 export type ProjectSummary = UrlFields & {
   id: string;
   name: string;
   path: string;
   detection: DetectionMode;
+  iconSources?: ProjectIconSource[];
   repoUrl: string | null;
   currentBranch: string | null;
   dirtyWorktree: boolean | null;
@@ -190,6 +197,7 @@ export type ProjectCandidate = {
   name: string;
   path: string;
   rootPath: string;
+  iconSources?: ProjectIconSource[];
   status: "managed" | "not_setup";
   managedProjectId: string | null;
   detection: DetectionMode | null;

@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Packaged macOS app path fixes are complete.
+- Current focus: Project icon UI is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T049 packaged app path verification.
+- Next action: Idle after T050 project icon verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T10:38:02+08:00 | Completed `t-050-project-icons` with local app icon data URLs, URL-derived favicon candidates, circular left-list rendering, and bundled shark-fin fallback. | `.sharkbay/tasks/t-050-project-icons/verification.md` |
+| 2026-05-08T10:32:14+08:00 | Opened `t-050-project-icons` to add circular left-list project icons with local app icon, web favicon, and bundled shark-fin fallback resolution. | `.sharkbay/tasks/t-050-project-icons/contract.md` |
 | 2026-05-07T20:35:15+08:00 | Completed `t-049-packaged-app-blank-screen` with relative Vite renderer assets and runtime `templateRoot` propagation for packaged project detail reads. | `.sharkbay/tasks/t-049-packaged-app-blank-screen/verification.md` |
 | 2026-05-07T20:29:37+08:00 | Opened `t-049-packaged-app-blank-screen` because the built macOS app launches to a blank white screen. | `.sharkbay/tasks/t-049-packaged-app-blank-screen/status.md` |
 | 2026-05-07T20:23:59+08:00 | Completed `t-048-macos-packaging-config` with electron-builder macOS scripts/config, release output ignored, README packaging docs, and verified app/dmg/zip artifacts. | `.sharkbay/tasks/t-048-macos-packaging-config/verification.md` |

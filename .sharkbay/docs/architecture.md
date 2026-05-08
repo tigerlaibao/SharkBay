@@ -21,6 +21,8 @@ Local SharkBay process
   |
   +--> Harness repo reader
   |
+  +--> Project icon resolver
+  |
   +--> Template installer
   |
   +--> Harness template sync checker
@@ -72,6 +74,7 @@ Local filesystem repositories
 | --- | --- | --- |
 | Scanner | Discover harness repos under configured roots | Modify repositories |
 | Repo reader | Parse contained `.sharkbay/` or legacy `.agent`/root task files | Infer missing facts without marking uncertainty |
+| Project icon resolver | Return ordered, read-only icon candidates from safe local app icons and project-authored URLs | Crawl arbitrary websites, write icon caches, or expose raw filesystem paths to the renderer |
 | Harness writer | Safely update allowlisted harness JSON fields in the resolved layout | Trust renderer roots, overwrite whole files, follow symlinks outside configured roots |
 | Path safety | Canonicalize paths, enforce configured-root containment, reject symlink escapes | Use string-prefix checks as an authority boundary |
 | Template installer | Create new harness repos from templates | Overwrite existing files blindly |
@@ -100,6 +103,7 @@ Acceptance criteria:
 Configured project roots
   -> scanner finds candidate repos
   -> repo reader loads manifest, state, queue, and task artifacts from the resolved harness layout
+  -> icon resolver adds local icon data URLs and favicon candidates
   -> normalized project records
   -> dashboard list, detail views, and terminal cwd selection
   -> user selects project/task action

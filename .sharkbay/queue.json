@@ -1,9 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-07T20:35:15+08:00",
+  "updatedAt": "2026-05-08T10:38:02+08:00",
   "active": [],
   "backlog": [],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-050-project-icons",
+      "title": "Add project icons to the left project list",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-08"
+    },
     {
       "priority": 1,
       "taskId": "t-049-packaged-app-blank-screen",

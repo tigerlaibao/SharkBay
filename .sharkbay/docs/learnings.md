@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Project Icons Should Be Ordered Candidates, Not Cached Downloads
+
+**Problem**: SharkBay needs recognizable project icons, but projects can be local apps, web apps, or plain folders, and not every project has a single authoritative icon file.
+
+**Cause**: Automatically "getting the icon" can mean reading a local app icon, using a web favicon, parsing hosted HTML, or downloading and caching assets. Broad crawling would add network, privacy, cache invalidation, and failure-mode complexity.
+
+**Solution**: Resolve a small ordered candidate list at scan time: safe local app icon data URLs first, project-authored favicon URLs second, and a bundled fallback in the renderer. The renderer tries candidates in order without persisting remote assets.
+
+**Source**: `.sharkbay/tasks/t-050-project-icons/implementation.md`, `src/main/project-icons.ts`, `src/renderer/App.tsx`.
+
+---
+
 ### Packaged Electron Apps Cannot Rely On Dev Paths Or CWD
 
 **Problem**: The packaged macOS app first showed a blank white screen, then project detail diagnostics reported `ENOENT: no such file or directory, open '/templates/harness/AGENTS.md'`.

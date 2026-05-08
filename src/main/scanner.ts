@@ -5,6 +5,7 @@ import { loadAppConfig, getRuntimeConfigPath } from "./config.js";
 import { detectHarnessLayout } from "./harness-layout.js";
 import { readProjectSummary } from "./harness-reader.js";
 import { isPathInside, resolveConfiguredRoots } from "./path-safety.js";
+import { resolveProjectIconSources } from "./project-icons.js";
 
 const ignoredDirectories = new Set([
   ".git",
@@ -48,16 +49,17 @@ export async function scanConfiguredRoots(configuredRoots: string[], options: Sc
   }
 
   const managedByPath = new Map([...projects.values()].map((project) => [project.path, project]));
-  const candidates = [...rawCandidates.values()]
-    .map((candidate): ProjectCandidate => {
+  const candidates = (await Promise.all([...rawCandidates.values()]
+    .map(async (candidate): Promise<ProjectCandidate> => {
       const project = managedByPath.get(candidate.path);
       return {
         ...candidate,
+        iconSources: project?.iconSources ?? await resolveProjectIconSources(candidate.path, [candidate.rootPath], { localUrl: null, testUrl: null, deploymentUrl: null }),
         status: project ? "managed" : "not_setup",
         managedProjectId: project?.id ?? null,
         detection: project?.detection ?? null,
       };
-    })
+    })))
     .sort((a, b) => a.name.localeCompare(b.name) || a.path.localeCompare(b.path));
 
   return {
@@ -147,6 +149,7 @@ function candidateFromPath(candidatePath: string, rootPath: string): Omit<Projec
     name: path.basename(candidatePath),
     path: candidatePath,
     rootPath,
+    iconSources: [],
   };
 }
 

@@ -5,6 +5,49 @@ import { createContainedHarnessFixture, createHarnessFixture, makeTempRoot, writ
 import { scanConfiguredRoots, scanProjects } from "../src/main/scanner.js";
 
 describe("scanner", () => {
+  it("adds ordered local icon and favicon candidates to project rows", async () => {
+    const root = await makeTempRoot("scanner-icons");
+    const repo = await createHarnessFixture(root, "IconRepo");
+    await writeJson(path.join(repo, "package.json"), {
+      build: { mac: { icon: "resources/custom-icon.png" } },
+    });
+    await fs.mkdir(path.join(repo, "resources"), { recursive: true });
+    await fs.writeFile(
+      path.join(repo, "resources", "custom-icon.png"),
+      Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64"),
+    );
+    await fs.mkdir(path.join(repo, "public"), { recursive: true });
+    await fs.writeFile(
+      path.join(repo, "public", "favicon.png"),
+      Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64"),
+    );
+
+    const result = await scanConfiguredRoots([root]);
+    const project = result.projects.find((item) => item.name === "IconRepo");
+    const candidate = result.candidates.find((item) => item.name === "IconRepo");
+
+    expect(project?.iconSources[0]).toEqual(expect.objectContaining({ kind: "local", label: "custom-icon.png" }));
+    expect(project?.iconSources[0]?.url).toMatch(/^data:image\/png;base64,/);
+    expect(project?.iconSources.some((source) => source.kind === "favicon" && source.url === "https://state.example/favicon.ico")).toBe(true);
+    expect(candidate?.iconSources[0]).toEqual(project?.iconSources[0]);
+  });
+
+  it("adds local icon candidates to not-setup project rows", async () => {
+    const root = await makeTempRoot("scanner-not-setup-icons");
+    const plainRepo = path.join(root, "PlainRepo");
+    await fs.mkdir(path.join(plainRepo, "resources"), { recursive: true });
+    await fs.writeFile(
+      path.join(plainRepo, "resources", "icon.png"),
+      Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64"),
+    );
+
+    const result = await scanConfiguredRoots([root]);
+    const candidate = result.candidates.find((item) => item.name === "PlainRepo");
+
+    expect(candidate?.status).toBe("not_setup");
+    expect(candidate?.iconSources[0]).toEqual(expect.objectContaining({ kind: "local", label: "icon.png" }));
+  });
+
   it("discovers manifest and protocol-fallback repos", async () => {
     const root = await makeTempRoot("scanner");
     await createHarnessFixture(root, "ManifestRepo");

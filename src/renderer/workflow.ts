@@ -9,6 +9,7 @@ export type WorkflowProjectCandidate = {
   name: string;
   path: string;
   rootPath: string;
+  iconSources?: Array<{ kind: "local" | "favicon"; url: string; label: string }>;
   status: "managed" | "not_setup";
   managedProjectId: string | null;
   detection: DetectionMode | null;
@@ -19,6 +20,7 @@ export type WorkflowProjectSummary = {
   name: string;
   path: string;
   detection: DetectionMode;
+  iconSources?: Array<{ kind: "local" | "favicon"; url: string; label: string }>;
 };
 
 export type GateStatusCandidate = {
@@ -292,6 +294,7 @@ export function projectToCandidate(project: WorkflowProjectSummary): WorkflowPro
     name: project.name,
     path: project.path,
     rootPath: project.path,
+    iconSources: project.iconSources ?? [],
     status: "managed",
     managedProjectId: project.id,
     detection: project.detection,

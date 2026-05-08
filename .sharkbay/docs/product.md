@@ -48,6 +48,7 @@ Key terms:
 | P0 | New managed project wizard | Create a new project directory from bundled templates | Writes root `AGENTS.md` and contained `.sharkbay/` harness files |
 | P1 | Next-action prompt | Generate a prompt for Codex to advance a selected task | Prompt references repo path, task id, phase, and protocol |
 | P1 | URL tracking | Store local, test, and deployment URLs | URLs appear in project dashboard and detail view |
+| P1 | Project icons | Show recognizable project identity icons in the workbench list | Project rows show circular icons from local app icons, favicons, or the bundled default icon |
 | P1 | Ordinary folder discovery | Show all direct child folders under scan roots | User can see projects that are not managed yet and start one-click Ripple setup |
 | P1 | Project terminal | Open terminal tabs rooted at selected project directories | Selecting any managed or not-setup project opens a shell rooted at that project path |
 | P1 | Harness template sync | Detect when installed Ripple control files drift from SharkBay's tracked `templates/harness/` source | Managed project scan results include current/stale/missing harness template status and stale file names |

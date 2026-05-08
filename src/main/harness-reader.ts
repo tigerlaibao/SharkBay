@@ -27,6 +27,7 @@ import { checkHarnessTemplateSync } from "./harness-template-sync.js";
 import { checkLegacyHarnessCleanup } from "./legacy-harness-cleanup.js";
 import { readJsonFile } from "./json-file.js";
 import { isPathInside, resolveReadableHarnessJsonFile, resolveReadableRepoFile, resolveRepoPath } from "./path-safety.js";
+import { resolveProjectIconSources } from "./project-icons.js";
 
 const artifactFiles: Record<keyof TaskArtifacts, string> = {
   statusMarkdown: "status.md",
@@ -102,6 +103,7 @@ export async function readProjectDetail(
   const urls = readUrls(state.ok, state.data, manifest.data);
   const name = readProjectName(manifest.data, repoPath);
   const repoUrl = readRepoUrl(state.data) || readRepoUrl(manifest.data) || git.githubUrl;
+  const iconSources = await resolveProjectIconSources(repoPath, configuredRoots, urls);
   const harnessTemplate = await readHarnessTemplateSummary(repoPath, configuredRoots, readOptions.templateDir, errors);
   const legacyHarnessCleanup = await readLegacyHarnessCleanupSummary(repoPath, configuredRoots, errors);
   const currentTask = readOptions.includeArtifacts === false || !activeTask ? null : await readTaskArtifacts(repoPath, configuredRoots, layout, activeTask.taskId, errors);
@@ -113,6 +115,7 @@ export async function readProjectDetail(
     name,
     path: repoPath,
     detection,
+    iconSources,
     repoUrl,
     currentBranch: git.currentBranch,
     dirtyWorktree: git.dirtyWorktree,
@@ -735,6 +738,7 @@ function unsafeProjectDetail(repoPath: string, detection: DetectionMode, message
     name: path.basename(repoPath),
     path: repoPath,
     detection,
+    iconSources: [],
     repoUrl: null,
     currentBranch: null,
     dirtyWorktree: null,
