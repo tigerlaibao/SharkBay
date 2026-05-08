@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T19:43:35+08:00",
+  "updatedAt": "2026-05-08T19:50:29+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Monorepo web package project icons are resolved.",
+    "currentFocus": "Monorepo web package favicons are preferred.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T069 monorepo project icon discovery.",
+    "nextAction": "Idle after T070 favicon-first monorepo icon ordering.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T19:50:29+08:00",
+      "decision": "Completed t-070-favicon-first-monorepo-icons by reordering monorepo web package icon candidates so favicon.ico/png win over apple-touch-icon, icon-512, and logo assets, with real ItsMyLife verification.",
+      "source": ".sharkbay/tasks/t-070-favicon-first-monorepo-icons/verification.md"
+    },
+    {
+      "date": "2026-05-08T19:49:21+08:00",
+      "decision": "Opened t-070-favicon-first-monorepo-icons to prefer committed favicon files over icon-512/logo assets in monorepo web package icon discovery.",
+      "source": ".sharkbay/tasks/t-070-favicon-first-monorepo-icons/contract.md"
+    },
     {
       "date": "2026-05-08T19:43:35+08:00",
       "decision": "Completed t-069-monorepo-project-icons by adding common packages/web/public and apps/web/public icon paths, scanner coverage, and real ItsMyLife verification showing local icon-512.png before favicon URLs.",

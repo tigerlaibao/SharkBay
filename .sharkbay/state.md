@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Monorepo web package project icons are resolved.
+- Current focus: Monorepo web package favicons are preferred.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T069 monorepo project icon discovery.
+- Next action: Idle after T070 favicon-first monorepo icon ordering.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T19:50:29+08:00 | Completed `t-070-favicon-first-monorepo-icons` by reordering monorepo web package icon candidates so `favicon.ico/png` win over `apple-touch-icon`, `icon-512`, and logo assets, with real ItsMyLife verification. | `.sharkbay/tasks/t-070-favicon-first-monorepo-icons/verification.md` |
+| 2026-05-08T19:49:21+08:00 | Opened `t-070-favicon-first-monorepo-icons` to prefer committed favicon files over `icon-512`/logo assets in monorepo web package icon discovery. | `.sharkbay/tasks/t-070-favicon-first-monorepo-icons/contract.md` |
 | 2026-05-08T19:43:35+08:00 | Completed `t-069-monorepo-project-icons` by adding common `packages/web/public` and `apps/web/public` icon paths, scanner coverage, and real ItsMyLife verification showing local `icon-512.png` before favicon URLs. | `.sharkbay/tasks/t-069-monorepo-project-icons/verification.md` |
 | 2026-05-08T19:41:54+08:00 | Opened `t-069-monorepo-project-icons` to let SharkBay resolve local project icons from common monorepo frontend package assets after ItsMyLife icons were found under `packages/web/public`. | `.sharkbay/tasks/t-069-monorepo-project-icons/contract.md` |
 | 2026-05-08T19:29:41+08:00 | Completed `t-068-project-service-running-dot` by lifting running service project state from TerminalPane and rendering a green dot before project names in the left list. | `.sharkbay/tasks/t-068-project-service-running-dot/verification.md` |

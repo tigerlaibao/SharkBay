@@ -2,13 +2,25 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Web Package Favicons Should Beat Generic PWA Icons
+
+**Problem**: After adding monorepo package icon discovery, ItsMyLife selected `icon-512.png` before the favicon.
+
+**Cause**: The package-level path order put larger PWA/logo assets ahead of favicon files.
+
+**Solution**: Keep explicit `project-icon.png` overrides highest priority, but prefer package `favicon.ico`/`favicon.png` before `apple-touch-icon.png`, `icon-512.png`, and `logo.png`.
+
+**Source**: `.sharkbay/tasks/t-070-favicon-first-monorepo-icons/implementation.md`, `src/main/project-icons.ts`, `tests/scanner.test.ts`.
+
+---
+
 ### Monorepo Web Icons Need Package-Level Discovery
 
 **Problem**: ItsMyLife project avatars depended on runtime `localhost` favicon URLs even though the repository had committed icon assets.
 
 **Cause**: SharkBay only checked root-level project icon paths and package build icon metadata. ItsMyLife stores web icons under `packages/web/public`, so no local icon candidate was returned before URL favicon candidates.
 
-**Solution**: Keep root semantic project icons highest priority, then include common package-level frontend public asset paths such as `packages/web/public/icon-512.png` and `apps/web/public/icon-512.png`.
+**Solution**: Keep root semantic project icons highest priority, then include common package-level frontend public asset paths. Within web package assets, prefer committed favicons before larger PWA/logo assets.
 
 **Source**: `.sharkbay/tasks/t-069-monorepo-project-icons/implementation.md`, `src/main/project-icons.ts`, `tests/scanner.test.ts`.
 

@@ -6,6 +6,15 @@
   "done": [
     {
       "priority": 1,
+      "taskId": "t-070-favicon-first-monorepo-icons",
+      "title": "Prefer favicons for monorepo web package icons",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-08"
+    },
+    {
+      "priority": 1,
       "taskId": "t-069-monorepo-project-icons",
       "title": "Resolve monorepo web package project icons",
       "phase": "done",

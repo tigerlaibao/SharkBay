@@ -48,19 +48,20 @@ describe("scanner", () => {
     expect(candidate?.iconSources[0]).toEqual(expect.objectContaining({ kind: "local", label: "icon.png" }));
   });
 
-  it("adds monorepo web package icons to project rows", async () => {
+  it("prefers monorepo web package favicons for project rows", async () => {
     const root = await makeTempRoot("scanner-monorepo-icons");
     const repo = await createHarnessFixture(root, "MonorepoIconRepo");
     const image = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64");
     await fs.mkdir(path.join(repo, "packages", "web", "public"), { recursive: true });
+    await fs.writeFile(path.join(repo, "packages", "web", "public", "favicon.ico"), image);
     await fs.writeFile(path.join(repo, "packages", "web", "public", "icon-512.png"), image);
 
     const result = await scanConfiguredRoots([root]);
     const project = result.projects.find((item) => item.name === "MonorepoIconRepo");
     const candidate = result.candidates.find((item) => item.name === "MonorepoIconRepo");
 
-    expect(project?.iconSources[0]).toEqual(expect.objectContaining({ kind: "local", label: "icon-512.png" }));
-    expect(project?.iconSources[0]?.url).toMatch(/^data:image\/png;base64,/);
+    expect(project?.iconSources[0]).toEqual(expect.objectContaining({ kind: "local", label: "favicon.ico" }));
+    expect(project?.iconSources[0]?.url).toMatch(/^data:image\/x-icon;base64,/);
     expect(candidate?.iconSources[0]).toEqual(project?.iconSources[0]);
   });
 
