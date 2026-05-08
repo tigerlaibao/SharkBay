@@ -48,6 +48,20 @@ describe("scanner", () => {
     expect(candidate?.iconSources[0]).toEqual(expect.objectContaining({ kind: "local", label: "icon.png" }));
   });
 
+  it("prefers semantic project icons over app icons for project rows", async () => {
+    const root = await makeTempRoot("scanner-project-icon");
+    const plainRepo = path.join(root, "PlainRepo");
+    const image = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64");
+    await fs.mkdir(path.join(plainRepo, "resources"), { recursive: true });
+    await fs.writeFile(path.join(plainRepo, "resources", "project-icon.png"), image);
+    await fs.writeFile(path.join(plainRepo, "resources", "app-icon.png"), image);
+
+    const result = await scanConfiguredRoots([root]);
+    const candidate = result.candidates.find((item) => item.name === "PlainRepo");
+
+    expect(candidate?.iconSources[0]).toEqual(expect.objectContaining({ kind: "local", label: "project-icon.png" }));
+  });
+
   it("discovers manifest and protocol-fallback repos", async () => {
     const root = await makeTempRoot("scanner");
     await createHarnessFixture(root, "ManifestRepo");

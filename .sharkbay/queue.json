@@ -1,9 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T15:16:00+08:00",
+  "updatedAt": "2026-05-08T15:23:00+08:00",
   "active": [],
   "backlog": [],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-060-sharkbay-project-icon-source",
+      "title": "Use semantic project icon source for project avatars",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-08"
+    },
     {
       "priority": 1,
       "taskId": "t-059-project-avatar-scale-reset",

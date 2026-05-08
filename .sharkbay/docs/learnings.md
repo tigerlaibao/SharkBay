@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Project Avatars Should Not Use Padded App Icons
+
+**Problem**: SharkBay's project avatar did not fill the circular project icon container, unlike other project icons.
+
+**Cause**: Project avatar discovery reused themed macOS app icon PNGs. Those icons intentionally have transparent visual padding so they look correct in the Dock, but that padding is wrong for small circular avatars.
+
+**Solution**: Keep app icons for Dock/runtime use and introduce a semantic `resources/project-icon.png` convention for project avatars. Generic project-avatar discovery should prefer semantic project icon filenames and avoid branded themed app-icon resources.
+
+**Source**: `.sharkbay/tasks/t-060-sharkbay-project-icon-source/implementation.md`, `src/main/project-icons.ts`, `resources/project-icon.png`.
+
+---
+
 ### Night Mode Needs Every Small Badge Audited
 
 **Problem**: After softening the obvious project pills, smaller UI badges such as task priority, Info chips, and project-section counts still looked too bright in Night mode.
@@ -32,9 +44,9 @@ Record durable lessons here. Newest entries go first.
 
 **Cause**: The fallback icon shared the same `<img>` path as real local or favicon project icons, so a global image filter would also distort user/project icons.
 
-**Solution**: Mark only fallback project icons with `is-default` and apply a Night-only lightening filter to that class. Keep real project icons untouched. When bundled Shark app icons are used as project avatars, mark them separately and scale them inside the circular avatar so their transparent app-icon padding does not make them look too small.
+**Solution**: Mark only fallback project icons with `is-default` and apply a Night-only lightening filter to that class. Keep real project icons untouched. Do not compensate for app-icon padding with avatar scaling; use a semantic project-avatar source instead.
 
-**Source**: `.sharkbay/tasks/t-057-night-pill-icon-polish/implementation.md`, `src/renderer/App.tsx`, `src/styles/app.css`.
+**Source**: `.sharkbay/tasks/t-057-night-pill-icon-polish/implementation.md`, `.sharkbay/tasks/t-060-sharkbay-project-icon-source/implementation.md`, `src/renderer/App.tsx`, `src/styles/app.css`, `src/main/project-icons.ts`.
 
 ---
 

@@ -8,10 +8,7 @@ import { resolveReadableRepoFile } from "./path-safety.js";
 const maxIconBytes = 1024 * 1024;
 
 const commonIconPaths = [
-  "resources/shark-morning.png",
-  "resources/shark-day.png",
-  "resources/shark-night.png",
-  "resources/shark.png",
+  "resources/project-icon.png",
   "resources/icon.png",
   "resources/app-icon.png",
   "app/icon.png",

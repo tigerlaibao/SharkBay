@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T15:16:00+08:00",
+  "updatedAt": "2026-05-08T15:23:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Project avatar image scale reset is complete.",
+    "currentFocus": "Semantic project avatar source fix is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T059 avatar scale verification.",
+    "nextAction": "Idle after T060 semantic project icon verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T15:23:00+08:00",
+      "decision": "Completed t-060-sharkbay-project-icon-source by adding semantic resources/project-icon.png, removing branded app-icon resources from generic project-avatar discovery, and adding scanner coverage for project-icon priority.",
+      "source": ".sharkbay/tasks/t-060-sharkbay-project-icon-source/verification.md"
+    },
+    {
+      "date": "2026-05-08T15:18:46+08:00",
+      "decision": "Opened t-060-sharkbay-project-icon-source after confirming project avatar discovery used transparent-padding macOS app icon PNGs; user clarified not to hardcode a SharkBay-specific path.",
+      "source": ".sharkbay/tasks/t-060-sharkbay-project-icon-source/contract.md"
+    },
     {
       "date": "2026-05-08T15:16:00+08:00",
       "decision": "Completed t-059-project-avatar-scale-reset by removing the fallback/Shark project avatar scale override and returning avatars to the base 100% image sizing.",
