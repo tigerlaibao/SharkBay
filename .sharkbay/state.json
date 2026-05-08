@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T15:23:00+08:00",
+  "updatedAt": "2026-05-08T15:34:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Semantic project avatar source fix is complete.",
+    "currentFocus": "Fresh macOS .app packaging is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T060 semantic project icon verification.",
+    "nextAction": "Idle after T061 packaging verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T15:34:00+08:00",
+      "decision": "Completed t-061-package-new-app by generating release/mac-arm64/SharkBay.app with npm run pack and verifying the artifact, bundle metadata, and code signature.",
+      "source": ".sharkbay/tasks/t-061-package-new-app/verification.md"
+    },
+    {
+      "date": "2026-05-08T15:32:00+08:00",
+      "decision": "Opened t-061-package-new-app to produce a fresh local macOS .app artifact from the current repository state.",
+      "source": ".sharkbay/tasks/t-061-package-new-app/contract.md"
+    },
     {
       "date": "2026-05-08T15:23:00+08:00",
       "decision": "Completed t-060-sharkbay-project-icon-source by adding semantic resources/project-icon.png, removing branded app-icon resources from generic project-avatar discovery, and adding scanner coverage for project-icon priority.",

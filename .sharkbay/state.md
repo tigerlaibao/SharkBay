@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Semantic project avatar source fix is complete.
+- Current focus: Fresh macOS .app packaging is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T060 semantic project icon verification.
+- Next action: Idle after T061 packaging verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T15:34:00+08:00 | Completed `t-061-package-new-app` by generating `release/mac-arm64/SharkBay.app` with `npm run pack` and verifying the artifact, bundle metadata, and code signature. | `.sharkbay/tasks/t-061-package-new-app/verification.md` |
+| 2026-05-08T15:32:00+08:00 | Opened `t-061-package-new-app` to produce a fresh local macOS `.app` artifact from the current repository state. | `.sharkbay/tasks/t-061-package-new-app/contract.md` |
 | 2026-05-08T15:23:00+08:00 | Completed `t-060-sharkbay-project-icon-source` by adding semantic `resources/project-icon.png`, removing branded app-icon resources from generic project-avatar discovery, and adding scanner coverage for project-icon priority. | `.sharkbay/tasks/t-060-sharkbay-project-icon-source/verification.md` |
 | 2026-05-08T15:18:46+08:00 | Opened `t-060-sharkbay-project-icon-source` after confirming project avatar discovery used transparent-padding macOS app icon PNGs; user clarified not to hardcode a SharkBay-specific path. | `.sharkbay/tasks/t-060-sharkbay-project-icon-source/contract.md` |
 | 2026-05-08T15:16:00+08:00 | Completed `t-059-project-avatar-scale-reset` by removing the fallback/Shark project avatar scale override and returning avatars to the base 100% image sizing. | `.sharkbay/tasks/t-059-project-avatar-scale-reset/verification.md` |

@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-061-package-new-app` | Package a new macOS app build | 2026-05-08 |
 | `t-060-sharkbay-project-icon-source` | Use semantic project icon source for project avatars | 2026-05-08 |
 | `t-059-project-avatar-scale-reset` | Reset project avatar image scale | 2026-05-08 |
 | `t-058-night-detail-chip-polish` | Soften Night detail chips and project counts | 2026-05-08 |
