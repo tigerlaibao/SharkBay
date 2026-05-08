@@ -192,6 +192,10 @@ function asMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function suppressToast(_toast: Toast): void {
+  // Global top-of-app toasts are intentionally disabled.
+}
+
 function isAppConfig(value: unknown): value is AppConfig {
   return Boolean(value && typeof value === "object" && "configuredRoots" in value);
 }
@@ -567,7 +571,7 @@ export function App() {
   const [detail, setDetail] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [toast, setToast] = useState<Toast | null>(null);
+  const setToast = suppressToast;
   const [scanErrors, setScanErrors] = useState<string[]>([]);
   const [lastScanAt, setLastScanAt] = useState<string | null>(null);
   const [appearanceTheme, setAppearanceTheme] = useState<AppearanceTheme>("day");
@@ -742,15 +746,6 @@ export function App() {
     <div className="app-shell" data-theme={appearanceTheme}>
       <main className="workspace">
         <div className="workspace-body">
-          {toast ? (
-            <div className={cx("toast", `toast-${toast.tone}`)}>
-              <span>{toast.message}</span>
-              <button aria-label="Dismiss" onClick={() => setToast(null)}>
-                x
-              </button>
-            </div>
-          ) : null}
-
           <div
             aria-hidden={view !== "dashboard"}
             className={cx("view-surface", view !== "dashboard" && "is-hidden")}

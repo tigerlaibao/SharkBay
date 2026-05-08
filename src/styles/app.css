@@ -1304,42 +1304,6 @@ body.is-resizing-columns * {
   font-size: 12px;
 }
 
-.toast {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 10px;
-  border-radius: 7px;
-  border: 1px solid;
-  font-size: 12px;
-}
-
-.toast button {
-  color: inherit;
-  background: transparent;
-  border: 0;
-  font-weight: 800;
-}
-
-.toast-info {
-  color: #245361;
-  background: #e1eef0;
-  border-color: #c4dfe5;
-}
-
-.toast-error {
-  color: #7e3028;
-  background: #f7e5df;
-  border-color: #ecc3b7;
-}
-
-.toast-success {
-  color: #285735;
-  background: #e3f0e4;
-  border-color: #c8e0cc;
-}
-
 .settings-layout {
   display: grid;
   align-content: start;
