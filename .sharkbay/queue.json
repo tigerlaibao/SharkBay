@@ -1,9 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T15:51:00+08:00",
+  "updatedAt": "2026-05-08T17:32:35+08:00",
   "active": [],
   "backlog": [],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-063-sidebar-counts-terminal-add-button",
+      "title": "Remove sidebar counts and move terminal add button",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-08"
+    },
     {
       "priority": 1,
       "taskId": "t-062-llm-agnostic-harness-language",

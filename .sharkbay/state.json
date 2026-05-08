@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T15:51:00+08:00",
+  "updatedAt": "2026-05-08T17:32:35+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -21,10 +21,25 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T062 harness language cleanup.",
+    "nextAction": "Idle after T063 sidebar and terminal tabs UI polish.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T17:32:35+08:00",
+      "decision": "Completed t-063-sidebar-counts-terminal-add-button by removing left sidebar section counts and moving the new-terminal plus button into the terminal tabs row with passing typecheck, build, diff, and JSON checks.",
+      "source": ".sharkbay/tasks/t-063-sidebar-counts-terminal-add-button/verification.md"
+    },
+    {
+      "date": "2026-05-08T17:30:00+08:00",
+      "decision": "Advanced t-063-sidebar-counts-terminal-add-button to coding after a narrow contract with no blockers or major risks.",
+      "source": ".sharkbay/tasks/t-063-sidebar-counts-terminal-add-button/status.md"
+    },
+    {
+      "date": "2026-05-08T17:28:35+08:00",
+      "decision": "Opened t-063-sidebar-counts-terminal-add-button to remove Managed/Not setup counts from the left sidebar and move the new-terminal plus button into the terminal tabs row.",
+      "source": ".sharkbay/tasks/t-063-sidebar-counts-terminal-add-button/contract.md"
+    },
     {
       "date": "2026-05-08T15:51:00+08:00",
       "decision": "Completed t-062-llm-agnostic-harness-language by replacing tool-specific harness/template/product language with agent-neutral Ripple wording and passing search, typecheck, focused test, JSON, and diff checks.",

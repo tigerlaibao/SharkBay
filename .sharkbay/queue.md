@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-063-sidebar-counts-terminal-add-button` | Remove sidebar counts and move terminal add button | 2026-05-08 |
 | `t-062-llm-agnostic-harness-language` | Make harness language agent-neutral | 2026-05-08 |
 | `t-061-package-new-app` | Package a new macOS app build | 2026-05-08 |
 | `t-060-sharkbay-project-icon-source` | Use semantic project icon source for project avatars | 2026-05-08 |

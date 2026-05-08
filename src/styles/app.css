@@ -398,17 +398,6 @@ body.is-resizing-columns * {
   letter-spacing: 0;
 }
 
-.project-section-title span {
-  min-height: 22px;
-  color: #506064;
-  background: #f4f1eb;
-  border: 1px solid #dedad1;
-  border-radius: 999px;
-  padding: 2px 7px;
-  font-size: 11px;
-  font-weight: 700;
-}
-
 .workflow-panel {
   display: grid;
   align-content: start;
@@ -1566,30 +1555,35 @@ body.is-resizing-columns * {
   color: #6b7672;
 }
 
-.terminal-actions {
-  display: inline-flex;
-  gap: 6px;
+.terminal-tabs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 38px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #d8d1c4;
 }
 
-.terminal-actions .icon-button {
+.terminal-tab-list {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 5px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.terminal-tab-add {
+  flex: 0 0 auto;
+  margin-left: auto;
   color: #4f5c5f;
   background: #e5ded1;
   border-color: #d1c8b8;
 }
 
-.terminal-actions .icon-button:hover,
-.terminal-actions .icon-button:focus-visible {
+.terminal-tab-add:hover,
+.terminal-tab-add:focus-visible {
   color: #263235;
   background: #d8cfbf;
-}
-
-.terminal-tabs {
-  display: flex;
-  gap: 5px;
-  min-height: 38px;
-  overflow-x: auto;
-  padding: 6px 8px;
-  border-bottom: 1px solid #d8d1c4;
 }
 
 .terminal-tab {
@@ -1824,12 +1818,6 @@ body.is-resizing-columns * {
   color: #9fb0ac;
 }
 
-.app-shell[data-theme="night"] .project-section-title span {
-  color: rgba(217, 229, 223, 0.7);
-  background: rgba(217, 229, 223, 0.07);
-  border-color: rgba(217, 229, 223, 0.12);
-}
-
 .app-shell[data-theme="night"] .project-icon {
   background: #223235;
   border-color: #3a5054;
@@ -2022,7 +2010,7 @@ body.is-resizing-columns * {
   color: #f4faf6;
 }
 
-.app-shell[data-theme="night"] .terminal-actions .icon-button,
+.app-shell[data-theme="night"] .terminal-tab-add,
 .app-shell[data-theme="night"] .terminal-tab {
   color: #cbd9f7;
   background: #1d2a2d;
@@ -2106,14 +2094,14 @@ body.is-resizing-columns * {
   color: #8fa09c;
 }
 
-.app-shell[data-theme="morning"] .terminal-actions .icon-button {
+.app-shell[data-theme="morning"] .terminal-tab-add {
   color: #b7c7c2;
   background: #223235;
   border-color: #31474b;
 }
 
-.app-shell[data-theme="morning"] .terminal-actions .icon-button:hover,
-.app-shell[data-theme="morning"] .terminal-actions .icon-button:focus-visible {
+.app-shell[data-theme="morning"] .terminal-tab-add:hover,
+.app-shell[data-theme="morning"] .terminal-tab-add:focus-visible {
   color: #ffffff;
   background: #2d4448;
 }

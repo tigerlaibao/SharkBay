@@ -20,13 +20,16 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T062 harness language cleanup.
+- Next action: Idle after T063 sidebar and terminal tabs UI polish.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T17:32:35+08:00 | Completed `t-063-sidebar-counts-terminal-add-button` by removing left sidebar section counts and moving the new-terminal plus button into the terminal tabs row with passing typecheck, build, diff, and JSON checks. | `.sharkbay/tasks/t-063-sidebar-counts-terminal-add-button/verification.md` |
+| 2026-05-08T17:30:00+08:00 | Advanced `t-063-sidebar-counts-terminal-add-button` to coding after a narrow contract with no blockers or major risks. | `.sharkbay/tasks/t-063-sidebar-counts-terminal-add-button/status.md` |
+| 2026-05-08T17:28:35+08:00 | Opened `t-063-sidebar-counts-terminal-add-button` to remove Managed/Not setup counts from the left sidebar and move the new-terminal plus button into the terminal tabs row. | `.sharkbay/tasks/t-063-sidebar-counts-terminal-add-button/contract.md` |
 | 2026-05-08T15:51:00+08:00 | Completed `t-062-llm-agnostic-harness-language` by replacing tool-specific harness/template/product language with agent-neutral Ripple wording and passing search, typecheck, focused test, JSON, and diff checks. | `.sharkbay/tasks/t-062-llm-agnostic-harness-language/verification.md` |
 | 2026-05-08T15:46:09+08:00 | Opened `t-062-llm-agnostic-harness-language` to remove tool-specific positioning from active harness templates, docs, and user-visible copy. | `.sharkbay/tasks/t-062-llm-agnostic-harness-language/contract.md` |
 | 2026-05-08T15:34:00+08:00 | Completed `t-061-package-new-app` by generating `release/mac-arm64/SharkBay.app` with `npm run pack` and verifying the artifact, bundle metadata, and code signature. | `.sharkbay/tasks/t-061-package-new-app/verification.md` |

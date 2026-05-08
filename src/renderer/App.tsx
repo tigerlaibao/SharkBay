@@ -1229,43 +1229,43 @@ function TerminalPane({
           <h3>{terminalHeading}</h3>
           <div className="path-line">{activeSpace?.path ?? candidate?.path ?? "Select a project"}</div>
         </div>
-        <div className="terminal-actions">
-          <button aria-label="New terminal tab" className="icon-button" disabled={!canCreate} title="New terminal tab" type="button" onClick={() => void openCurrentProjectTab()}>
-            <PlusIcon />
-          </button>
-        </div>
       </div>
 
       <div className="terminal-space-stack">
         {Object.values(spaces).map((space) => (
           <div className={cx("terminal-space", space.projectId === activeProjectId && "is-active")} key={space.projectId}>
-            {space.tabs.length ? (
-              <div className="terminal-tabs" role="tablist">
-                {space.tabs.map((tab) => (
-                  <div className={cx("terminal-tab", tab.session.id === space.activeId && "is-active")} key={tab.session.id} role="tab" aria-selected={tab.session.id === space.activeId}>
-                    <button
-                      className="terminal-tab-main"
-                      type="button"
-                      onClick={() => setActiveTab(space.projectId, tab.session.id)}
-                    >
-                      <span className={cx("terminal-state", tab.session.status === "exited" && "is-exited")} />
-                      <span className="truncate">{tab.session.title}</span>
-                    </button>
-                    <button
-                      aria-label={`Close ${tab.session.title}`}
-                      className="terminal-tab-close"
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void closeTab(tab.session.id);
-                      }}
-                    >
-                      x
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+            <div className="terminal-tabs">
+              {space.tabs.length ? (
+                <div className="terminal-tab-list" role="tablist">
+                  {space.tabs.map((tab) => (
+                    <div className={cx("terminal-tab", tab.session.id === space.activeId && "is-active")} key={tab.session.id} role="tab" aria-selected={tab.session.id === space.activeId}>
+                      <button
+                        className="terminal-tab-main"
+                        type="button"
+                        onClick={() => setActiveTab(space.projectId, tab.session.id)}
+                      >
+                        <span className={cx("terminal-state", tab.session.status === "exited" && "is-exited")} />
+                        <span className="truncate">{tab.session.title}</span>
+                      </button>
+                      <button
+                        aria-label={`Close ${tab.session.title}`}
+                        className="terminal-tab-close"
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void closeTab(tab.session.id);
+                        }}
+                      >
+                        x
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <button aria-label="New terminal tab" className="icon-button terminal-tab-add" disabled={!canCreate} title="New terminal tab" type="button" onClick={() => void openCurrentProjectTab()}>
+                <PlusIcon />
+              </button>
+            </div>
             <div className="xterm-surface-stack">
               {space.tabs.map((tab) => (
                 <XTermSurface
@@ -1576,7 +1576,6 @@ function ProjectTable({
     <section className={cx("project-section", `is-${group}`)}>
       <div className="project-section-title">
         <h4>{title}</h4>
-        <span>{candidates.length}</span>
       </div>
       <div className="project-list" aria-label={`${title} projects`}>
         {candidates.map((candidate) => {
