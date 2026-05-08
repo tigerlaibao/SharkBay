@@ -1287,7 +1287,7 @@ function TerminalPane({
                   onClick={() => void toggleService(service)}
                 >
                   <span className="service-dot" aria-hidden="true" />
-                  <span>{service.label}</span>
+                  <span className="service-pill-label">{service.label}</span>
                 </button>
               );
             })}

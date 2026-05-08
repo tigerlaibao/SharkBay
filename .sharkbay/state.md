@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Script-labeled dev service discovery is complete.
+- Current focus: Service pill label truncation is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T065 script-labeled dev service discovery.
+- Next action: Idle after T066 service pill label truncation.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T19:18:41+08:00 | Completed `t-066-truncate-service-pill-labels` by constraining service pill width and truncating long labels with ellipsis while preserving full title text. | `.sharkbay/tasks/t-066-truncate-service-pill-labels/verification.md` |
+| 2026-05-08T19:17:38+08:00 | Opened `t-066-truncate-service-pill-labels` to truncate long terminal-header service pill labels without changing service discovery or execution. | `.sharkbay/tasks/t-066-truncate-service-pill-labels/contract.md` |
 | 2026-05-08T19:07:04+08:00 | Completed `t-065-script-labeled-dev-services` by discovering root `dev:*` scripts and direct-child `scripts.dev`, labeling service pills by script semantics, using per-service cwd, and verifying real AIBF/AIGF/ItsMyLife discovery. | `.sharkbay/tasks/t-065-script-labeled-dev-services/verification.md` |
 | 2026-05-08T19:04:09+08:00 | Opened `t-065-script-labeled-dev-services` to discover root `dev:*` scripts and direct-child `scripts.dev` while labeling service pills by script semantics instead of directory names. | `.sharkbay/tasks/t-065-script-labeled-dev-services/contract.md` |
 | 2026-05-08T18:46:12+08:00 | Completed `t-064-dev-service-pill-mvp` with root `package.json` dev service discovery, terminal-header service pills, service-bound terminal tabs, stop-to-close behavior, and passing typecheck, tests, build, diff, and JSON checks. | `.sharkbay/tasks/t-064-dev-service-pill-mvp/verification.md` |

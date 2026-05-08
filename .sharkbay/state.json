@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T19:07:04+08:00",
+  "updatedAt": "2026-05-08T19:18:41+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Script-labeled dev service discovery is complete.",
+    "currentFocus": "Service pill label truncation is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T065 script-labeled dev service discovery.",
+    "nextAction": "Idle after T066 service pill label truncation.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T19:18:41+08:00",
+      "decision": "Completed t-066-truncate-service-pill-labels by constraining service pill width and truncating long labels with ellipsis while preserving full title text.",
+      "source": ".sharkbay/tasks/t-066-truncate-service-pill-labels/verification.md"
+    },
+    {
+      "date": "2026-05-08T19:17:38+08:00",
+      "decision": "Opened t-066-truncate-service-pill-labels to truncate long terminal-header service pill labels without changing service discovery or execution.",
+      "source": ".sharkbay/tasks/t-066-truncate-service-pill-labels/contract.md"
+    },
     {
       "date": "2026-05-08T19:07:04+08:00",
       "decision": "Completed t-065-script-labeled-dev-services by discovering root dev:* scripts and direct-child scripts.dev, labeling service pills by script semantics, using per-service cwd, and verifying real AIBF/AIGF/ItsMyLife discovery.",

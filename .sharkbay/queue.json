@@ -1,9 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T19:07:04+08:00",
+  "updatedAt": "2026-05-08T19:18:41+08:00",
   "active": [],
   "backlog": [],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-066-truncate-service-pill-labels",
+      "title": "Truncate service pill labels",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-08"
+    },
     {
       "priority": 1,
       "taskId": "t-065-script-labeled-dev-services",
