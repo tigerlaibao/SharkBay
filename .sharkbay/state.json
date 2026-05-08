@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T19:18:41+08:00",
+  "updatedAt": "2026-05-08T19:21:19+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Service pill label truncation is complete.",
+    "currentFocus": "Service status dot visibility is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T066 service pill label truncation.",
+    "nextAction": "Idle after T067 service status dot visibility fix.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T19:21:19+08:00",
+      "decision": "Completed t-067-keep-service-dot-visible by making service status dots fixed-size/non-shrinking while keeping label ellipsis behavior.",
+      "source": ".sharkbay/tasks/t-067-keep-service-dot-visible/verification.md"
+    },
+    {
+      "date": "2026-05-08T19:20:23+08:00",
+      "decision": "Opened t-067-keep-service-dot-visible to keep the service status dot visible when long service pill labels are truncated.",
+      "source": ".sharkbay/tasks/t-067-keep-service-dot-visible/contract.md"
+    },
     {
       "date": "2026-05-08T19:18:41+08:00",
       "decision": "Completed t-066-truncate-service-pill-labels by constraining service pill width and truncating long labels with ellipsis while preserving full title text.",

@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Service pill label truncation is complete.
+- Current focus: Service status dot visibility is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T066 service pill label truncation.
+- Next action: Idle after T067 service status dot visibility fix.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T19:21:19+08:00 | Completed `t-067-keep-service-dot-visible` by making service status dots fixed-size/non-shrinking while keeping label ellipsis behavior. | `.sharkbay/tasks/t-067-keep-service-dot-visible/verification.md` |
+| 2026-05-08T19:20:23+08:00 | Opened `t-067-keep-service-dot-visible` to keep the service status dot visible when long service pill labels are truncated. | `.sharkbay/tasks/t-067-keep-service-dot-visible/contract.md` |
 | 2026-05-08T19:18:41+08:00 | Completed `t-066-truncate-service-pill-labels` by constraining service pill width and truncating long labels with ellipsis while preserving full title text. | `.sharkbay/tasks/t-066-truncate-service-pill-labels/verification.md` |
 | 2026-05-08T19:17:38+08:00 | Opened `t-066-truncate-service-pill-labels` to truncate long terminal-header service pill labels without changing service discovery or execution. | `.sharkbay/tasks/t-066-truncate-service-pill-labels/contract.md` |
 | 2026-05-08T19:07:04+08:00 | Completed `t-065-script-labeled-dev-services` by discovering root `dev:*` scripts and direct-child `scripts.dev`, labeling service pills by script semantics, using per-service cwd, and verifying real AIBF/AIGF/ItsMyLife discovery. | `.sharkbay/tasks/t-065-script-labeled-dev-services/verification.md` |

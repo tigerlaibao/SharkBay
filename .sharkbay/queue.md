@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-067-keep-service-dot-visible` | Keep service status dot visible | 2026-05-08 |
 | `t-066-truncate-service-pill-labels` | Truncate service pill labels | 2026-05-08 |
 | `t-065-script-labeled-dev-services` | Use script-labeled dev service discovery | 2026-05-08 |
 | `t-064-dev-service-pill-mvp` | Add dev service pill MVP | 2026-05-08 |
