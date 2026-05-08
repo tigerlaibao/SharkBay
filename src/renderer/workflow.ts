@@ -13,7 +13,7 @@ export type WorkflowProjectCandidate = {
   status: "managed" | "not_setup";
   managedProjectId: string | null;
   detection: DetectionMode | null;
-  services?: Array<{ id: string; label: string; command: string; script: string }>;
+  services?: Array<{ id: string; label: string; command: string; script: string; cwd: string }>;
 };
 
 export type WorkflowProjectSummary = {

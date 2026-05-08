@@ -153,6 +153,7 @@ export type ProjectDevService = {
   label: string;
   command: string;
   script: string;
+  cwd: string;
 };
 
 export type ProjectSummary = {

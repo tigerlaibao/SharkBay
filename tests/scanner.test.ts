@@ -61,13 +61,63 @@ describe("scanner", () => {
 
     const result = await scanConfiguredRoots([root]);
     const candidate = result.candidates.find((item) => item.name === "PlainRepo");
+    const realPlainRepo = await fs.realpath(plainRepo);
 
     expect(candidate?.services).toEqual([
       {
-        id: "dev",
-        label: "dev",
+        id: "root:dev",
+        label: "dev: vite",
         command: "pnpm dev",
         script: "vite",
+        cwd: realPlainRepo,
+      },
+    ]);
+  });
+
+  it("adds root dev:* and direct child dev services to project candidates", async () => {
+    const root = await makeTempRoot("scanner-script-dev-services");
+    const repo = path.join(root, "AppRepo");
+    const site = path.join(repo, "site");
+    await fs.mkdir(site, { recursive: true });
+    await writeJson(path.join(repo, "package.json"), {
+      scripts: {
+        "dev:server": "pnpm --filter server dev",
+        "dev:web": "pnpm --filter web dev",
+      },
+    });
+    await fs.writeFile(path.join(repo, "pnpm-lock.yaml"), "");
+    await writeJson(path.join(site, "package.json"), {
+      scripts: {
+        dev: "next dev",
+      },
+    });
+
+    const result = await scanConfiguredRoots([root]);
+    const candidate = result.candidates.find((item) => item.name === "AppRepo");
+    const realRepo = await fs.realpath(repo);
+    const realSite = await fs.realpath(site);
+
+    expect(candidate?.services).toEqual([
+      {
+        id: "root:dev:server",
+        label: "dev:server",
+        command: "pnpm dev:server",
+        script: "pnpm --filter server dev",
+        cwd: realRepo,
+      },
+      {
+        id: "root:dev:web",
+        label: "dev:web",
+        command: "pnpm dev:web",
+        script: "pnpm --filter web dev",
+        cwd: realRepo,
+      },
+      {
+        id: "site:dev",
+        label: "dev: next dev",
+        command: "npm run dev",
+        script: "next dev",
+        cwd: realSite,
       },
     ]);
   });

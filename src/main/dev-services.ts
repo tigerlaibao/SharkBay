@@ -7,36 +7,71 @@ type PackageJson = {
   scripts?: unknown;
 };
 
-export async function discoverProjectDevServices(projectPath: string): Promise<ProjectDevService[]> {
-  const packageJson = await readPackageJson(projectPath);
-  const devScript = typeof packageJson?.scripts === "object" && packageJson.scripts !== null
-    ? (packageJson.scripts as Record<string, unknown>).dev
-    : null;
+const ignoredServiceDirectories = new Set([
+  ".git",
+  ".next",
+  ".turbo",
+  ".vite",
+  "node_modules",
+  "dist",
+  "build",
+  "out",
+  "coverage",
+]);
 
-  if (typeof devScript !== "string" || !devScript.trim()) {
-    return [];
+export async function discoverProjectDevServices(projectPath: string): Promise<ProjectDevService[]> {
+  const services = await servicesFromPackage(projectPath, "root");
+  const children = await directChildDirectories(projectPath);
+
+  for (const childPath of children) {
+    services.push(...await servicesFromPackage(childPath, path.basename(childPath)));
   }
 
-  return [{
-    id: "dev",
-    label: "dev",
-    command: await devCommandForProject(projectPath, packageJson ?? {}),
-    script: devScript,
-  }];
+  return services;
 }
 
 export async function devCommandForProject(projectPath: string, packageJson: PackageJson): Promise<string> {
+  return scriptCommandForProject(projectPath, packageJson, "dev");
+}
+
+export async function scriptCommandForProject(projectPath: string, packageJson: PackageJson, scriptName: string): Promise<string> {
   const packageManager = typeof packageJson.packageManager === "string" ? packageJson.packageManager : "";
   if (packageManager.startsWith("pnpm") || await fileExists(path.join(projectPath, "pnpm-lock.yaml"))) {
-    return "pnpm dev";
+    return `pnpm ${scriptName}`;
   }
   if (packageManager.startsWith("yarn") || await fileExists(path.join(projectPath, "yarn.lock"))) {
-    return "yarn dev";
+    return `yarn ${scriptName}`;
   }
   if (packageManager.startsWith("bun") || await fileExists(path.join(projectPath, "bun.lockb"))) {
-    return "bun run dev";
+    return `bun run ${scriptName}`;
   }
-  return "npm run dev";
+  return `npm run ${scriptName}`;
+}
+
+async function servicesFromPackage(projectPath: string, idPrefix: string): Promise<ProjectDevService[]> {
+  const packageJson = await readPackageJson(projectPath);
+  const scripts = typeof packageJson?.scripts === "object" && packageJson.scripts !== null
+    ? packageJson.scripts as Record<string, unknown>
+    : {};
+  const services: ProjectDevService[] = [];
+
+  for (const [scriptName, script] of Object.entries(scripts)) {
+    if (scriptName !== "dev" && !scriptName.startsWith("dev:")) {
+      continue;
+    }
+    if (typeof script !== "string" || !script.trim()) {
+      continue;
+    }
+    services.push({
+      id: `${idPrefix}:${scriptName}`,
+      label: scriptName === "dev" ? `dev: ${script.trim()}` : scriptName,
+      command: await scriptCommandForProject(projectPath, packageJson ?? {}, scriptName),
+      script,
+      cwd: projectPath,
+    });
+  }
+
+  return services;
 }
 
 async function readPackageJson(projectPath: string): Promise<PackageJson | null> {
@@ -56,4 +91,26 @@ async function fileExists(filePath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+async function directChildDirectories(projectPath: string): Promise<string[]> {
+  let entries: import("node:fs").Dirent[];
+  try {
+    entries = await fs.readdir(projectPath, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const directories: string[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.isSymbolicLink() || shouldIgnoreServiceDirectory(entry.name)) {
+      continue;
+    }
+    directories.push(path.join(projectPath, entry.name));
+  }
+  return directories.sort((a, b) => a.localeCompare(b));
+}
+
+function shouldIgnoreServiceDirectory(name: string): boolean {
+  return ignoredServiceDirectories.has(name) || name.startsWith(".");
 }

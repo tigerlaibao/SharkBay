@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Dev service pill MVP is complete.
+- Current focus: Script-labeled dev service discovery is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T064 dev service pill MVP.
+- Next action: Idle after T065 script-labeled dev service discovery.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T19:07:04+08:00 | Completed `t-065-script-labeled-dev-services` by discovering root `dev:*` scripts and direct-child `scripts.dev`, labeling service pills by script semantics, using per-service cwd, and verifying real AIBF/AIGF/ItsMyLife discovery. | `.sharkbay/tasks/t-065-script-labeled-dev-services/verification.md` |
+| 2026-05-08T19:04:09+08:00 | Opened `t-065-script-labeled-dev-services` to discover root `dev:*` scripts and direct-child `scripts.dev` while labeling service pills by script semantics instead of directory names. | `.sharkbay/tasks/t-065-script-labeled-dev-services/contract.md` |
 | 2026-05-08T18:46:12+08:00 | Completed `t-064-dev-service-pill-mvp` with root `package.json` dev service discovery, terminal-header service pills, service-bound terminal tabs, stop-to-close behavior, and passing typecheck, tests, build, diff, and JSON checks. | `.sharkbay/tasks/t-064-dev-service-pill-mvp/verification.md` |
 | 2026-05-08T18:43:00+08:00 | Advanced `t-064-dev-service-pill-mvp` to coding after scoping the first slice to root `package.json` `scripts.dev` with no URL detection, editing UI, run history, or monorepo scanning. | `.sharkbay/tasks/t-064-dev-service-pill-mvp/contract.md` |
 | 2026-05-08T18:39:13+08:00 | Opened `t-064-dev-service-pill-mvp` to add a scoped dev-service control: discover root `package.json` `scripts.dev`, show a terminal-header status pill, start a service terminal tab, and close it on stop. | `.sharkbay/tasks/t-064-dev-service-pill-mvp/contract.md` |

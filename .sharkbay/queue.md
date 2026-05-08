@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-065-script-labeled-dev-services` | Use script-labeled dev service discovery | 2026-05-08 |
 | `t-064-dev-service-pill-mvp` | Add dev service pill MVP | 2026-05-08 |
 | `t-063-sidebar-counts-terminal-add-button` | Remove sidebar counts and move terminal add button | 2026-05-08 |
 | `t-062-llm-agnostic-harness-language` | Make harness language agent-neutral | 2026-05-08 |

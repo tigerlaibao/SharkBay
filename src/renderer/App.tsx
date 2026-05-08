@@ -1189,7 +1189,7 @@ function TerminalPane({
       await closeTab(existing.session.id);
       return;
     }
-    await openProjectTab(candidate.id, candidate.path, candidate.name, false, {
+    await openProjectTab(candidate.id, service.cwd, candidate.name, false, {
       initialCommand: service.command,
       service: {
         id: service.id,

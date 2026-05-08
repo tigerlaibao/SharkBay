@@ -134,7 +134,7 @@ Legacy harness cleanup is a separate explicit migration service. It reports read
 
 Create-repo writes only to an empty target inside configured roots and rejects non-empty targets, existing harness files, and symlink targets.
 
-Terminal sessions are writable process sessions, but their filesystem authority starts from the same configured-root boundary. The main process canonicalizes the requested cwd through `resolveRepoPath` before spawning a `node-pty` shell, and renderer payloads cannot open arbitrary paths outside configured roots. The renderer uses xterm terminal spaces keyed by project candidate so hidden project terminals remain alive while only the selected project's space is visible. The first dev-service control reuses the terminal manager by attaching service metadata and an initial command to a safe PTY session discovered from root `package.json` `scripts.dev`.
+Terminal sessions are writable process sessions, but their filesystem authority starts from the same configured-root boundary. The main process canonicalizes the requested cwd through `resolveRepoPath` before spawning a `node-pty` shell, and renderer payloads cannot open arbitrary paths outside configured roots. The renderer uses xterm terminal spaces keyed by project candidate so hidden project terminals remain alive while only the selected project's space is visible. Dev-service controls reuse the terminal manager by attaching service metadata and an initial command to a safe PTY session discovered from root `package.json` `dev`/`dev:*` scripts or direct-child `scripts.dev`.
 
 ## 8. Constraints
 
