@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T19:21:19+08:00",
+  "updatedAt": "2026-05-08T19:29:41+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Service status dot visibility is complete.",
+    "currentFocus": "Running service project list indicator is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T067 service status dot visibility fix.",
+    "nextAction": "Idle after T068 running service project list indicator.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T19:29:41+08:00",
+      "decision": "Completed t-068-project-service-running-dot by lifting running service project state from TerminalPane and rendering a green dot before project names in the left list.",
+      "source": ".sharkbay/tasks/t-068-project-service-running-dot/verification.md"
+    },
+    {
+      "date": "2026-05-08T19:27:45+08:00",
+      "decision": "Opened t-068-project-service-running-dot to show a green project-name indicator in the left list when a project has a running service-bound terminal tab.",
+      "source": ".sharkbay/tasks/t-068-project-service-running-dot/contract.md"
+    },
     {
       "date": "2026-05-08T19:21:19+08:00",
       "decision": "Completed t-067-keep-service-dot-visible by making service status dots fixed-size/non-shrinking while keeping label ellipsis behavior.",

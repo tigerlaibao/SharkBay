@@ -831,6 +831,7 @@ function DashboardView({
   const managedCandidates = filteredCandidates.filter((candidate) => candidate.status === "managed");
   const notSetupCandidates = filteredCandidates.filter((candidate) => candidate.status === "not_setup");
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const [runningServiceProjectIds, setRunningServiceProjectIds] = useState<Set<string>>(() => new Set());
   const [projectColumnWidth, setProjectColumnWidth] = useState(() =>
     storedColumnWidth(projectColumnStorageKey, defaultProjectColumnWidth, minProjectColumnWidth),
   );
@@ -960,6 +961,7 @@ function DashboardView({
             candidates={managedCandidates}
             group="managed"
             projectById={projectById}
+            runningServiceProjectIds={runningServiceProjectIds}
             selectedId={selectedCandidate?.id ?? null}
             title="Managed"
             onSelect={setSelectedId}
@@ -968,6 +970,7 @@ function DashboardView({
             candidates={notSetupCandidates}
             group="not_setup"
             projectById={projectById}
+            runningServiceProjectIds={runningServiceProjectIds}
             selectedId={selectedCandidate?.id ?? null}
             title="Not setup"
             onSelect={setSelectedId}
@@ -992,6 +995,11 @@ function DashboardView({
           bridgeAvailable={bridgeAvailable}
           isVisible={isVisible}
           setToast={setToast}
+          onRunningServiceProjectIdsChange={(nextIds) =>
+            setRunningServiceProjectIds((currentIds) =>
+              sameStringSet(currentIds, nextIds) ? currentIds : nextIds,
+            )
+          }
         />
       </section>
 
@@ -1037,12 +1045,14 @@ function TerminalPane({
   candidate,
   isVisible,
   setToast,
+  onRunningServiceProjectIdsChange,
 }: {
   appearanceTheme: AppearanceTheme;
   bridgeAvailable: boolean;
   candidate: ProjectCandidate | null;
   isVisible: boolean;
   setToast: (toast: Toast) => void;
+  onRunningServiceProjectIdsChange: (projectIds: Set<string>) => void;
 }) {
   const [spaces, setSpaces] = useState<Record<string, TerminalSpace>>({});
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -1058,6 +1068,15 @@ function TerminalPane({
   useEffect(() => {
     spacesRef.current = spaces;
   }, [spaces]);
+
+  useEffect(() => {
+    const runningProjectIds = new Set(
+      Object.values(spaces)
+        .filter((space) => space.tabs.some((tab) => tab.session.service && tab.session.status === "running"))
+        .map((space) => space.projectId),
+    );
+    onRunningServiceProjectIdsChange(runningProjectIds);
+  }, [onRunningServiceProjectIdsChange, spaces]);
 
   useEffect(() => {
     for (const space of Object.values(spacesRef.current)) {
@@ -1617,10 +1636,23 @@ function RootWorkflowPanel({
   );
 }
 
+function sameStringSet(left: Set<string>, right: Set<string>): boolean {
+  if (left.size !== right.size) {
+    return false;
+  }
+  for (const value of left) {
+    if (!right.has(value)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function ProjectTable({
   candidates,
   group,
   projectById,
+  runningServiceProjectIds,
   selectedId,
   title,
   onSelect,
@@ -1628,6 +1660,7 @@ function ProjectTable({
   candidates: ProjectCandidate[];
   group: CandidateGroup;
   projectById: Map<string, ProjectSummary>;
+  runningServiceProjectIds: Set<string>;
   selectedId: string | null;
   title: string;
   onSelect: (id: string) => void;
@@ -1652,12 +1685,16 @@ function ProjectTable({
           const runnerLabel = project ? runnerStatusLabel(project) : null;
           const harnessStatus = project?.harnessTemplate?.status;
           const showHarnessStatus = harnessStatus === "stale" || harnessStatus === "missing";
+          const hasRunningService = runningServiceProjectIds.has(candidate.id);
 
           return (
             <button className={cx("project-row", candidate.status === "not_setup" && "is-not-setup", selectedId === candidate.id && "is-selected")} key={candidate.id} onClick={() => onSelect(candidate.id)}>
               <ProjectIcon name={candidate.name} sources={candidate.iconSources ?? project?.iconSources ?? []} />
               <span className="project-row-main">
-                <span className="cell-title">{candidate.name}</span>
+                <span className="cell-title">
+                  {hasRunningService ? <span className="project-service-dot" aria-label="Service running" /> : null}
+                  <span className="cell-title-text truncate">{candidate.name}</span>
+                </span>
                 {taskTitle ? <span className="cell-subtitle truncate">{taskTitle}</span> : null}
                 <span className="cell-subtitle truncate">{candidate.path}</span>
               </span>
