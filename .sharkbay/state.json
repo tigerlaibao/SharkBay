@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T19:29:41+08:00",
+  "updatedAt": "2026-05-08T19:43:35+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Running service project list indicator is complete.",
+    "currentFocus": "Monorepo web package project icons are resolved.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T068 running service project list indicator.",
+    "nextAction": "Idle after T069 monorepo project icon discovery.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T19:43:35+08:00",
+      "decision": "Completed t-069-monorepo-project-icons by adding common packages/web/public and apps/web/public icon paths, scanner coverage, and real ItsMyLife verification showing local icon-512.png before favicon URLs.",
+      "source": ".sharkbay/tasks/t-069-monorepo-project-icons/verification.md"
+    },
+    {
+      "date": "2026-05-08T19:41:54+08:00",
+      "decision": "Opened t-069-monorepo-project-icons to let SharkBay resolve local project icons from common monorepo frontend package assets after ItsMyLife icons were found under packages/web/public.",
+      "source": ".sharkbay/tasks/t-069-monorepo-project-icons/contract.md"
+    },
     {
       "date": "2026-05-08T19:29:41+08:00",
       "decision": "Completed t-068-project-service-running-dot by lifting running service project state from TerminalPane and rendering a green dot before project names in the left list.",

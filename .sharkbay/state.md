@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Running service project list indicator is complete.
+- Current focus: Monorepo web package project icons are resolved.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T068 running service project list indicator.
+- Next action: Idle after T069 monorepo project icon discovery.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T19:43:35+08:00 | Completed `t-069-monorepo-project-icons` by adding common `packages/web/public` and `apps/web/public` icon paths, scanner coverage, and real ItsMyLife verification showing local `icon-512.png` before favicon URLs. | `.sharkbay/tasks/t-069-monorepo-project-icons/verification.md` |
+| 2026-05-08T19:41:54+08:00 | Opened `t-069-monorepo-project-icons` to let SharkBay resolve local project icons from common monorepo frontend package assets after ItsMyLife icons were found under `packages/web/public`. | `.sharkbay/tasks/t-069-monorepo-project-icons/contract.md` |
 | 2026-05-08T19:29:41+08:00 | Completed `t-068-project-service-running-dot` by lifting running service project state from TerminalPane and rendering a green dot before project names in the left list. | `.sharkbay/tasks/t-068-project-service-running-dot/verification.md` |
 | 2026-05-08T19:27:45+08:00 | Opened `t-068-project-service-running-dot` to show a green project-name indicator in the left list when a project has a running service-bound terminal tab. | `.sharkbay/tasks/t-068-project-service-running-dot/contract.md` |
 | 2026-05-08T19:21:19+08:00 | Completed `t-067-keep-service-dot-visible` by making service status dots fixed-size/non-shrinking while keeping label ellipsis behavior. | `.sharkbay/tasks/t-067-keep-service-dot-visible/verification.md` |

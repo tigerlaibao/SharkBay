@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Monorepo Web Icons Need Package-Level Discovery
+
+**Problem**: ItsMyLife project avatars depended on runtime `localhost` favicon URLs even though the repository had committed icon assets.
+
+**Cause**: SharkBay only checked root-level project icon paths and package build icon metadata. ItsMyLife stores web icons under `packages/web/public`, so no local icon candidate was returned before URL favicon candidates.
+
+**Solution**: Keep root semantic project icons highest priority, then include common package-level frontend public asset paths such as `packages/web/public/icon-512.png` and `apps/web/public/icon-512.png`.
+
+**Source**: `.sharkbay/tasks/t-069-monorepo-project-icons/implementation.md`, `src/main/project-icons.ts`, `tests/scanner.test.ts`.
+
+---
+
 ### Project Avatars Should Not Use Padded App Icons
 
 **Problem**: SharkBay's project avatar did not fill the circular project icon container, unlike other project icons.
