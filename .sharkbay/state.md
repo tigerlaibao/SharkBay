@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Morning theme rename and macOS-sized theme icon regeneration are complete.
+- Current focus: Night mode pill, project icon fill, and terminal title contrast polish is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,17 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T056 Morning theme icon verification.
+- Next action: Idle after T057 Night pill/icon verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T15:00:00+08:00 | Completed `t-057-night-pill-icon-polish` with translucent Night pills, visible fallback project icons, filled bundled Shark project avatars, and readable Night terminal titles. | `.sharkbay/tasks/t-057-night-pill-icon-polish/verification.md` |
+| 2026-05-08T14:59:00+08:00 | Extended `t-057-night-pill-icon-polish` to scale padded Shark project icons inside circular avatars and restore Night terminal header project-name contrast. | `.sharkbay/tasks/t-057-night-pill-icon-polish/contract.md` |
+| 2026-05-08T14:57:00+08:00 | Completed `t-057-night-pill-icon-polish` by adding Night-only translucent pill styles and a fallback-only default project icon treatment. | `.sharkbay/tasks/t-057-night-pill-icon-polish/verification.md` |
+| 2026-05-08T14:55:00+08:00 | Opened `t-057-night-pill-icon-polish` to make Night mode pill tags more translucent and improve fallback project icon visibility on dark backgrounds. | `.sharkbay/tasks/t-057-night-pill-icon-polish/contract.md` |
 | 2026-05-08T14:50:00+08:00 | Completed `t-056-morning-theme-icons` by renaming Classic to Morning, preserving legacy classic config migration, and regenerating Morning/Day/Night macOS-sized icon PNG/ICNS assets. | `.sharkbay/tasks/t-056-morning-theme-icons/verification.md` |
 | 2026-05-08T14:43:39+08:00 | Opened `t-056-morning-theme-icons` to rename Classic to Morning, migrate legacy classic configs to morning, and rebuild Morning/Day/Night app icons from the refreshed Downloads assets using Apple macOS icon guidance. | `.sharkbay/tasks/t-056-morning-theme-icons/contract.md` |
 | 2026-05-08T14:29:08+08:00 | Completed `t-055-classic-t050-palette` by adding full default xterm ANSI colors to Classic so it fully resets from Day/Night back to the T050 terminal palette. | `.sharkbay/tasks/t-055-classic-t050-palette/verification.md` |

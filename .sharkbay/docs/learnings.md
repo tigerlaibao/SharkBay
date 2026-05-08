@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Fallback Icons Need Theme-Aware Treatment
+
+**Problem**: The default project icon was a black transparent line drawing, which became hard to read in Night mode.
+
+**Cause**: The fallback icon shared the same `<img>` path as real local or favicon project icons, so a global image filter would also distort user/project icons.
+
+**Solution**: Mark only fallback project icons with `is-default` and apply a Night-only lightening filter to that class. Keep real project icons untouched. When bundled Shark app icons are used as project avatars, mark them separately and scale them inside the circular avatar so their transparent app-icon padding does not make them look too small.
+
+**Source**: `.sharkbay/tasks/t-057-night-pill-icon-polish/implementation.md`, `src/renderer/App.tsx`, `src/styles/app.css`.
+
+---
+
 ### Electron Dock Icons Need Visual-Size Padding
 
 **Problem**: The rounded SharkBay app icons were technically rounded, but they still looked larger than neighboring macOS app icons in the Dock.

@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-057-night-pill-icon-polish` | Soften Night pills and default project icon | 2026-05-08 |
 | `t-056-morning-theme-icons` | Rename Classic to Morning and regenerate app icons | 2026-05-08 |
 | `t-055-classic-t050-palette` | Restore Classic to the T050 color baseline | 2026-05-08 |
 | `t-054-repository-night-and-classic-terminal` | Fix Repository night colors and Classic terminal styling | 2026-05-08 |

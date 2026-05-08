@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T14:50:00+08:00",
+  "updatedAt": "2026-05-08T15:00:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Morning theme rename and macOS-sized theme icon regeneration are complete.",
+    "currentFocus": "Night mode pill, project icon fill, and terminal title contrast polish is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,30 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T056 Morning theme icon verification.",
+    "nextAction": "Idle after T057 Night pill/icon verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T15:00:00+08:00",
+      "decision": "Completed t-057-night-pill-icon-polish with translucent Night pills, visible fallback project icons, filled bundled Shark project avatars, and readable Night terminal titles.",
+      "source": ".sharkbay/tasks/t-057-night-pill-icon-polish/verification.md"
+    },
+    {
+      "date": "2026-05-08T14:59:00+08:00",
+      "decision": "Extended t-057-night-pill-icon-polish to scale padded Shark project icons inside circular avatars and restore Night terminal header project-name contrast.",
+      "source": ".sharkbay/tasks/t-057-night-pill-icon-polish/contract.md"
+    },
+    {
+      "date": "2026-05-08T14:57:00+08:00",
+      "decision": "Completed t-057-night-pill-icon-polish by adding Night-only translucent pill styles and a fallback-only default project icon treatment.",
+      "source": ".sharkbay/tasks/t-057-night-pill-icon-polish/verification.md"
+    },
+    {
+      "date": "2026-05-08T14:55:00+08:00",
+      "decision": "Opened t-057-night-pill-icon-polish to make Night mode pill tags more translucent and improve fallback project icon visibility on dark backgrounds.",
+      "source": ".sharkbay/tasks/t-057-night-pill-icon-polish/contract.md"
+    },
     {
       "date": "2026-05-08T14:50:00+08:00",
       "decision": "Completed t-056-morning-theme-icons by renaming Classic to Morning, preserving legacy classic config migration, and regenerating Morning/Day/Night macOS-sized icon PNG/ICNS assets.",

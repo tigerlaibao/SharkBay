@@ -672,6 +672,12 @@ body.is-resizing-columns * {
   object-fit: cover;
 }
 
+.project-icon.is-default img,
+.project-icon.is-shark-app img {
+  width: 118%;
+  height: 118%;
+}
+
 .cell-title {
   color: #253135;
   font-size: 12px;
@@ -1829,6 +1835,82 @@ body.is-resizing-columns * {
   border-color: #3a5054;
 }
 
+.app-shell[data-theme="night"] .project-icon.is-default {
+  background: rgba(236, 241, 236, 0.08);
+  border-color: rgba(217, 229, 223, 0.18);
+}
+
+.app-shell[data-theme="night"] .project-icon.is-default img {
+  filter: invert(1) saturate(0.6) brightness(1.55);
+  opacity: 0.78;
+}
+
+.app-shell[data-theme="night"] .phase-pill,
+.app-shell[data-theme="night"] .status-pill,
+.app-shell[data-theme="night"] .runner-pill,
+.app-shell[data-theme="night"] .worktree-pill,
+.app-shell[data-theme="night"] .harness-pill {
+  color: rgba(217, 229, 223, 0.76);
+  background: rgba(217, 229, 223, 0.07);
+  border: 1px solid rgba(217, 229, 223, 0.12);
+}
+
+.app-shell[data-theme="night"] .phase-intake,
+.app-shell[data-theme="night"] .phase-spec,
+.app-shell[data-theme="night"] .phase-design,
+.app-shell[data-theme="night"] .phase-design_review,
+.app-shell[data-theme="night"] .phase-design_revision,
+.app-shell[data-theme="night"] .phase-contract,
+.app-shell[data-theme="night"] .phase-coding,
+.app-shell[data-theme="night"] .phase-code_review,
+.app-shell[data-theme="night"] .phase-code_revision,
+.app-shell[data-theme="night"] .phase-verification,
+.app-shell[data-theme="night"] .phase-docs_update,
+.app-shell[data-theme="night"] .task-active,
+.app-shell[data-theme="night"] .runner-running {
+  color: rgba(183, 229, 194, 0.84);
+  background: rgba(111, 210, 140, 0.16);
+  border-color: rgba(111, 210, 140, 0.22);
+}
+
+.app-shell[data-theme="night"] .phase-done,
+.app-shell[data-theme="night"] .task-done,
+.app-shell[data-theme="night"] .status-pass,
+.app-shell[data-theme="night"] .worktree-pill {
+  color: rgba(184, 223, 195, 0.78);
+  background: rgba(111, 210, 140, 0.11);
+  border-color: rgba(111, 210, 140, 0.16);
+}
+
+.app-shell[data-theme="night"] .phase-blocked,
+.app-shell[data-theme="night"] .runner-waiting_for_human,
+.app-shell[data-theme="night"] .runner-blocked,
+.app-shell[data-theme="night"] .status-blocked,
+.app-shell[data-theme="night"] .harness-pill.is-missing {
+  color: rgba(239, 184, 176, 0.82);
+  background: rgba(229, 139, 126, 0.14);
+  border-color: rgba(229, 139, 126, 0.2);
+}
+
+.app-shell[data-theme="night"] .task-ready,
+.app-shell[data-theme="night"] .status-pending,
+.app-shell[data-theme="night"] .worktree-pill.is-dirty,
+.app-shell[data-theme="night"] .harness-pill {
+  color: rgba(229, 203, 145, 0.8);
+  background: rgba(215, 189, 120, 0.13);
+  border-color: rgba(215, 189, 120, 0.18);
+}
+
+.app-shell[data-theme="night"] .task-backlog,
+.app-shell[data-theme="night"] .task-idle,
+.app-shell[data-theme="night"] .task-unknown,
+.app-shell[data-theme="night"] .runner-stale,
+.app-shell[data-theme="night"] .status-unknown {
+  color: rgba(190, 205, 200, 0.7);
+  background: rgba(217, 229, 223, 0.07);
+  border-color: rgba(217, 229, 223, 0.12);
+}
+
 .app-shell[data-theme="night"] .history-time {
   color: #8fa09c;
 }
@@ -1912,6 +1994,14 @@ body.is-resizing-columns * {
 
 .app-shell[data-theme="night"] .terminal-header {
   border-bottom-color: #2b3f42;
+}
+
+.app-shell[data-theme="night"] .terminal-layout {
+  color: #d9e5df;
+}
+
+.app-shell[data-theme="night"] .terminal-header h3 {
+  color: #f4faf6;
 }
 
 .app-shell[data-theme="night"] .terminal-actions .icon-button,

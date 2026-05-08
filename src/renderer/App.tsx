@@ -1630,9 +1630,10 @@ function ProjectIcon({ name, sources }: { name: string; sources: NonNullable<Pro
 
   const source = sources[failedCount];
   const imageUrl = source?.url ?? defaultProjectIconUrl;
+  const isSharkAppIcon = source?.kind === "local" && /^shark(?:-(?:morning|day|night))?\.png$/u.test(source.label);
 
   return (
-    <span className="project-icon" aria-hidden="true" title={`${name} icon`}>
+    <span className={cx("project-icon", !source && "is-default", isSharkAppIcon && "is-shark-app")} aria-hidden="true" title={`${name} icon`}>
       <img
         alt=""
         draggable={false}
