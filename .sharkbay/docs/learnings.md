@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### App Icon Shape Belongs In The PNG Alpha For Runtime Dock Icons
+
+**Problem**: Electron development showed the day/night app icon as a large square even though macOS app icons are expected to read as rounded rectangles.
+
+**Cause**: The runtime Dock/window icon uses the PNG resource directly. macOS does not add an app-icon mask for arbitrary PNGs; if the PNG has opaque square corners, the Dock shows square corners.
+
+**Solution**: Keep the artwork full-bleed but add a rounded-rectangle alpha mask to the PNG itself, then regenerate the ICNS from that rounded PNG for packaged builds.
+
+**Source**: `.sharkbay/tasks/t-052-theme-icon-polish/implementation.md`, `resources/shark-day.png`, `resources/shark-night.png`.
+
+---
+
 ### Terminal Colors Are First-Class xterm Theme Data
 
 **Problem**: SharkBay needed day/night color schemes, and the question was whether the embedded terminal could follow app appearance.

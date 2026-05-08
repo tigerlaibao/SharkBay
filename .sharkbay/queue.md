@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-052-theme-icon-polish` | Polish day/night icons and theme colors | 2026-05-08 |
 | `t-051-day-night-theme-icons` | Add day and night app themes with matching icons | 2026-05-08 |
 | `t-050-project-icons` | Add project icons to the left project list | 2026-05-08 |
 | `t-048-macos-packaging-config` | Add macOS packaging config | 2026-05-07 |

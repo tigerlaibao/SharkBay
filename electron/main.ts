@@ -93,7 +93,7 @@ function createMainWindow(): BrowserWindow {
     icon,
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     show: false,
-    backgroundColor: appearanceTheme === "night" ? "#081226" : "#f7f8fa",
+    backgroundColor: appearanceTheme === "night" ? "#101719" : "#f7f8fa",
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
