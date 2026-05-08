@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-059-project-avatar-scale-reset` | Reset project avatar image scale | 2026-05-08 |
 | `t-058-night-detail-chip-polish` | Soften Night detail chips and project counts | 2026-05-08 |
 | `t-057-night-pill-icon-polish` | Soften Night pills and default project icon | 2026-05-08 |
 | `t-056-morning-theme-icons` | Rename Classic to Morning and regenerate app icons | 2026-05-08 |

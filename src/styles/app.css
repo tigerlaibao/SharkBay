@@ -672,12 +672,6 @@ body.is-resizing-columns * {
   object-fit: cover;
 }
 
-.project-icon.is-default img,
-.project-icon.is-shark-app img {
-  width: 108%;
-  height: 108%;
-}
-
 .cell-title {
   color: #253135;
   font-size: 12px;

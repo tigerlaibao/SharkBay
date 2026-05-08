@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T15:12:00+08:00",
+  "updatedAt": "2026-05-08T15:16:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Night detail chips, project counts, and avatar scale polish is complete.",
+    "currentFocus": "Project avatar image scale reset is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T058 Night detail chip verification.",
+    "nextAction": "Idle after T059 avatar scale verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T15:16:00+08:00",
+      "decision": "Completed t-059-project-avatar-scale-reset by removing the fallback/Shark project avatar scale override and returning avatars to the base 100% image sizing.",
+      "source": ".sharkbay/tasks/t-059-project-avatar-scale-reset/verification.md"
+    },
+    {
+      "date": "2026-05-08T15:14:49+08:00",
+      "decision": "Opened t-059-project-avatar-scale-reset to remove the 108% fallback/Shark project avatar scaling and return project avatars to 100%.",
+      "source": ".sharkbay/tasks/t-059-project-avatar-scale-reset/contract.md"
+    },
     {
       "date": "2026-05-08T15:12:00+08:00",
       "decision": "Completed t-058-night-detail-chip-polish by softening Night priority badges, Info chips, project count bubbles, and reducing project avatar scaling from 118% to 108%.",

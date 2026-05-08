@@ -14,6 +14,18 @@ Record durable lessons here. Newest entries go first.
 
 ---
 
+### Project Avatar Scaling Should Stay Literal
+
+**Problem**: Scaling project avatar images above 100% made the circular project icon feel less refined.
+
+**Cause**: The extra scale compensated for transparent padding in some Shark app-icon assets, but it also made line work and edges feel less precise inside a small avatar.
+
+**Solution**: Keep avatar images at the base 100% sizing and solve readability with theme-specific color/filter treatment instead of geometric scaling.
+
+**Source**: `.sharkbay/tasks/t-059-project-avatar-scale-reset/implementation.md`, `src/styles/app.css`.
+
+---
+
 ### Fallback Icons Need Theme-Aware Treatment
 
 **Problem**: The default project icon was a black transparent line drawing, which became hard to read in Night mode.
