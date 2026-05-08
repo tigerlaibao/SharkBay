@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T14:08:39+08:00",
+  "updatedAt": "2026-05-08T14:22:27+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Classic theme and night panel coverage is complete.",
+    "currentFocus": "Repository night colors and Classic terminal styling are complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,15 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T053 Classic theme and night panel verification.",
+    "nextAction": "Idle after T054 Repository night and Classic terminal verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T14:22:27+08:00",
+      "decision": "Completed t-054-repository-night-and-classic-terminal with Night Repository fact tile colors and Classic terminal parity fixes.",
+      "source": ".sharkbay/tasks/t-054-repository-night-and-classic-terminal/verification.md"
+    },
     {
       "date": "2026-05-08T14:08:39+08:00",
       "decision": "Completed t-053-classic-theme-and-night-panels with persisted Classic theme selection, original dark terminal styling for Classic, and night-mode Decisions/Git panel coverage.",

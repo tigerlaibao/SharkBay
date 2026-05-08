@@ -1797,6 +1797,7 @@ body.is-resizing-columns * {
 .app-shell[data-theme="night"] .settings-list-row,
 .app-shell[data-theme="night"] .queue-item,
 .app-shell[data-theme="night"] .decision-item,
+.app-shell[data-theme="night"] .fact,
 .app-shell[data-theme="night"] .artifact-card,
 .app-shell[data-theme="night"] .artifact-panel,
 .app-shell[data-theme="night"] .url-card,
@@ -1830,6 +1831,19 @@ body.is-resizing-columns * {
 
 .app-shell[data-theme="night"] .history-time {
   color: #8fa09c;
+}
+
+.app-shell[data-theme="night"] .fact span {
+  color: #8fa09c;
+}
+
+.app-shell[data-theme="night"] .fact strong {
+  color: #edf2ef;
+}
+
+.app-shell[data-theme="night"] .fact.is-warn strong,
+.app-shell[data-theme="night"] .warn-text {
+  color: #d7bd78;
 }
 
 .app-shell[data-theme="night"] .settings-nav-item {
@@ -1965,9 +1979,14 @@ body.is-resizing-columns * {
   color: #d9e5df;
   background: #172022;
   border-color: #263639;
+  box-shadow: 0 1px 0 rgba(32, 49, 54, 0.04);
 }
 
 .app-shell[data-theme="classic"] .terminal-layout {
+  color: #d9e5df;
+}
+
+.app-shell[data-theme="classic"] .terminal-header h3 {
   color: #d9e5df;
 }
 
@@ -2009,6 +2028,10 @@ body.is-resizing-columns * {
 
 .app-shell[data-theme="classic"] .terminal-state {
   background: #6fd28c;
+}
+
+.app-shell[data-theme="classic"] .terminal-state.is-exited {
+  background: #8b9693;
 }
 
 .app-shell[data-theme="classic"] .terminal-tab-close {

@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-054-repository-night-and-classic-terminal` | Fix Repository night colors and Classic terminal styling | 2026-05-08 |
 | `t-053-classic-theme-and-night-panels` | Add classic theme and finish night panel coverage | 2026-05-08 |
 | `t-052-theme-icon-polish` | Polish day/night icons and theme colors | 2026-05-08 |
 | `t-051-day-night-theme-icons` | Add day and night app themes with matching icons | 2026-05-08 |
