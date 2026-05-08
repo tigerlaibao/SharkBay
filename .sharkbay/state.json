@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T14:22:27+08:00",
+  "updatedAt": "2026-05-08T14:29:08+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Repository night colors and Classic terminal styling are complete.",
+    "currentFocus": "Classic T050 color baseline restoration is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,15 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T054 Repository night and Classic terminal verification.",
+    "nextAction": "Idle after T055 Classic T050 palette verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T14:29:08+08:00",
+      "decision": "Completed t-055-classic-t050-palette by adding full default xterm ANSI colors to Classic so it fully resets from Day/Night back to the T050 terminal palette.",
+      "source": ".sharkbay/tasks/t-055-classic-t050-palette/verification.md"
+    },
     {
       "date": "2026-05-08T14:22:27+08:00",
       "decision": "Completed t-054-repository-night-and-classic-terminal with Night Repository fact tile colors and Classic terminal parity fixes.",
