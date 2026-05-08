@@ -91,9 +91,9 @@ const settingsSections: Array<{ id: SettingsSection; label: string }> = [
 ];
 
 const appearanceThemes: Array<{ id: AppearanceTheme; label: string }> = [
+  { id: "morning", label: "Morning" },
   { id: "day", label: "Day" },
   { id: "night", label: "Night" },
-  { id: "classic", label: "Classic" },
 ];
 
 const terminalThemes: Record<AppearanceTheme, NonNullable<ConstructorParameters<typeof XTerm>[0]>["theme"]> = {
@@ -125,7 +125,7 @@ const terminalThemes: Record<AppearanceTheme, NonNullable<ConstructorParameters<
     white: "#edf2ef",
     yellow: "#d7bd78",
   },
-  classic: {
+  morning: {
     background: "#101719",
     foreground: "#d9e5df",
     cursor: "#93d7a4",
@@ -195,7 +195,7 @@ function isAppConfig(value: unknown): value is AppConfig {
 }
 
 function normalizeAppearanceTheme(value: unknown): AppearanceTheme {
-  if (value === "classic") return "classic";
+  if (value === "morning" || value === "classic") return "morning";
   return value === "night" ? "night" : "day";
 }
 
@@ -539,8 +539,8 @@ function formatRelativeTime(value: string): string {
 }
 
 function appearanceDescription(theme: AppearanceTheme): string {
+  if (theme === "morning") return "Morning icon and original dark terminal";
   if (theme === "night") return "Night icon and dark colors";
-  if (theme === "classic") return "Light workspace with original dark terminal";
   return "Day icon and colors";
 }
 

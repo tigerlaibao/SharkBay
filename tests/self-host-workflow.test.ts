@@ -27,6 +27,23 @@ describe("self-host workflow", () => {
     expect((await loadAppConfig(configPath)).configuredRoots).toEqual([path.resolve(rootB)]);
   });
 
+  it("migrates legacy classic appearance config to morning", async () => {
+    const configDir = await makeTempRoot("appearance-config");
+    const configPath = path.join(configDir, "config.json");
+    await fs.writeFile(
+      configPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        configuredRoots: [],
+        appearanceTheme: "classic",
+        updatedAt: "2026-05-08",
+      }),
+      "utf8",
+    );
+
+    expect((await loadAppConfig(configPath)).appearanceTheme).toBe("morning");
+  });
+
   it("discovers a SharkBay-like fixture as a manifest self-host project", async () => {
     const root = await makeTempRoot("self-host-scan");
     const repo = await createSelfHostFixture(root);

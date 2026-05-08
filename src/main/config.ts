@@ -106,12 +106,13 @@ function normalizeAppConfig(value: unknown): AppConfig {
 }
 
 function normalizeAppearanceTheme(value: unknown): AppearanceTheme {
-  if (value === "classic") return "classic";
+  if (value === "morning" || value === "classic") return "morning";
   return value === "night" ? "night" : "day";
 }
 
 function themeFromInput(input: string | AppearanceThemeInput | undefined): AppearanceTheme {
-  if (input === "day" || input === "night" || input === "classic") return input;
+  if (input === "morning" || input === "classic") return "morning";
+  if (input === "day" || input === "night") return input;
   if (typeof input === "object") return normalizeAppearanceTheme(input.theme);
   return "day";
 }

@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Electron Dock Icons Need Visual-Size Padding
+
+**Problem**: The rounded SharkBay app icons were technically rounded, but they still looked larger than neighboring macOS app icons in the Dock.
+
+**Cause**: Electron's runtime PNG icon path displays the supplied alpha geometry directly. A full 1024x1024 rounded rectangle can read visually oversized compared with icons authored with a centered safe visual area.
+
+**Solution**: Keep the exported icon canvas at 1024x1024, but center the artwork in an 880x880 rounded rectangle with transparent outer padding. Generate the ICNS from the same corrected PNG so runtime and packaged assets share the same geometry.
+
+**Source**: `.sharkbay/tasks/t-056-morning-theme-icons/implementation.md`, `resources/shark-morning.png`, `resources/shark-day.png`, `resources/shark-night.png`.
+
+---
+
 ### Classic Theme Preserves The Original Split Mood
 
 **Problem**: After adding day/night themes, the original SharkBay look was no longer selectable. That original look was not fully light or fully dark: left/right workspace surfaces were light, while the middle terminal column stayed dark.

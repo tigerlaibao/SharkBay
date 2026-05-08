@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T14:29:08+08:00",
+  "updatedAt": "2026-05-08T14:50:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Classic T050 color baseline restoration is complete.",
+    "currentFocus": "Morning theme rename and macOS-sized theme icon regeneration are complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T055 Classic T050 palette verification.",
+    "nextAction": "Idle after T056 Morning theme icon verification.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T14:50:00+08:00",
+      "decision": "Completed t-056-morning-theme-icons by renaming Classic to Morning, preserving legacy classic config migration, and regenerating Morning/Day/Night macOS-sized icon PNG/ICNS assets.",
+      "source": ".sharkbay/tasks/t-056-morning-theme-icons/verification.md"
+    },
+    {
+      "date": "2026-05-08T14:43:39+08:00",
+      "decision": "Opened t-056-morning-theme-icons to rename Classic to Morning, migrate legacy classic configs to morning, and rebuild Morning/Day/Night app icons from the refreshed Downloads assets using Apple macOS icon guidance.",
+      "source": ".sharkbay/tasks/t-056-morning-theme-icons/contract.md"
+    },
     {
       "date": "2026-05-08T14:29:08+08:00",
       "decision": "Completed t-055-classic-t050-palette by adding full default xterm ANSI colors to Classic so it fully resets from Day/Night back to the T050 terminal palette.",

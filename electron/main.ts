@@ -23,6 +23,7 @@ function getResourcePath(fileName: string): string {
 }
 
 function getAppIconPath(theme = appearanceTheme): string {
+  if (theme === "morning") return getResourcePath("shark-morning.png");
   return getResourcePath(theme === "night" ? "shark-night.png" : "shark-day.png");
 }
 

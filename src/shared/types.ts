@@ -17,7 +17,7 @@ export type UrlFields = Record<UrlField, string | null>;
 
 export type RevisionToken = string;
 
-export type AppearanceTheme = "day" | "night" | "classic";
+export type AppearanceTheme = "day" | "night" | "morning";
 
 export type AppConfig = {
   schemaVersion: 1;

@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Classic T050 color baseline restoration is complete.
+- Current focus: Morning theme rename and macOS-sized theme icon regeneration are complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T055 Classic T050 palette verification.
+- Next action: Idle after T056 Morning theme icon verification.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T14:50:00+08:00 | Completed `t-056-morning-theme-icons` by renaming Classic to Morning, preserving legacy classic config migration, and regenerating Morning/Day/Night macOS-sized icon PNG/ICNS assets. | `.sharkbay/tasks/t-056-morning-theme-icons/verification.md` |
+| 2026-05-08T14:43:39+08:00 | Opened `t-056-morning-theme-icons` to rename Classic to Morning, migrate legacy classic configs to morning, and rebuild Morning/Day/Night app icons from the refreshed Downloads assets using Apple macOS icon guidance. | `.sharkbay/tasks/t-056-morning-theme-icons/contract.md` |
 | 2026-05-08T14:29:08+08:00 | Completed `t-055-classic-t050-palette` by adding full default xterm ANSI colors to Classic so it fully resets from Day/Night back to the T050 terminal palette. | `.sharkbay/tasks/t-055-classic-t050-palette/verification.md` |
 | 2026-05-08T14:22:27+08:00 | Completed `t-054-repository-night-and-classic-terminal` with Night Repository fact tile colors and Classic terminal parity fixes. | `.sharkbay/tasks/t-054-repository-night-and-classic-terminal/verification.md` |
 | 2026-05-08T14:08:39+08:00 | Completed `t-053-classic-theme-and-night-panels` with persisted Classic theme selection, original dark terminal styling for Classic, and night-mode Decisions/Git panel coverage. | `.sharkbay/tasks/t-053-classic-theme-and-night-panels/verification.md` |

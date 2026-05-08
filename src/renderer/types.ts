@@ -2,7 +2,7 @@ export type GateStatus = "pass" | "pending" | "blocked" | "unknown";
 
 export type DetectionMode = "manifest" | "protocol-fallback";
 
-export type AppearanceTheme = "day" | "night" | "classic";
+export type AppearanceTheme = "day" | "night" | "morning";
 
 export type RootRecord = {
   path: string;
