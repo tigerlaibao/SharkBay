@@ -173,7 +173,7 @@ const workflowRequiredChecks = [
 const workflowStopConditions = [
   "Stop before destructive changes, production deployment, publishing, secrets, or files outside the approved scope.",
   "Stop if required verification cannot run or must be skipped.",
-  "Stop if implementation needs direct Codex execution, background automation, or broader filesystem authority.",
+  "Stop if implementation needs direct agent/tool execution, background automation, or broader filesystem authority.",
 ];
 
 const taskIdCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });

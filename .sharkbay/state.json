@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T15:34:00+08:00",
+  "updatedAt": "2026-05-08T15:51:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Fresh macOS .app packaging is complete.",
+    "currentFocus": "Ripple harness language is agent-neutral.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -21,10 +21,20 @@
   "currentTask": {
     "taskId": "",
     "phase": "done",
-    "nextAction": "Idle after T061 packaging verification.",
+    "nextAction": "Idle after T062 harness language cleanup.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-08T15:51:00+08:00",
+      "decision": "Completed t-062-llm-agnostic-harness-language by replacing tool-specific harness/template/product language with agent-neutral Ripple wording and passing search, typecheck, focused test, JSON, and diff checks.",
+      "source": ".sharkbay/tasks/t-062-llm-agnostic-harness-language/verification.md"
+    },
+    {
+      "date": "2026-05-08T15:46:09+08:00",
+      "decision": "Opened t-062-llm-agnostic-harness-language to remove tool-specific positioning from active harness templates, docs, and user-visible copy.",
+      "source": ".sharkbay/tasks/t-062-llm-agnostic-harness-language/contract.md"
+    },
     {
       "date": "2026-05-08T15:34:00+08:00",
       "decision": "Completed t-061-package-new-app by generating release/mac-arm64/SharkBay.app with npm run pack and verifying the artifact, bundle metadata, and code signature.",
@@ -437,12 +447,12 @@
     },
     {
       "date": "2026-05-06T20:32:36+08:00",
-      "decision": "Completed the t-023-terminal-title-strategy revision so codex, claude, and terminal monitor foreground apps keep process titles and OSC color responses no longer pollute tab titles.",
+      "decision": "Completed the t-023-terminal-title-strategy revision so interactive foreground apps keep process titles and OSC color responses no longer pollute tab titles.",
       "source": "tasks/t-023-terminal-title-strategy/verification.md"
     },
     {
       "date": "2026-05-06T20:29:49+08:00",
-      "decision": "Reopened t-023-terminal-title-strategy because Codex/xterm OSC color responses and interactive app input could overwrite the intended foreground app tab title.",
+      "decision": "Reopened t-023-terminal-title-strategy because xterm OSC color responses and interactive app input could overwrite the intended foreground app tab title.",
       "source": "user report"
     },
     {
@@ -497,7 +507,7 @@
     },
     {
       "date": "2026-05-05",
-      "decision": "Keep Codex edits scoped to the current project workspace; SharkBay will later manage only directories configured inside the app.",
+      "decision": "Keep repository edits scoped to the current project workspace; SharkBay will later manage only directories configured inside the app.",
       "source": "user answer"
     },
     {
@@ -787,7 +797,7 @@
     },
     {
       "date": "2026-05-05T20:20:00+08:00",
-      "decision": "Advanced t-010-agent-onboarding-instructions from intake to spec with a Codex-first AGENTS.md onboarding policy and no-overwrite setup behavior.",
+      "decision": "Advanced t-010-agent-onboarding-instructions from intake to spec with an agent entrypoint onboarding policy and no-overwrite setup behavior.",
       "source": "tasks/t-010-agent-onboarding-instructions/spec.md"
     },
     {

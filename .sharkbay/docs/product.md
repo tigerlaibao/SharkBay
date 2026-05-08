@@ -2,7 +2,7 @@
 
 ## 1. Background and Terms
 
-SharkBay is a macOS local app for managing AI-assisted software projects. It starts with local projects that have SharkBay's Ripple files installed: a file-based project memory and task protocol under contained `.sharkbay/` harness files, with legacy support for older `.agent/`, root `docs/`, and root `tasks/` projects. The project exists because switching between many AI sessions and repositories makes it hard to see what each project is doing, what phase each task is in, and what evidence exists for review or verification.
+SharkBay is a macOS local app for managing harness-enabled software projects. It starts with local projects that have SharkBay's Ripple files installed: a file-based project memory and task protocol under contained `.sharkbay/` harness files, with legacy support for older `.agent/`, root `docs/`, and root `tasks/` projects. The project exists because switching between many sessions and repositories makes it hard to see what each project is doing, what phase each task is in, and what evidence exists for review or verification.
 
 SharkBay can also manage this repository locally during dogfooding. That local root `.agent/`, root `tasks/`, `docs/task.md`, and `docs/learnings.md` state is intentionally not tracked in the public product repository so forks do not inherit SharkBay's private work queue or run history. The public source of the harness that SharkBay installs into other projects is `templates/harness/`.
 
@@ -21,8 +21,8 @@ Key terms:
 
 | Item | Value |
 | --- | --- |
-| One-line positioning | A macOS workbench for local AI coding projects |
-| Target users | Developers managing multiple local repos with Codex or similar coding agents |
+| One-line positioning | A macOS workbench for local harness-enabled projects |
+| Target users | Developers managing multiple local repos that follow file-based task protocols |
 | Core workflow | Scan user-configured roots, inspect managed project/task state, create new managed projects, and generate next-action prompts |
 | Value proposition | Reduce session switching by making project state, phase, gates, URLs, and verification evidence visible in one place |
 | First managed project | SharkBay itself |
@@ -31,10 +31,10 @@ Key terms:
 
 | User | Problem | Current workaround | Desired outcome |
 | --- | --- | --- | --- |
-| Solo developer | Too many AI sessions and repos to track mentally | Manually switch windows and read chats | One dashboard shows project/task state |
-| Solo developer | AI says work is done without durable evidence | Search terminal/chat history | Verification evidence is saved and visible |
+| Solo developer | Too many sessions and repos to track mentally | Manually switch windows and read logs | One dashboard shows project/task state |
+| Solo developer | Work is marked done without durable evidence | Search terminal history and notes | Verification evidence is saved and visible |
 | Solo developer | New project setup repeats the same Ripple file boilerplate | Copy files manually | Create a managed project from templates |
-| Solo developer | Unsure what to ask Codex next | Reconstruct state from memory | Generate a next-action prompt from task state |
+| Solo developer | Unsure what action should happen next | Reconstruct state from memory | Generate a next-action prompt from task state |
 
 ## 4. Functional Scope
 
@@ -46,14 +46,14 @@ Key terms:
 | P0 | Directory safety boundary | Manage only user-configured directories | App does not scan or modify arbitrary filesystem locations outside configured roots |
 | P0 | Project detail | Show queue, active task, lifecycle artifacts, and evidence | User can inspect task files without leaving the app |
 | P0 | New managed project wizard | Create a new project directory from bundled templates | Writes root `AGENTS.md` and contained `.sharkbay/` harness files |
-| P1 | Next-action prompt | Generate a prompt for Codex to advance a selected task | Prompt references repo path, task id, phase, and protocol |
+| P1 | Next-action prompt | Generate a prompt for an agent or tool to advance a selected task | Prompt references repo path, task id, phase, and protocol |
 | P1 | URL tracking | Store local, test, and deployment URLs | URLs appear in project dashboard and detail view |
 | P1 | Project icons | Show recognizable project identity icons in the workbench list | Project rows show circular icons from local app icons, favicons, or the bundled default icon |
 | P1 | Ordinary folder discovery | Show all direct child folders under scan roots | User can see projects that are not managed yet and start one-click Ripple setup |
 | P1 | Project terminal | Open terminal tabs rooted at selected project directories | Selecting any managed or not-setup project opens a shell rooted at that project path |
 | P1 | Harness template sync | Detect when installed Ripple control files drift from SharkBay's tracked `templates/harness/` source | Managed project scan results include current/stale/missing harness template status and stale file names |
 | P1 | Legacy harness migration | Move old `.agent`/root docs/root tasks harness files into `.sharkbay/` only after explicit confirmation | Mixed layouts, conflicts, symlinks, and unrelated root content are preserved or blocked rather than changed silently |
-| P2 | Direct Codex invocation | Advance tasks from the UI through Codex CLI/MCP | Requires explicit user approval and visible logs |
+| P2 | Direct agent/tool invocation | Advance tasks from the UI through an approved agent or tool | Requires explicit user approval and visible logs |
 
 ## 5. Non-Goals
 

@@ -1,8 +1,8 @@
 # SharkBay
 
-SharkBay is a local-first macOS workbench for managing AI-assisted software projects.
+SharkBay is a local-first macOS workbench for managing harness-enabled software projects.
 
-It reads lightweight project metadata from local repositories, shows task, runner, Git, and verification state in one place, opens project-rooted terminal spaces, and helps generate next-action prompts for coding agents that follow a file-based workflow.
+It reads lightweight project metadata from local repositories, shows task, runner, Git, and verification state in one place, opens project-rooted terminal spaces, and helps generate next-action prompts for agents or tools that follow a file-based workflow.
 
 ## What It Does
 

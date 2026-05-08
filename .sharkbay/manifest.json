@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "harness": {
-    "name": "codex-harness",
+    "name": "ripple-harness",
     "protocolVersion": "0.1.0"
   },
   "project": {
     "name": "SharkBay",
     "slug": "sharkbay",
     "type": "local-first-macos-app",
-    "description": "A macOS local dashboard for managing harness-enabled AI-assisted repositories.",
+    "description": "A macOS local dashboard for managing harness-enabled repositories.",
     "domain": "sharkbay.xyz"
   },
   "repository": {

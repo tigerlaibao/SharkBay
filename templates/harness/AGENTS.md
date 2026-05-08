@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repository uses a Codex-oriented Ripple harness.
+This repository uses a tool-neutral Ripple harness.
 
 ## Start Here
 

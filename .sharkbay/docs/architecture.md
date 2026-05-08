@@ -81,9 +81,9 @@ Local filesystem repositories
 | Harness template sync | Compare/update version-owned Ripple control files from tracked `templates/harness/` | Overwrite project-owned identity, queue, state, docs, tasks, or runtime history |
 | Application menu | Expose macOS-native app actions such as Settings | Perform repository reads or writes directly |
 | Dashboard UI | Display project and task lifecycle state | Execute destructive repo operations |
-| Prompt generator | Produce next-action prompts for Codex | Pretend execution happened |
+| Prompt generator | Produce next-action prompts for agents or tools | Pretend execution happened |
 | Terminal manager | Spawn user-driven `node-pty` shell tabs inside configured project roots | Treat renderer-supplied cwd as filesystem authority or run outside configured roots |
-| Runner, future | Invoke Codex CLI/MCP with approval | Run without logs or user-visible evidence |
+| Runner, future | Invoke approved agents or tools with approval | Run without logs or user-visible evidence |
 
 ## 5. Self-Hosting Requirement
 
@@ -141,7 +141,7 @@ Terminal sessions are writable process sessions, but their filesystem authority 
 | Constraint | Reason | Source |
 | --- | --- | --- |
 | Prefer JSON for dashboard state | Markdown tables are fragile to parse | Harness protocol |
-| Manage only configured roots | User wants Codex and SharkBay constrained by explicit directory settings | User answer |
+| Manage only configured roots | User wants all repository work constrained by explicit directory settings | User answer |
 | Preserve repository files | SharkBay manages developer workspaces, including its own source repo | Safety rule |
-| Require evidence for verification | Avoid AI self-reporting without proof | Quality rules |
-| Ask before direct execution | Codex invocation can edit files or run commands | Approval rule |
+| Require evidence for verification | Avoid self-reporting without proof | Quality rules |
+| Ask before direct execution | Agent/tool invocation can edit files or run commands | Approval rule |

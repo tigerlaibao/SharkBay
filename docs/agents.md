@@ -1,6 +1,6 @@
-# AI Assistant Guide
+# Agent Guide
 
-This file provides guidance to AI coding assistants when working in this repository.
+This file provides guidance to automation agents and contributors when working in this repository.
 
 ## Project Overview
 
@@ -48,7 +48,7 @@ The root `.agent/`, root `tasks/`, `docs/task.md`, and `docs/learnings.md` files
 
 ## Automation Scripts
 
-Use `scripts/` for project-local validation helpers that make AI verification repeatable.
+Use `scripts/` for project-local validation helpers that make verification repeatable.
 
 Conventions:
 

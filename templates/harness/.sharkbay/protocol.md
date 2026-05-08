@@ -1,4 +1,4 @@
-# Codex Controller Protocol
+# Ripple Controller Protocol
 
 Read `.sharkbay/manifest.json`, `.sharkbay/state.json`, `.sharkbay/queue.json`, `.sharkbay/protocol.md`, `.sharkbay/quality-rules.md`, `.sharkbay/queue.md`, `.sharkbay/state.md`, and the active task status before advancing work.
 

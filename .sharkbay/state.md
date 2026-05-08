@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Fresh macOS .app packaging is complete.
+- Current focus: Ripple harness language is agent-neutral.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -20,13 +20,15 @@
 
 - Task ID: none
 - Phase: done
-- Next action: Idle after T061 packaging verification.
+- Next action: Idle after T062 harness language cleanup.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-08T15:51:00+08:00 | Completed `t-062-llm-agnostic-harness-language` by replacing tool-specific harness/template/product language with agent-neutral Ripple wording and passing search, typecheck, focused test, JSON, and diff checks. | `.sharkbay/tasks/t-062-llm-agnostic-harness-language/verification.md` |
+| 2026-05-08T15:46:09+08:00 | Opened `t-062-llm-agnostic-harness-language` to remove tool-specific positioning from active harness templates, docs, and user-visible copy. | `.sharkbay/tasks/t-062-llm-agnostic-harness-language/contract.md` |
 | 2026-05-08T15:34:00+08:00 | Completed `t-061-package-new-app` by generating `release/mac-arm64/SharkBay.app` with `npm run pack` and verifying the artifact, bundle metadata, and code signature. | `.sharkbay/tasks/t-061-package-new-app/verification.md` |
 | 2026-05-08T15:32:00+08:00 | Opened `t-061-package-new-app` to produce a fresh local macOS `.app` artifact from the current repository state. | `.sharkbay/tasks/t-061-package-new-app/contract.md` |
 | 2026-05-08T15:23:00+08:00 | Completed `t-060-sharkbay-project-icon-source` by adding semantic `resources/project-icon.png`, removing branded app-icon resources from generic project-avatar discovery, and adding scanner coverage for project-icon priority. | `.sharkbay/tasks/t-060-sharkbay-project-icon-source/verification.md` |
@@ -109,8 +111,8 @@
 | 2026-05-06T20:45:21+08:00 | Pushed README refresh commit `0941329` to `origin/main`. | `git push origin main` |
 | 2026-05-06T20:42:52+08:00 | Completed `t-025-readme-publish` with `README.md` refreshed for current SharkBay workbench capabilities and native terminal rebuild guidance. | `tasks/t-025-readme-publish/verification.md` |
 | 2026-05-06T20:41:15+08:00 | Open `t-025-readme-publish` to refresh `README.md` and push the current `main` branch to origin. | User request |
-| 2026-05-06T20:32:36+08:00 | Completed the `t-023-terminal-title-strategy` revision so `codex`, `claude`, and terminal monitor foreground apps keep process titles and OSC color responses no longer pollute tab titles. | `tasks/t-023-terminal-title-strategy/verification.md` |
-| 2026-05-06T20:29:49+08:00 | Reopened `t-023-terminal-title-strategy` because Codex/xterm OSC color responses and interactive app input could overwrite the intended foreground app tab title. | User report |
+| 2026-05-06T20:32:36+08:00 | Completed the `t-023-terminal-title-strategy` revision so interactive foreground apps keep process titles and OSC color responses no longer pollute tab titles. | `tasks/t-023-terminal-title-strategy/verification.md` |
+| 2026-05-06T20:29:49+08:00 | Reopened `t-023-terminal-title-strategy` because xterm OSC color responses and interactive app input could overwrite the intended foreground app tab title. | User report |
 | 2026-05-06T20:24:02+08:00 | Completed `t-024-project-aware-column-headings` with the terminal column titled by selected project name and redundant right detail project name/path headers removed. | `tasks/t-024-project-aware-column-headings/verification.md` |
 | 2026-05-06T20:21:48+08:00 | Open `t-024-project-aware-column-headings` to title the terminal column with the selected project name and remove the redundant project name/path header from the right detail column. | User request |
 | 2026-05-06T20:16:12+08:00 | Completed `t-023-terminal-title-strategy` with terminal tabs deriving titles from project-relative cwd or foreground occupying commands. | `tasks/t-023-terminal-title-strategy/verification.md` |
@@ -121,7 +123,7 @@
 | 2026-05-06T19:44:38+08:00 | Open `t-021-harness-behavioral-discipline` to add ambiguity, simplicity, traceability, and verification-mapping rules to SharkBay, templates, AIBF, and AIGF. | User request |
 | 2026-05-05 | Initialized SharkBay from the project seed in `init.md`. | `init.md` |
 | 2026-05-05 | Orient SharkBay as a macOS local app rather than a browser-only web app. | User answer |
-| 2026-05-05 | Keep Codex edits scoped to the current project workspace; SharkBay will later manage only directories configured inside the app. | User answer |
+| 2026-05-05 | Keep repository edits scoped to the current project workspace; SharkBay will later manage only directories configured inside the app. | User answer |
 | 2026-05-05 | Initialized git in the repository on branch `main`. | User approval |
 | 2026-05-05 | Recorded intended GitHub repository URL `git@github.com:SharkUI/sharkbay.git`. | User answer |
 | 2026-05-05 | Configured git remote origin as `git@github.com:SharkUI/sharkbay.git`. | Controller |
@@ -179,7 +181,7 @@
 | 2026-05-05T19:50:58+08:00 | Opened `t-010-agent-onboarding-instructions` to define setup-time agent entrypoint instructions for Ripple projects. | User request |
 | 2026-05-05T20:08:50+08:00 | Synchronized SharkBay repository identity and git origin to `git@github.com:SharkUI/SharkBay.git` after the GitHub repository casing changed. | User request |
 | 2026-05-05T20:14:48+08:00 | Scrubbed public working-tree references to private local filesystem paths before publishing the repository. | User request |
-| 2026-05-05T20:20:00+08:00 | Advanced `t-010-agent-onboarding-instructions` from intake to spec with a Codex-first `AGENTS.md` onboarding policy and no-overwrite setup behavior. | `tasks/t-010-agent-onboarding-instructions/spec.md` |
+| 2026-05-05T20:20:00+08:00 | Advanced `t-010-agent-onboarding-instructions` from intake to spec with an agent entrypoint onboarding policy and no-overwrite setup behavior. | `tasks/t-010-agent-onboarding-instructions/spec.md` |
 | 2026-05-05T21:10:47+08:00 | Advanced `t-010-agent-onboarding-instructions` from spec to design with a root `AGENTS.md` template and no-overwrite setup behavior. | `tasks/t-010-agent-onboarding-instructions/design.md` |
 | 2026-05-05T21:11:54+08:00 | Design review passed for `t-010-agent-onboarding-instructions` with blocker=0 and major=0. | `tasks/t-010-agent-onboarding-instructions/design-review.md` |
 | 2026-05-05T21:12:31+08:00 | Contract passed for `t-010-agent-onboarding-instructions`; coding may begin because dependency `t-009-human-intervention-policy` is done. | `tasks/t-010-agent-onboarding-instructions/contract.md` |

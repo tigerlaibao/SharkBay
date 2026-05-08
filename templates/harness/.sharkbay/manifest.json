@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "harness": {
-    "name": "codex-harness",
+    "name": "ripple-harness",
     "protocolVersion": "0.1.0"
   },
   "project": {

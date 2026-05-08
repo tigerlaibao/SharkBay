@@ -6,7 +6,7 @@ This file is a portable bootstrap contract pre-seeded for SharkBay. Copy it into
 Read init.md and bootstrap this repository according to it.
 ```
 
-The model should create the harness files, initialize project knowledge templates, seed SharkBay's project context, ask only for missing decisions, then enter the Codex controller workflow.
+The bootstrap process should create the harness files, initialize project knowledge templates, seed SharkBay's project context, ask only for missing decisions, then enter the Ripple controller workflow.
 
 ## 0. Project Seed: SharkBay
 
@@ -18,10 +18,10 @@ Use this section to initialize the repository knowledge if the current repositor
 | Domain | `sharkbay.xyz` |
 | Repo name | `sharkbay` |
 | Project type | local-first web app / developer tool |
-| Primary user | A developer managing many local AI-assisted repositories |
+| Primary user | A developer managing many local harness-enabled repositories |
 | Core promise | A single dashboard for harness-enabled repos, tasks, phases, gates, repo status, local URLs, and deployment URLs |
 
-SharkBay is a local project management and harness dashboard for AI-assisted development. It scans configured project roots, detects repositories initialized with this harness protocol, shows their current lifecycle state, and helps the user create or advance tasks without manually switching between many AI sessions.
+SharkBay is a local project management and harness dashboard for file-based development workflows. It scans configured project roots, detects repositories initialized with this harness protocol, shows their current lifecycle state, and helps the user create or advance tasks without manually switching between many sessions.
 
 ### MVP Scope
 
@@ -33,7 +33,7 @@ Build the first version around these capabilities:
 4. Show a project detail page with queue, active task, lifecycle phase, review findings, verification evidence, and recent decisions.
 5. Create a new harness repository from bundled templates.
 6. Write machine-readable state files: `.agent/manifest.json`, `.agent/state.json`, and `.agent/queue.json`.
-7. Generate a "next action" prompt that can be copied into Codex for the selected project.
+7. Generate a "next action" prompt that can be copied into an agent or tool session for the selected project.
 
 ### Deferred Scope
 
@@ -68,7 +68,7 @@ Do not assume the final stack without asking. If the user wants a default recomm
 
 You are the bootstrap agent for this repository.
 
-Your job is to turn the current directory into a Codex-oriented engineering harness:
+Your job is to turn the current directory into a tool-neutral engineering harness:
 
 - Repository knowledge lives in versioned files, not chat memory.
 - Task progress is recoverable from disk.
@@ -148,7 +148,7 @@ docs/<feature>-design.md
 ```markdown
 # AGENTS.md
 
-This repository uses a Codex-oriented engineering harness.
+This repository uses a tool-neutral engineering harness.
 
 ## Start Here
 
@@ -195,14 +195,14 @@ Design and code do not pass because they "look fine." They pass only when the re
 {
   "schemaVersion": 1,
   "harness": {
-    "name": "codex-harness",
+    "name": "ripple-harness",
     "protocolVersion": "0.1.0"
   },
   "project": {
     "name": "SharkBay",
     "slug": "sharkbay",
     "type": "local-first-web-app",
-    "description": "A local dashboard for managing harness-enabled AI-assisted repositories.",
+    "description": "A local dashboard for managing harness-enabled repositories.",
     "domain": "sharkbay.xyz"
   },
   "repository": {
@@ -285,11 +285,11 @@ Design and code do not pass because they "look fine." They pass only when the re
 ### 4.5 `.agent/protocol.md`
 
 ```markdown
-# Codex Controller Protocol
+# Ripple Controller Protocol
 
 ## 1. Purpose
 
-This protocol defines how Codex should act as the controller for this repository.
+This protocol defines how an agent or tool should act as the controller for this repository.
 
 The controller coordinates planning, design, review, implementation, verification, documentation updates, and task state transitions.
 
@@ -322,7 +322,7 @@ Execute one phase at a time unless the user explicitly asks for a larger run.
 
 This harness uses both Markdown and JSON:
 
-- Markdown files are for humans and AI reasoning.
+- Markdown files are for human-readable reasoning and review.
 - JSON files are for SharkBay, scripts, dashboards, and reliable scanning.
 
 Keep these files synchronized:
@@ -665,9 +665,9 @@ Documentation passes only when:
 ### 4.9 `docs/agents.md`
 
 ```markdown
-# AI Assistant Guide
+# Agent Guide
 
-This file provides guidance to AI coding assistants when working in this repository.
+This file provides guidance to automation agents and contributors when working in this repository.
 
 ## Project Overview
 
@@ -708,7 +708,7 @@ Fill this section after the stack is known.
 
 ## Automation Scripts
 
-Use `scripts/` for project-local validation helpers that make AI verification repeatable.
+Use `scripts/` for project-local validation helpers that make verification repeatable.
 
 Conventions:
 
@@ -748,7 +748,7 @@ If a command is unavailable, record the missing command and residual risk in `co
 
 ## 1. Background and Terms
 
-SharkBay is a local dashboard for managing AI-assisted software projects that use a file-based harness protocol. The project exists because switching between many AI sessions and repositories makes it hard to see what each project is doing, what phase each task is in, and what evidence exists for review or verification.
+SharkBay is a local dashboard for managing software projects that use a file-based harness protocol. The project exists because switching between many sessions and repositories makes it hard to see what each project is doing, what phase each task is in, and what evidence exists for review or verification.
 
 Key terms:
 
@@ -764,8 +764,8 @@ Key terms:
 
 | Item | Value |
 | --- | --- |
-| One-line positioning | A local control panel for harness-enabled AI coding projects |
-| Target users | Developers managing multiple local repos with Codex or similar coding agents |
+| One-line positioning | A local control panel for harness-enabled projects |
+| Target users | Developers managing multiple local repos that follow file-based task protocols |
 | Core workflow | Scan project roots, inspect project/task state, create harness repos, and generate next-action prompts |
 | Value proposition | Reduce session switching by making project state, phase, gates, URLs, and verification evidence visible in one place |
 
@@ -773,10 +773,10 @@ Key terms:
 
 | User | Problem | Current workaround | Desired outcome |
 | --- | --- | --- | --- |
-| Solo developer | Too many AI sessions and repos to track mentally | Manually switch windows and read chats | One dashboard shows project/task state |
-| Solo developer | AI says work is done without durable evidence | Search terminal/chat history | Verification evidence is saved and visible |
+| Solo developer | Too many sessions and repos to track mentally | Manually switch windows and read logs | One dashboard shows project/task state |
+| Solo developer | Work is marked done without durable evidence | Search terminal history and notes | Verification evidence is saved and visible |
 | Solo developer | New repo setup repeats the same harness boilerplate | Copy files manually | Create a harness repo from templates |
-| Solo developer | Unsure what to ask Codex next | Reconstruct state from memory | Generate a next-action prompt from task state |
+| Solo developer | Unsure what action should happen next | Reconstruct state from memory | Generate a next-action prompt from task state |
 
 ## 4. Functional Scope
 
@@ -786,9 +786,9 @@ Key terms:
 | P0 | Dashboard | Show detected projects and current state | Displays name, path, branch, dirty state, active task, phase, and gate status |
 | P0 | Project detail | Show queue, active task, lifecycle artifacts, and evidence | User can inspect task files without leaving the app |
 | P0 | New harness repo wizard | Create a new project directory from bundled templates | Writes `.agent/`, `docs/`, `tasks/`, and machine-readable JSON |
-| P1 | Next-action prompt | Generate a prompt for Codex to advance a selected task | Prompt references repo path, task id, phase, and protocol |
+| P1 | Next-action prompt | Generate a prompt for an agent or tool to advance a selected task | Prompt references repo path, task id, phase, and protocol |
 | P1 | URL tracking | Store local, test, and deployment URLs | URLs appear in project dashboard and detail view |
-| P2 | Direct Codex invocation | Advance tasks from the UI through Codex CLI/MCP | Requires explicit user approval and visible logs |
+| P2 | Direct agent/tool invocation | Advance tasks from the UI through an approved agent or tool | Requires explicit user approval and visible logs |
 
 ## 5. Non-Goals
 
@@ -868,8 +868,8 @@ Local filesystem repositories
 | Repo reader | Parse `.agent/manifest.json`, state, queue, and task files | Infer missing facts without marking uncertainty |
 | Template installer | Create new harness repos from templates | Overwrite existing files blindly |
 | Dashboard UI | Display project and task lifecycle state | Execute destructive repo operations |
-| Prompt generator | Produce next-action prompts for Codex | Pretend execution happened |
-| Runner, future | Invoke Codex CLI/MCP with approval | Run without logs or user-visible evidence |
+| Prompt generator | Produce next-action prompts for agents or tools | Pretend execution happened |
+| Runner, future | Invoke approved agents or tools with approval | Run without logs or user-visible evidence |
 
 ## 5. Data Flow
 
@@ -889,8 +889,8 @@ Configured project roots
 | --- | --- | --- |
 | Prefer JSON for dashboard state | Markdown tables are fragile to parse | Harness protocol |
 | Preserve repository files | SharkBay manages developer workspaces | Safety rule |
-| Require evidence for verification | Avoid AI self-reporting without proof | Quality rules |
-| Ask before direct execution | Codex invocation can edit files or run commands | Approval rule |
+| Require evidence for verification | Avoid self-reporting without proof | Quality rules |
+| Ask before direct execution | Agent/tool invocation can edit files or run commands | Approval rule |
 ```
 
 ### 4.12 `docs/roadmap.md`
@@ -1002,7 +1002,7 @@ Do not record:
 ```markdown
 # Scripts
 
-This directory stores project-local automation that helps AI assistants and humans verify work repeatably.
+This directory stores project-local automation that helps agents, tools, and humans verify work repeatably.
 
 ## Rules
 
