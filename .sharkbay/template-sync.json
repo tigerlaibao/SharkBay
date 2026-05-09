@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "source": "sharkbay/templates/harness",
-  "version": "9a9711e1333d8ffb517d6dc0c0474aba4af373462f68bd7dec7b878bd7d90c4e",
-  "updatedAt": "2026-05-07T04:31:17.214Z",
+  "version": "363d46ef12b8a4dde2233a2c634c5ab1737c49c40563cd9569f7c2f23b300e05",
+  "updatedAt": "2026-05-09T08:52:22.912Z",
   "versionOwnedFiles": [
     {
       "path": ".sharkbay/protocol.md",
-      "sha256": "4ba9ebce6c1df814dfdac6ba0e99b710020ecfc45e7f826080ac756df7ea6005"
+      "sha256": "ca7220f3b8f98e6cc9d54d868813dab827351a7212d4bf16fb7c868299ec6cc0"
     },
     {
       "path": ".sharkbay/quality-rules.md",
@@ -14,7 +14,7 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "be0caceaf1eebd12cd5f7622829243c88f4c1a36e205d462d7872e96e92ca305"
+      "sha256": "96ed79ae0608197b747d2e24d7ff19757a7b636935f47e37702dcb034a8ec11c"
     }
   ]
 }
