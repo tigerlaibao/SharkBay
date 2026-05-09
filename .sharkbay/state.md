@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Project status placement and terminal activity labels are complete.
+- Current focus: Terminal input observation and empty state layout are complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T16:25:00+08:00 | Completed `t-083-terminal-input-observation-and-empty-state` by resetting terminal output observation on user input and moving the no-terminal empty state below the tab row. | `.sharkbay/tasks/t-083-terminal-input-observation-and-empty-state/verification.md` |
+| 2026-05-09T16:20:57+08:00 | Opened `t-083-terminal-input-observation-and-empty-state` to prevent continuous typing from triggering working and to keep the empty terminal message below the tab row. | `.sharkbay/tasks/t-083-terminal-input-observation-and-empty-state/contract.md` |
 | 2026-05-09T16:14:00+08:00 | Completed `t-082-project-status-and-terminal-labels` by moving project status pills to the Tasks tab and showing aggregated terminal working/idle labels in the project list. | `.sharkbay/tasks/t-082-project-status-and-terminal-labels/verification.md` |
 | 2026-05-09T16:07:41+08:00 | Opened `t-082-project-status-and-terminal-labels` to move project status pills into Tasks and show aggregated terminal working/idle labels in the project list. | `.sharkbay/tasks/t-082-project-status-and-terminal-labels/contract.md` |
 | 2026-05-09T16:02:00+08:00 | Completed `t-081-terminal-working-state-lights` by making service indicators blue and terminal tabs use sustained-output green plus quiet-complete yellow states. | `.sharkbay/tasks/t-081-terminal-working-state-lights/verification.md` |

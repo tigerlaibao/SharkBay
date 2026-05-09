@@ -1995,6 +1995,11 @@ button.project-file-toggle:focus-visible {
   overflow: hidden;
 }
 
+.xterm-empty-state {
+  position: absolute;
+  inset: 0;
+}
+
 .xterm-surface {
   position: absolute;
   inset: 0;

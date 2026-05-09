@@ -1193,10 +1193,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   const activeProjectIdRef = useRef<string | null>(null);
   const creatingProjects = useRef(new Set<string>());
   const quietTimers = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
-  const activeSpace = activeProjectId ? spaces[activeProjectId] ?? null : null;
   const selectedSpace = candidate?.id ? spaces[candidate.id] ?? null : null;
-  const visibleSpace = selectedSpace ?? activeSpace;
-  const activeTab = visibleSpace?.tabs.find((tab) => tab.session.id === visibleSpace.activeId) ?? visibleSpace?.tabs[0] ?? null;
   const canCreate = bridgeAvailable && Boolean(candidate?.path);
   const services = candidate?.services ?? [];
 
@@ -1335,7 +1332,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   ) {
     try {
       const session = await createTerminal(cwd, projectName, options);
-      const terminal = createXTerm(session.id, appearanceTheme, setToast);
+      const terminal = createXTerm(session.id, appearanceTheme, setToast, recordTerminalInputActivity);
       const tab: TerminalTab = {
         session,
         terminal: terminal.instance,
@@ -1418,6 +1415,15 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     }));
 
     scheduleTerminalQuietTimer(sessionId);
+  }
+
+  function recordTerminalInputActivity(sessionId: string) {
+    clearTerminalQuietTimer(sessionId);
+    setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => ({
+      ...currentTab,
+      activityState: currentTab.activityState === "done" ? "done" : "idle",
+      outputBurstStartedAt: null,
+    })));
   }
 
   function scheduleTerminalQuietTimer(sessionId: string) {
@@ -1607,14 +1613,33 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
                   onResize={(cols, rows) => void resizeTerminal(tab.session.id, cols, rows).catch((error) => setToast({ tone: "error", message: asMessage(error) }))}
                 />
               ))}
+              {!space.tabs.length ? (
+                <div className="xterm-empty-state">
+                  <EmptyState
+                    title="No terminal open"
+                    body="Open a tab for the selected project."
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
         ))}
-        {!activeTab ? (
-          <EmptyState
-            title="No terminal open"
-            body={candidate ? "Open a tab for the selected project." : "Select a project to start a shell."}
-          />
+        {!Object.values(spaces).length ? (
+          <div className="terminal-space is-active terminal-empty-space">
+            <div className="terminal-tabs">
+              <button aria-label="New terminal tab" className="icon-button terminal-tab-add" disabled={!canCreate} title="New terminal tab" type="button" onClick={() => void openCurrentProjectTab()}>
+                <PlusIcon />
+              </button>
+            </div>
+            <div className="xterm-surface-stack">
+              <div className="xterm-empty-state">
+                <EmptyState
+                  title="No terminal open"
+                  body={candidate ? "Open a tab for the selected project." : "Select a project to start a shell."}
+                />
+              </div>
+            </div>
+          </div>
         ) : null}
       </div>
     </div>
@@ -1695,7 +1720,12 @@ function XTermSurface({
   );
 }
 
-function createXTerm(sessionId: string, appearanceTheme: AppearanceTheme, setToast: (toast: Toast) => void): { instance: XTerm; fitAddon: FitAddon; disposables: Disposable[] } {
+function createXTerm(
+  sessionId: string,
+  appearanceTheme: AppearanceTheme,
+  setToast: (toast: Toast) => void,
+  onInput: (sessionId: string) => void,
+): { instance: XTerm; fitAddon: FitAddon; disposables: Disposable[] } {
   const instance = new XTerm({
     allowTransparency: false,
     cursorBlink: true,
@@ -1708,6 +1738,7 @@ function createXTerm(sessionId: string, appearanceTheme: AppearanceTheme, setToa
   instance.loadAddon(fitAddon);
   instance.loadAddon(new WebLinksAddon());
   const inputDisposable = instance.onData((data) => {
+    onInput(sessionId);
     void sendTerminalInput(sessionId, data).catch((error) => {
       setToast({ tone: "error", message: asMessage(error) });
     });

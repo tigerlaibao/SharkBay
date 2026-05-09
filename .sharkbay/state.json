@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T16:14:00+08:00",
+  "updatedAt": "2026-05-09T16:25:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Project status placement and terminal activity labels are complete.",
+    "currentFocus": "Terminal input observation and empty state layout are complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T16:25:00+08:00",
+      "decision": "Completed t-083-terminal-input-observation-and-empty-state by resetting terminal output observation on user input and moving the no-terminal empty state below the tab row.",
+      "source": ".sharkbay/tasks/t-083-terminal-input-observation-and-empty-state/verification.md"
+    },
+    {
+      "date": "2026-05-09T16:20:57+08:00",
+      "decision": "Opened t-083-terminal-input-observation-and-empty-state to prevent continuous typing from triggering working and to keep the empty terminal message below the tab row.",
+      "source": ".sharkbay/tasks/t-083-terminal-input-observation-and-empty-state/contract.md"
+    },
     {
       "date": "2026-05-09T16:14:00+08:00",
       "decision": "Completed t-082-project-status-and-terminal-labels by moving project status pills to the Tasks tab and showing aggregated terminal working/idle labels in the project list.",
