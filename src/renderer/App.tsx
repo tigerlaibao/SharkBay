@@ -58,12 +58,15 @@ type Disposable = {
   dispose: () => void;
 };
 
+type TerminalActivityState = "idle" | "working" | "done";
+
 type TerminalTab = {
   session: TerminalSession;
   terminal: XTerm;
   fitAddon: FitAddon;
   disposables: Disposable[];
-  outputActive: boolean;
+  activityState: TerminalActivityState;
+  outputBurstStartedAt: number | null;
 };
 
 type TerminalSpace = {
@@ -82,7 +85,8 @@ type TerminalPaneHandle = {
 const minProjectColumnWidth = 216;
 const minDetailColumnWidth = 340;
 const minTerminalColumnWidth = 420;
-const terminalOutputActivityTimeoutMs = 1600;
+const terminalWorkingThresholdMs = 5000;
+const terminalQuietDoneMs = 5000;
 const defaultProjectColumnWidth = minProjectColumnWidth;
 const defaultDetailColumnWidth = minDetailColumnWidth;
 const resizerColumnWidth = 12;
@@ -1175,8 +1179,9 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   const [spaces, setSpaces] = useState<Record<string, TerminalSpace>>({});
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const spacesRef = useRef<Record<string, TerminalSpace>>({});
+  const activeProjectIdRef = useRef<string | null>(null);
   const creatingProjects = useRef(new Set<string>());
-  const activityTimers = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
+  const quietTimers = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
   const activeSpace = activeProjectId ? spaces[activeProjectId] ?? null : null;
   const selectedSpace = candidate?.id ? spaces[candidate.id] ?? null : null;
   const visibleSpace = selectedSpace ?? activeSpace;
@@ -1188,11 +1193,15 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     spacesRef.current = spaces;
   }, [spaces]);
 
+  useEffect(() => {
+    activeProjectIdRef.current = activeProjectId;
+  }, [activeProjectId]);
+
   useEffect(() => () => {
-    for (const timer of activityTimers.current.values()) {
+    for (const timer of quietTimers.current.values()) {
       window.clearTimeout(timer);
     }
-    activityTimers.current.clear();
+    quietTimers.current.clear();
   }, []);
 
   useEffect(() => {
@@ -1309,7 +1318,8 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
         terminal: terminal.instance,
         fitAddon: terminal.fitAddon,
         disposables: terminal.disposables,
-        outputActive: false,
+        activityState: "idle",
+        outputBurstStartedAt: null,
       };
 
       setSpaces((current) => {
@@ -1361,47 +1371,72 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   function appendTerminalOutput(event: TerminalDataEvent) {
     const tab = findTerminalTab(spacesRef.current, event.sessionId);
     tab?.terminal.write(event.data);
-    markTerminalOutputActive(event.sessionId);
+    recordTerminalOutputActivity(event.sessionId);
   }
 
-  function markTerminalOutputActive(sessionId: string) {
+  function recordTerminalOutputActivity(sessionId: string) {
     const tab = findTerminalTab(spacesRef.current, sessionId);
     if (!tab || tab.session.status !== "running") {
       return;
     }
 
-    if (!tab.outputActive) {
-      setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => ({
+    const now = Date.now();
+    setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => {
+      if (currentTab.session.status !== "running") {
+        return currentTab;
+      }
+      const burstStartedAt = currentTab.outputBurstStartedAt ?? now;
+      const sustained = now - burstStartedAt >= terminalWorkingThresholdMs;
+      return {
         ...currentTab,
-        outputActive: true,
-      })));
-    }
+        activityState: sustained ? "working" : currentTab.activityState === "done" ? "idle" : currentTab.activityState,
+        outputBurstStartedAt: burstStartedAt,
+      };
+    }));
 
-    const existingTimer = activityTimers.current.get(sessionId);
+    scheduleTerminalQuietTimer(sessionId);
+  }
+
+  function scheduleTerminalQuietTimer(sessionId: string) {
+    const existingTimer = quietTimers.current.get(sessionId);
     if (existingTimer) {
       window.clearTimeout(existingTimer);
     }
     const timer = window.setTimeout(() => {
-      activityTimers.current.delete(sessionId);
+      quietTimers.current.delete(sessionId);
+      const currentSpaces = spacesRef.current;
+      const isCurrentTab = isCurrentOpenTerminalTab(currentSpaces, sessionId, activeProjectIdRef.current);
       setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => ({
         ...currentTab,
-        outputActive: false,
+        activityState: currentTab.activityState === "working" && !isCurrentTab ? "done" : "idle",
+        outputBurstStartedAt: null,
       })));
-    }, terminalOutputActivityTimeoutMs);
-    activityTimers.current.set(sessionId, timer);
+    }, terminalQuietDoneMs);
+    quietTimers.current.set(sessionId, timer);
   }
 
-  function clearTerminalActivityTimer(sessionId: string) {
-    const timer = activityTimers.current.get(sessionId);
+  function clearTerminalQuietTimer(sessionId: string) {
+    const timer = quietTimers.current.get(sessionId);
     if (!timer) {
       return;
     }
     window.clearTimeout(timer);
-    activityTimers.current.delete(sessionId);
+    quietTimers.current.delete(sessionId);
+  }
+
+  function clearTerminalDoneState(sessionId: string) {
+    const tab = findTerminalTab(spacesRef.current, sessionId);
+    if (tab?.activityState !== "done") {
+      return;
+    }
+    setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => ({
+      ...currentTab,
+      activityState: "idle",
+    })));
   }
 
   function markTerminalExit(event: TerminalExitEvent) {
-    clearTerminalActivityTimer(event.sessionId);
+    clearTerminalQuietTimer(event.sessionId);
     const message = `\r\n[process exited${event.exitCode === null ? "" : ` with code ${event.exitCode}`}${event.signal ? `, signal ${event.signal}` : ""}]\r\n`;
     const match = findTerminalTabWithSpace(spacesRef.current, event.sessionId);
     if (match?.tab.session.service) {
@@ -1413,7 +1448,8 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     match?.tab.terminal.write(message);
     setSpaces((current) => mapTerminalTab(current, event.sessionId, (currentTab) => ({
       ...currentTab,
-      outputActive: false,
+      activityState: "idle",
+      outputBurstStartedAt: null,
       session: { ...currentTab.session, status: "exited" },
     })));
   }
@@ -1437,7 +1473,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   }
 
   function removeTerminalTab(sessionId: string, match: ReturnType<typeof findTerminalTabWithSpace>) {
-    clearTerminalActivityTimer(sessionId);
+    clearTerminalQuietTimer(sessionId);
     match?.tab.disposables.forEach((disposable) => disposable.dispose());
     match?.tab.terminal.dispose();
     setSpaces((current) => {
@@ -1505,9 +1541,19 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
                       <button
                         className="terminal-tab-main"
                         type="button"
-                        onClick={() => setActiveTab(space.projectId, tab.session.id)}
+                        onClick={() => {
+                          setActiveTab(space.projectId, tab.session.id);
+                          clearTerminalDoneState(tab.session.id);
+                        }}
                       >
-                        <span className={cx("terminal-state", tab.outputActive && "is-active", tab.session.status === "exited" && "is-exited")} />
+                        <span
+                          className={cx(
+                            "terminal-state",
+                            tab.activityState === "working" && "is-working",
+                            tab.activityState === "done" && "is-done",
+                            tab.session.status === "exited" && "is-exited",
+                          )}
+                        />
                         <span className="truncate">{tab.session.title}</span>
                       </button>
                       <button
@@ -1668,6 +1714,15 @@ function findTerminalTabWithSpace(
     }
   }
   return null;
+}
+
+function isCurrentOpenTerminalTab(
+  spaces: Record<string, TerminalSpace>,
+  sessionId: string,
+  activeProjectId: string | null,
+): boolean {
+  const match = findTerminalTabWithSpace(spaces, sessionId);
+  return Boolean(match && match.space.projectId === activeProjectId && match.space.activeId === sessionId);
 }
 
 function mapTerminalTab(

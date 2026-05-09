@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T15:42:00+08:00",
+  "updatedAt": "2026-05-09T16:02:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Terminal tab output activity indicator is complete.",
+    "currentFocus": "Terminal working state lights are complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T16:02:00+08:00",
+      "decision": "Completed t-081-terminal-working-state-lights by making service indicators blue and terminal tabs use sustained-output green plus quiet-complete yellow states.",
+      "source": ".sharkbay/tasks/t-081-terminal-working-state-lights/verification.md"
+    },
+    {
+      "date": "2026-05-09T15:57:02+08:00",
+      "decision": "Opened t-081-terminal-working-state-lights to separate blue service indicators from terminal sustained-output working/done lights.",
+      "source": ".sharkbay/tasks/t-081-terminal-working-state-lights/contract.md"
+    },
     {
       "date": "2026-05-09T15:42:00+08:00",
       "decision": "Completed t-080-terminal-output-activity-light by making terminal tab indicators turn green on recent PTY output and dim after quiet time.",

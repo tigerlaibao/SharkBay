@@ -731,9 +731,9 @@ body.is-resizing-columns * {
   flex: 0 0 7px;
   width: 7px;
   height: 7px;
-  background: #4c845d;
+  background: #3b82f6;
   border-radius: 999px;
-  box-shadow: 0 0 0 3px rgba(76, 132, 93, 0.14);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
 }
 
 .cell-subtitle {
@@ -1828,8 +1828,8 @@ button.project-file-toggle:focus-visible {
 }
 
 .service-pill.is-running .service-dot {
-  background: #4c845d;
-  box-shadow: 0 0 0 3px rgba(76, 132, 93, 0.14);
+  background: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
 }
 
 .terminal-tabs {
@@ -1904,9 +1904,14 @@ button.project-file-toggle:focus-visible {
   border-radius: 999px;
 }
 
-.terminal-state.is-active {
+.terminal-state.is-working {
   background: #4c845d;
   box-shadow: 0 0 0 3px rgba(76, 132, 93, 0.14);
+}
+
+.terminal-state.is-done {
+  background: #c9962f;
+  box-shadow: 0 0 0 3px rgba(201, 150, 47, 0.14);
 }
 
 .terminal-state.is-exited {
@@ -2163,8 +2168,8 @@ button.project-file-toggle:focus-visible {
 }
 
 .app-shell[data-theme="night"] .project-service-dot {
-  background: #93d7a4;
-  box-shadow: 0 0 0 3px rgba(147, 215, 164, 0.14);
+  background: #78a9ff;
+  box-shadow: 0 0 0 3px rgba(120, 169, 255, 0.14);
 }
 
 .app-shell[data-theme="night"] .phase-pill,
@@ -2366,8 +2371,8 @@ button.project-file-toggle:focus-visible {
 }
 
 .app-shell[data-theme="night"] .service-pill.is-running .service-dot {
-  background: #93d7a4;
-  box-shadow: 0 0 0 3px rgba(147, 215, 164, 0.14);
+  background: #78a9ff;
+  box-shadow: 0 0 0 3px rgba(120, 169, 255, 0.14);
 }
 
 .app-shell[data-theme="night"] .terminal-tab-add,
@@ -2387,9 +2392,14 @@ button.project-file-toggle:focus-visible {
   background: #526360;
 }
 
-.app-shell[data-theme="night"] .terminal-state.is-active {
+.app-shell[data-theme="night"] .terminal-state.is-working {
   background: #93d7a4;
   box-shadow: 0 0 0 3px rgba(147, 215, 164, 0.14);
+}
+
+.app-shell[data-theme="night"] .terminal-state.is-done {
+  background: #e2b253;
+  box-shadow: 0 0 0 3px rgba(226, 178, 83, 0.14);
 }
 
 .app-shell[data-theme="night"] .terminal-state.is-exited {
@@ -2481,8 +2491,8 @@ button.project-file-toggle:focus-visible {
 }
 
 .app-shell[data-theme="morning"] .service-pill.is-running .service-dot {
-  background: #6fd28c;
-  box-shadow: 0 0 0 3px rgba(111, 210, 140, 0.14);
+  background: #78a9ff;
+  box-shadow: 0 0 0 3px rgba(120, 169, 255, 0.14);
 }
 
 .app-shell[data-theme="morning"] .terminal-tab-add {
@@ -2517,9 +2527,14 @@ button.project-file-toggle:focus-visible {
   background: #586865;
 }
 
-.app-shell[data-theme="morning"] .terminal-state.is-active {
+.app-shell[data-theme="morning"] .terminal-state.is-working {
   background: #6fd28c;
   box-shadow: 0 0 0 3px rgba(111, 210, 140, 0.14);
+}
+
+.app-shell[data-theme="morning"] .terminal-state.is-done {
+  background: #e2b253;
+  box-shadow: 0 0 0 3px rgba(226, 178, 83, 0.14);
 }
 
 .app-shell[data-theme="morning"] .terminal-state.is-exited {

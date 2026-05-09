@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-081-terminal-working-state-lights` | Refine terminal working state lights | 2026-05-09 |
 | `t-080-terminal-output-activity-light` | Show terminal tab output activity | 2026-05-09 |
 | `t-079-workbench-file-git-polish` | Polish Files, task detail, and Git dirty file workflows | 2026-05-09 |
 | `t-078-lazy-files-tree` | Lazy-load Files tree directories | 2026-05-09 |
