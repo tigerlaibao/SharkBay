@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Right-column Files tab with editable-file nano launch is complete.
+- Current focus: Files tab tree expand/collapse behavior is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T12:50:16+08:00 | Completed `t-075-collapsible-files-tree` by adding plus/minus directory expansion controls to the Files tab with only root-level entries visible by default. | `.sharkbay/tasks/t-075-collapsible-files-tree/verification.md` |
+| 2026-05-09T12:48:28+08:00 | Opened `t-075-collapsible-files-tree` to make the Files tab tree expandable/collapsible with root-level entries visible by default. | `.sharkbay/tasks/t-075-collapsible-files-tree/contract.md` |
 | 2026-05-09T12:21:21+08:00 | Completed `t-074-files-tab-nano-open` with a right detail Files tab, configured-root-safe project file tree IPC, editable file classification, and `nano` launch through new terminal tabs. | `.sharkbay/tasks/t-074-files-tab-nano-open/verification.md` |
 | 2026-05-09T12:14:05+08:00 | Opened `t-074-files-tab-nano-open` to add a right detail Files tab that lists selected project files and opens editable files in a new `nano` terminal tab. | `.sharkbay/tasks/t-074-files-tab-nano-open/contract.md` |
 | 2026-05-08T20:42:13+08:00 | Completed `t-073-uninstall-harness-action` by adding a confirmation-gated Managed-project context menu action, safe harness file removal, exact `.gitignore` cleanup, and focused verification. | `.sharkbay/tasks/t-073-uninstall-harness-action/verification.md` |

@@ -1,9 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T12:21:21+08:00",
+  "updatedAt": "2026-05-09T12:50:16+08:00",
   "active": [],
   "backlog": [],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-075-collapsible-files-tree",
+      "title": "Make Files tree collapsible",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-09"
+    },
     {
       "priority": 1,
       "taskId": "t-074-files-tab-nano-open",

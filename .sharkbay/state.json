@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T12:21:21+08:00",
+  "updatedAt": "2026-05-09T12:50:16+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Right-column Files tab with editable-file nano launch is complete.",
+    "currentFocus": "Files tab tree expand/collapse behavior is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T12:50:16+08:00",
+      "decision": "Completed t-075-collapsible-files-tree by adding plus/minus directory expansion controls to the Files tab with only root-level entries visible by default.",
+      "source": ".sharkbay/tasks/t-075-collapsible-files-tree/verification.md"
+    },
+    {
+      "date": "2026-05-09T12:48:28+08:00",
+      "decision": "Opened t-075-collapsible-files-tree to make the Files tab tree expandable/collapsible with root-level entries visible by default.",
+      "source": ".sharkbay/tasks/t-075-collapsible-files-tree/contract.md"
+    },
     {
       "date": "2026-05-09T12:21:21+08:00",
       "decision": "Completed t-074-files-tab-nano-open with a right detail Files tab, configured-root-safe project file tree IPC, editable file classification, and nano launch through new terminal tabs.",

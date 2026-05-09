@@ -2344,6 +2344,7 @@ function FilesDetailTab({
     error: string | null;
     files: ProjectFileTreeItem[];
   }>({ loading: false, error: null, files: [] });
+  const [expandedDirectories, setExpandedDirectories] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     if (!active) {
@@ -2351,6 +2352,7 @@ function FilesDetailTab({
     }
 
     let cancelled = false;
+    setExpandedDirectories(new Set());
     setState((current) => ({ ...current, loading: true, error: null }));
     void listProjectFiles(detail)
       .then((result) => {
@@ -2385,6 +2387,18 @@ function FilesDetailTab({
     }
   }
 
+  function toggleDirectory(path: string) {
+    setExpandedDirectories((current) => {
+      const next = new Set(current);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+  }
+
   if (state.loading && !state.files.length) {
     return <EmptyState title="Loading files" body="Reading project files." />;
   }
@@ -2402,9 +2416,11 @@ function FilesDetailTab({
       <div className="project-file-tree" role="tree" aria-label="Project files">
         {state.files.map((item) => (
           <ProjectFileTreeItemRow
+            expandedDirectories={expandedDirectories}
             item={item}
             key={item.path}
             level={1}
+            onToggleDirectory={toggleDirectory}
             onOpenFile={openFile}
           />
         ))}
@@ -2414,46 +2430,72 @@ function FilesDetailTab({
 }
 
 function ProjectFileTreeItemRow({
+  expandedDirectories,
   item,
   level,
+  onToggleDirectory,
   onOpenFile,
 }: {
+  expandedDirectories: Set<string>;
   item: ProjectFileTreeItem;
   level: number;
+  onToggleDirectory: (path: string) => void;
   onOpenFile: (item: ProjectFileTreeItem) => Promise<void>;
 }) {
   const expandable = item.kind === "directory" && Boolean(item.children?.length);
+  const expanded = expandable && expandedDirectories.has(item.path);
   const disabled = item.kind === "file" && !item.editable;
   return (
     <>
-      <button
+      <div
         aria-disabled={disabled || undefined}
-        aria-expanded={item.kind === "directory" ? expandable : undefined}
+        aria-expanded={item.kind === "directory" ? expanded : undefined}
         className={cx("project-file-row", item.kind === "directory" && "is-directory", disabled && "is-disabled")}
         role="treeitem"
         style={{ "--file-tree-level": level } as CSSProperties}
         title={item.path}
-        type="button"
-        onDoubleClick={() => void onOpenFile(item)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            void onOpenFile(item);
-          }
-        }}
       >
-        <span className="project-file-icon" aria-hidden="true">
-          {item.kind === "directory" ? ">" : ""}
-        </span>
-        <span className="project-file-name">{item.name}</span>
-      </button>
-      {item.children?.map((child) => (
+        {item.kind === "directory" ? (
+          <button
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${item.name}`}
+            className="project-file-toggle"
+            disabled={!expandable}
+            type="button"
+            onClick={() => onToggleDirectory(item.path)}
+          >
+            {expandable ? (expanded ? "-" : "+") : ""}
+          </button>
+        ) : (
+          <span className="project-file-toggle" aria-hidden="true" />
+        )}
+        <button
+          className="project-file-action"
+          disabled={disabled}
+          type="button"
+          onDoubleClick={() => void onOpenFile(item)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              if (item.kind === "directory" && expandable) {
+                onToggleDirectory(item.path);
+                return;
+              }
+              void onOpenFile(item);
+            }
+          }}
+        >
+          <span className="project-file-name">{item.name}</span>
+        </button>
+      </div>
+      {expanded ? item.children?.map((child) => (
         <ProjectFileTreeItemRow
+          expandedDirectories={expandedDirectories}
           item={child}
           key={child.path}
           level={level + 1}
+          onToggleDirectory={onToggleDirectory}
           onOpenFile={onOpenFile}
         />
-      ))}
+      )) : null}
     </>
   );
 }
