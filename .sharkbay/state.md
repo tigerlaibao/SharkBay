@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Files tab now shows all project directories and files by name.
+- Current focus: Files tab project switching and icons are complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T13:10:26+08:00 | Completed `t-077-files-tab-refresh-icons` by preserving the Files tab across project switches, clearing stale file trees immediately, and adding subtle CSS-only Files/file/folder icons. | `.sharkbay/tasks/t-077-files-tab-refresh-icons/verification.md` |
+| 2026-05-09T13:08:57+08:00 | Opened `t-077-files-tab-refresh-icons` to make Files tab project switching update immediately and add low-key file/folder icons. | `.sharkbay/tasks/t-077-files-tab-refresh-icons/contract.md` |
 | 2026-05-09T12:58:49+08:00 | Completed `t-076-show-all-files-directories` by removing name-based Files tab skips so hidden files, `.env` files, `.git`, `node_modules`, build output, and symlink entries are visible while symlink escapes remain non-editable and unexpanded. | `.sharkbay/tasks/t-076-show-all-files-directories/verification.md` |
 | 2026-05-09T12:57:29+08:00 | Opened `t-076-show-all-files-directories` to remove name-based directory/file hiding from the Files tab while preserving configured-root safety. | `.sharkbay/tasks/t-076-show-all-files-directories/contract.md` |
 | 2026-05-09T12:50:16+08:00 | Completed `t-075-collapsible-files-tree` by adding plus/minus directory expansion controls to the Files tab with only root-level entries visible by default. | `.sharkbay/tasks/t-075-collapsible-files-tree/verification.md` |

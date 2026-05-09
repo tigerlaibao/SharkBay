@@ -1048,6 +1048,10 @@ body.is-resizing-columns * {
 
 .detail-tab-card {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-width: 0;
   min-height: 47px;
   color: #5f6c6e;
@@ -1063,6 +1067,33 @@ body.is-resizing-columns * {
   text-align: center;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.detail-tab-icon {
+  position: relative;
+  display: inline-block;
+  width: 13px;
+  height: 12px;
+  opacity: 0.74;
+}
+
+.detail-tab-icon.is-files::before,
+.detail-tab-icon.is-files::after {
+  position: absolute;
+  content: "";
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+}
+
+.detail-tab-icon.is-files::before {
+  inset: 2px 1px 0 4px;
+  opacity: 0.62;
+}
+
+.detail-tab-icon.is-files::after {
+  inset: 0 4px 2px 0;
+  background: currentColor;
+  opacity: 0.12;
 }
 
 .detail-tab-card:hover,
@@ -1167,6 +1198,10 @@ button.project-file-toggle:focus-visible {
 }
 
 .project-file-action {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
   min-width: 0;
   color: inherit;
   font: inherit;
@@ -1175,6 +1210,57 @@ button.project-file-toggle:focus-visible {
   background: transparent;
   border: 0;
   padding: 0;
+}
+
+.project-file-glyph {
+  position: relative;
+  display: inline-block;
+  width: 14px;
+  height: 13px;
+  color: #87908e;
+  opacity: 0.88;
+}
+
+.project-file-glyph.is-folder::before {
+  position: absolute;
+  inset: 4px 1px 1px;
+  content: "";
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  background: rgba(135, 144, 142, 0.1);
+}
+
+.project-file-glyph.is-folder::after {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 6px;
+  height: 4px;
+  content: "";
+  border: 1.5px solid currentColor;
+  border-bottom: 0;
+  border-radius: 2px 2px 0 0;
+}
+
+.project-file-glyph.is-file::before {
+  position: absolute;
+  inset: 1px 3px 1px 2px;
+  content: "";
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  background: rgba(135, 144, 142, 0.06);
+}
+
+.project-file-glyph.is-file::after {
+  position: absolute;
+  right: 3px;
+  top: 1px;
+  width: 4px;
+  height: 4px;
+  content: "";
+  border-left: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  background: #f4f1eb;
 }
 
 .project-file-name {
@@ -2003,6 +2089,14 @@ button.project-file-toggle:focus-visible {
 
 .app-shell[data-theme="night"] .project-file-toggle {
   color: #8fa09c;
+}
+
+.app-shell[data-theme="night"] .project-file-glyph {
+  color: #9fb0ac;
+}
+
+.app-shell[data-theme="night"] .project-file-glyph.is-file::after {
+  background: #182426;
 }
 
 .app-shell[data-theme="night"] .project-row.is-not-setup {

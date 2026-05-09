@@ -1977,7 +1977,7 @@ function ProjectDetailPane({
 
   useEffect(() => {
     setDetailMode("overview");
-    setActiveDetailTab("tasks");
+    setActiveDetailTab((current) => current === "files" ? "files" : "tasks");
     setSelectedTaskId(null);
   }, [project.id]);
 
@@ -2053,6 +2053,7 @@ function ProjectDetailPane({
             onKeyDown={(event) => handleDetailTabKeyDown(event, tab.id)}
             onClick={() => openDetailTab(tab.id)}
           >
+            {tab.id === "files" ? <span className="detail-tab-icon is-files" aria-hidden="true" /> : null}
             {tab.label}
           </button>
         ))}
@@ -2353,7 +2354,7 @@ function FilesDetailTab({
 
     let cancelled = false;
     setExpandedDirectories(new Set());
-    setState((current) => ({ ...current, loading: true, error: null }));
+    setState({ loading: true, error: null, files: [] });
     void listProjectFiles(detail)
       .then((result) => {
         if (cancelled) {
@@ -2483,6 +2484,7 @@ function ProjectFileTreeItemRow({
             }
           }}
         >
+          <span className={cx("project-file-glyph", item.kind === "directory" ? "is-folder" : "is-file")} aria-hidden="true" />
           <span className="project-file-name">{item.name}</span>
         </button>
       </div>
