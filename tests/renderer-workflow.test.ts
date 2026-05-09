@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readProjectDetail } from "../src/main/harness-reader.js";
-import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, resolveSelectedCandidate, taskStatusKind, taskStatusLabel, userActionReason, validTerminalResizeDimensions } from "../src/renderer/workflow.js";
+import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, resolveSelectedCandidate, userActionReason, validTerminalResizeDimensions } from "../src/renderer/workflow.js";
 import {
   createSelfHostFixture,
   makeTempRoot,
@@ -110,15 +110,6 @@ describe("renderer workflow contracts", () => {
     expect(userActionReason({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "mismatched" } })).toBe("Runner task t-999 does not match currentTask");
   });
 
-  it("prefers normalized task status over activeTask phase for project row labels", () => {
-    expect(taskStatusLabel({ taskStatus: { kind: "done", label: "done" }, activeTask: null })).toBe("done");
-    expect(taskStatusKind({ taskStatus: { kind: "done", label: "done" }, activeTask: null })).toBe("done");
-    expect(taskStatusLabel({ taskStatus: { kind: "ready", label: "ready" }, activeTask: { taskId: "t-001", phase: "done" } })).toBe("ready");
-    expect(taskStatusKind({ taskStatus: { kind: "ready", label: "ready" }, activeTask: { taskId: "t-001", phase: "done" } })).toBe("ready");
-    expect(taskStatusLabel({ activeTask: { taskId: "t-002", phase: "coding" } })).toBe("coding");
-    expect(taskStatusKind({ activeTask: { taskId: "t-002", phase: "coding" } })).toBe("active");
-  });
-
   it("resolves selected managed projects even when scan candidates are incomplete", () => {
     const nestedProject = {
       id: "/workspace/Container/Nested",
@@ -199,14 +190,6 @@ describe("renderer workflow contracts", () => {
         requiresUserAction: false,
         userActionReason: null,
       },
-      taskStatus: {
-        kind: "done" as const,
-        label: "done",
-        taskId: "t-007-character-explorer-upgrade",
-        title: "Character explorer upgrade",
-        phase: "done",
-        counts: { active: 0, backlog: 0, done: 1 },
-      },
       runner: null,
       localUrl: null,
       testUrl: null,
@@ -232,10 +215,6 @@ describe("renderer workflow contracts", () => {
       activeTask: expect.objectContaining({
         taskId: "t-007-character-explorer-upgrade",
         phase: "done",
-      }),
-      taskStatus: expect.objectContaining({
-        kind: "done",
-        label: "done",
       }),
       runner: null,
       localUrl: null,

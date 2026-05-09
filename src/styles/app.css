@@ -683,11 +683,7 @@ body.is-resizing-columns * {
   justify-self: end;
 }
 
-.project-row-status .phase-pill,
-.project-row-status .status-pill,
-.project-row-status .runner-pill,
 .project-row-status .worktree-pill,
-.project-row-status .harness-pill,
 .project-row-status .terminal-activity-pill {
   min-height: 16px;
   border: 0;
@@ -744,10 +740,7 @@ body.is-resizing-columns * {
 }
 
 .phase-pill,
-.status-pill,
-.runner-pill,
 .worktree-pill,
-.harness-pill,
 .terminal-activity-pill {
   display: inline-flex;
   align-items: center;
@@ -782,61 +775,16 @@ body.is-resizing-columns * {
   border-color: #2f7d54;
 }
 
-.phase-done,
-.task-done,
-.status-pass {
+.phase-done {
   color: #285735;
   background: #dceddf;
   border-color: #c4ddc9;
 }
 
-.phase-blocked,
-.runner-waiting_for_human,
-.runner-blocked,
-.status-blocked {
+.phase-blocked {
   color: #7e3028;
   background: #f3dad5;
   border-color: #e5b8af;
-}
-
-.task-active,
-.runner-running {
-  color: #ffffff;
-  background: #2f7d54;
-  border-color: #2f7d54;
-}
-
-.task-ready {
-  color: #6a4b17;
-  background: #f1e3c2;
-  border-color: #dfc98d;
-}
-
-.task-backlog,
-.task-idle,
-.task-unknown,
-.runner-stale {
-  color: #536064;
-  background: #e6e8e7;
-  border-color: #d3d7d6;
-}
-
-.status-pill {
-  color: #5b5145;
-  background: #eee6d5;
-  border: 1px solid #dfd2b7;
-}
-
-.status-pending {
-  color: #6a4b17;
-  background: #f1e3c2;
-  border-color: #dfc98d;
-}
-
-.status-unknown {
-  color: #536064;
-  background: #e6e8e7;
-  border-color: #d3d7d6;
 }
 
 .worktree-pill {
@@ -863,18 +811,6 @@ body.is-resizing-columns * {
   border: 1px solid #dfc98d;
 }
 
-.harness-pill {
-  color: #6a4b17;
-  background: #f1e3c2;
-  border: 1px solid #dfc98d;
-}
-
-.harness-pill.is-missing {
-  color: #7e3028;
-  background: #f3dad5;
-  border-color: #e5b8af;
-}
-
 .detail-layout {
   display: grid;
   align-content: start;
@@ -885,14 +821,6 @@ body.is-resizing-columns * {
   overflow-y: auto;
   padding-right: 2px;
   scrollbar-width: none;
-}
-
-.project-status-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  margin-bottom: 10px;
 }
 
 .detail-layout::-webkit-scrollbar {
@@ -2200,10 +2128,7 @@ button.project-file-toggle:focus-visible {
 }
 
 .app-shell[data-theme="night"] .phase-pill,
-.app-shell[data-theme="night"] .status-pill,
-.app-shell[data-theme="night"] .runner-pill,
 .app-shell[data-theme="night"] .worktree-pill,
-.app-shell[data-theme="night"] .harness-pill,
 .app-shell[data-theme="night"] .terminal-activity-pill {
   color: rgba(217, 229, 223, 0.76);
   background: rgba(217, 229, 223, 0.07);
@@ -2220,17 +2145,13 @@ button.project-file-toggle:focus-visible {
 .app-shell[data-theme="night"] .phase-code_review,
 .app-shell[data-theme="night"] .phase-code_revision,
 .app-shell[data-theme="night"] .phase-verification,
-.app-shell[data-theme="night"] .phase-docs_update,
-.app-shell[data-theme="night"] .task-active,
-.app-shell[data-theme="night"] .runner-running {
+.app-shell[data-theme="night"] .phase-docs_update {
   color: rgba(183, 229, 194, 0.84);
   background: rgba(111, 210, 140, 0.16);
   border-color: rgba(111, 210, 140, 0.22);
 }
 
 .app-shell[data-theme="night"] .phase-done,
-.app-shell[data-theme="night"] .task-done,
-.app-shell[data-theme="night"] .status-pass,
 .app-shell[data-theme="night"] .worktree-pill,
 .app-shell[data-theme="night"] .terminal-activity-pill.is-working {
   color: rgba(184, 223, 195, 0.78);
@@ -2238,41 +2159,20 @@ button.project-file-toggle:focus-visible {
   border-color: rgba(111, 210, 140, 0.16);
 }
 
-.app-shell[data-theme="night"] .phase-blocked,
-.app-shell[data-theme="night"] .runner-waiting_for_human,
-.app-shell[data-theme="night"] .runner-blocked,
-.app-shell[data-theme="night"] .status-blocked,
-.app-shell[data-theme="night"] .harness-pill.is-missing {
+.app-shell[data-theme="night"] .phase-blocked {
   color: rgba(239, 184, 176, 0.82);
   background: rgba(229, 139, 126, 0.14);
   border-color: rgba(229, 139, 126, 0.2);
 }
 
-.app-shell[data-theme="night"] .task-ready,
-.app-shell[data-theme="night"] .status-pending,
 .app-shell[data-theme="night"] .worktree-pill.is-dirty,
-.app-shell[data-theme="night"] .harness-pill,
 .app-shell[data-theme="night"] .terminal-activity-pill.is-idle {
   color: rgba(229, 203, 145, 0.8);
   background: rgba(215, 189, 120, 0.13);
   border-color: rgba(215, 189, 120, 0.18);
 }
 
-.app-shell[data-theme="night"] .task-backlog,
-.app-shell[data-theme="night"] .task-idle,
-.app-shell[data-theme="night"] .task-unknown,
-.app-shell[data-theme="night"] .runner-stale,
-.app-shell[data-theme="night"] .status-unknown {
-  color: rgba(190, 205, 200, 0.7);
-  background: rgba(217, 229, 223, 0.07);
-  border-color: rgba(217, 229, 223, 0.12);
-}
-
-.app-shell[data-theme="night"] .project-row-status .phase-pill,
-.app-shell[data-theme="night"] .project-row-status .status-pill,
-.app-shell[data-theme="night"] .project-row-status .runner-pill,
 .app-shell[data-theme="night"] .project-row-status .worktree-pill,
-.app-shell[data-theme="night"] .project-row-status .harness-pill,
 .app-shell[data-theme="night"] .project-row-status .terminal-activity-pill {
   border: 0;
 }

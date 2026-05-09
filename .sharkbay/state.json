@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T16:25:00+08:00",
+  "updatedAt": "2026-05-09T16:33:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,18 +13,28 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Terminal input observation and empty state layout are complete.",
+    "currentFocus": "Project status labels have been removed; terminal activity labels remain.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
   },
   "currentTask": {
-    "taskId": "none",
+    "taskId": null,
     "phase": "idle",
-    "nextAction": "Await the next user-requested task.",
+    "nextAction": "Await next user request.",
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T16:33:00+08:00",
+      "decision": "Completed t-084-remove-project-status-labels by removing the right Tasks project status strip and the app-derived taskStatus display state while keeping task phases and retained harness protocol consumers.",
+      "source": ".sharkbay/tasks/t-084-remove-project-status-labels/verification.md"
+    },
+    {
+      "date": "2026-05-09T16:26:08+08:00",
+      "decision": "Opened t-084-remove-project-status-labels to remove right-side project status labels while keeping task phases and auditing removable state/protocol.",
+      "source": ".sharkbay/tasks/t-084-remove-project-status-labels/contract.md"
+    },
     {
       "date": "2026-05-09T16:25:00+08:00",
       "decision": "Completed t-083-terminal-input-observation-and-empty-state by resetting terminal output observation on user input and moving the no-terminal empty state below the tab row.",

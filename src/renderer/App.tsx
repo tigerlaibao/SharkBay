@@ -10,7 +10,6 @@ import type {
   AppearanceTheme,
   CreateHarnessRepoInput,
   CreateHarnessRepoResult,
-  GateStatus,
   HarnessTemplateSyncUpdateResult,
   HarnessUninstallResult,
   NextActionPromptResult,
@@ -29,7 +28,7 @@ import type {
   TerminalUpdateEvent,
   TaskQueueItem,
 } from "./types";
-import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, taskStatusKind, taskStatusLabel, userActionReason, validTerminalResizeDimensions } from "./workflow";
+import { agentHandoffReason, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, userActionReason, validTerminalResizeDimensions } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailMode = "overview" | "task";
@@ -450,27 +449,6 @@ async function generatePrompt(project: ProjectDetail, task?: PromptTask | null):
   return typeof result === "string" ? result : (result as NextActionPromptResult).prompt;
 }
 
-function phaseOf(project: ProjectSummary): string {
-  return taskStatusLabel(project);
-}
-
-function gateOf(project: ProjectSummary): GateStatus {
-  return displayGateStatus(project);
-}
-
-function projectInProgress(project: ProjectSummary): boolean {
-  const kind = taskStatusKind(project);
-  return kind === "active" && !["done", "blocked", "verification"].includes(phaseOf(project));
-}
-
-function projectReadyToVerify(project: ProjectSummary): boolean {
-  return taskStatusKind(project) === "active" && phaseOf(project) === "verification";
-}
-
-function projectDone(project: ProjectSummary): boolean {
-  return taskStatusKind(project) === "done";
-}
-
 function isEmptyValue(value: string | null | undefined): boolean {
   const normalized = value?.trim().toLowerCase();
   return !normalized || ["none", "null", "unknown", "unset"].includes(normalized);
@@ -512,23 +490,6 @@ function taskSequenceNumber(taskId: string): number {
 
 function phaseClass(value: string | null | undefined): string {
   return `phase-${(value || "unknown").toLowerCase().replace(/[^a-z0-9_-]/gi, "_")}`;
-}
-
-function taskStatusClass(project: ProjectSummary): string {
-  return `task-${taskStatusKind(project).replace(/[^a-z0-9_-]/gi, "_")}`;
-}
-
-function runnerStatusLabel(project: ProjectSummary): string | null {
-  const status = project.runner?.status;
-  if (status === "running") return "running";
-  if (status === "stale") return "stale";
-  if (status === "blocked") return "blocked";
-  if (status === "waiting_for_human") return "waiting";
-  return null;
-}
-
-function runnerStatusClass(project: ProjectSummary): string {
-  return `runner-${(project.runner?.status || "unknown").replace(/[^a-z0-9_-]/gi, "_")}`;
 }
 
 function cx(...names: Array<string | false | null | undefined>): string {
@@ -2485,35 +2446,10 @@ function TasksDetailTab({
 }) {
   return (
     <>
-      <ProjectStatusStrip detail={detail} />
       {promptReason && promptTask ? <PromptPanel detail={detail} reason={promptReason} task={promptTask} setToast={setToast} /> : null}
       <QueueTabs detail={detail} onSelectTask={onSelectTask} />
       <Diagnostics detail={detail} />
     </>
-  );
-}
-
-function ProjectStatusStrip({ detail }: { detail: ProjectDetail }) {
-  const phase = phaseOf(detail);
-  const gate = gateOf(detail);
-  const showGate = gate === "blocked";
-  const actionReason = userActionReason(detail);
-  const runnerLabel = runnerStatusLabel(detail);
-  const harnessStatus = detail.harnessTemplate?.status;
-  const showHarnessStatus = harnessStatus === "stale" || harnessStatus === "missing";
-
-  if ((!phase || phase === "unknown") && !actionReason && !runnerLabel && !showGate && !showHarnessStatus) {
-    return null;
-  }
-
-  return (
-    <section className="project-status-strip" aria-label="Project status">
-      {phase && phase !== "unknown" ? <span className={cx("phase-pill", phaseClass(phase), taskStatusClass(detail))}>{phase}</span> : null}
-      {actionReason ? <span className="status-pill status-blocked" title={actionReason}>needs action</span> : null}
-      {runnerLabel ? <span className={cx("runner-pill", runnerStatusClass(detail))}>{runnerLabel}</span> : null}
-      {showGate && gate ? <StatusPill status={gate} /> : null}
-      {showHarnessStatus ? <span className={cx("harness-pill", harnessStatus === "missing" && "is-missing")}>harness {harnessStatus}</span> : null}
-    </section>
   );
 }
 
@@ -2828,7 +2764,6 @@ function ProjectFactsCard({ detail }: { detail: ProjectDetail }) {
     { label: "Branch", value: detail.currentBranch },
     { label: "Worktree", value: worktree, tone: detail.dirtyWorktree ? "warn" as const : undefined },
     { label: "Detection", value: detail.detection === "protocol-fallback" ? "Protocol fallback" : "Manifest" },
-    { label: "Task status", value: taskStatusLabel(detail) },
   ].filter((fact): fact is { label: string; value: string; tone?: "warn" } => Boolean(fact.value));
 
   return (
@@ -3519,10 +3454,6 @@ function Fact({ label, value, tone }: { label: string; value: string; tone?: "wa
       <strong>{value}</strong>
     </div>
   );
-}
-
-function StatusPill({ status }: { status: GateStatus }) {
-  return <span className={cx("status-pill", `status-${status}`)}>{status}</span>;
 }
 
 function ArrowLeftIcon() {

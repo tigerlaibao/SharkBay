@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Terminal input observation and empty state layout are complete.
+- Current focus: Project status labels have been removed; terminal activity labels remain.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -18,15 +18,17 @@
 
 ## Current Task
 
-- Task ID: `none`
+- Task ID: none
 - Phase: idle
-- Next action: Await the next user-requested task.
+- Next action: Await next user request.
 - Blocked by: none
 
 ## Recent Decisions
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T16:33:00+08:00 | Completed `t-084-remove-project-status-labels` by removing the right Tasks project status strip and the app-derived `taskStatus` display state while keeping task phases and retained harness protocol consumers. | `.sharkbay/tasks/t-084-remove-project-status-labels/verification.md` |
+| 2026-05-09T16:26:08+08:00 | Opened `t-084-remove-project-status-labels` to remove right-side project status labels while keeping task phases and auditing removable state/protocol. | `.sharkbay/tasks/t-084-remove-project-status-labels/contract.md` |
 | 2026-05-09T16:25:00+08:00 | Completed `t-083-terminal-input-observation-and-empty-state` by resetting terminal output observation on user input and moving the no-terminal empty state below the tab row. | `.sharkbay/tasks/t-083-terminal-input-observation-and-empty-state/verification.md` |
 | 2026-05-09T16:20:57+08:00 | Opened `t-083-terminal-input-observation-and-empty-state` to prevent continuous typing from triggering working and to keep the empty terminal message below the tab row. | `.sharkbay/tasks/t-083-terminal-input-observation-and-empty-state/contract.md` |
 | 2026-05-09T16:14:00+08:00 | Completed `t-082-project-status-and-terminal-labels` by moving project status pills to the Tasks tab and showing aggregated terminal working/idle labels in the project list. | `.sharkbay/tasks/t-082-project-status-and-terminal-labels/verification.md` |

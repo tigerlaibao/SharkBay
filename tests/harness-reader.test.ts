@@ -159,19 +159,13 @@ describe("harness reader", () => {
     expect(detail.queue.done.find((item) => item.taskId === "t-005-community-interaction-ui")?.status).toBe("done");
     expect(detail.queue.backlog.find((item) => item.taskId === "t-007-task-dir-only")?.source).toBe("tasks-directory");
     expect(detail.activeTask?.title).toBe("Community interaction UI");
-    expect(detail.taskStatus).toEqual(expect.objectContaining({
-      kind: "ready",
-      label: "ready",
-      taskId: "t-006-interactive-product-finder",
-      counts: { active: 0, backlog: 3, done: 1 },
-    }));
     expect(detail.taskArtifacts["t-007-task-dir-only"]?.statusMarkdown).toContain("# Task Status");
     expect(Object.values(detail.taskArtifacts["t-006-interactive-product-finder"] ?? {}).every((content) => content === null)).toBe(true);
     expect(detail.errors.some((error) => error.file.includes("t-006-interactive-product-finder"))).toBe(false);
   });
 
-  it("summarizes completed projects even when currentTask is null or empty", async () => {
-    const root = await makeTempRoot("reader-task-status-done");
+  it("keeps completed projects readable even when currentTask is null or empty", async () => {
+    const root = await makeTempRoot("reader-completed-project");
     const nullRepo = await createContainedHarnessFixture(root, "NullCurrentTaskRepo");
     const emptyRepo = await createContainedHarnessFixture(root, "EmptyCurrentTaskRepo");
     const doneQueue = {
@@ -206,8 +200,8 @@ describe("harness reader", () => {
 
     expect(nullDetail.activeTask).toBeNull();
     expect(emptyDetail.activeTask).toBeNull();
-    expect(nullDetail.taskStatus).toEqual(expect.objectContaining({ kind: "done", label: "done", taskId: "t-001-finished" }));
-    expect(emptyDetail.taskStatus).toEqual(expect.objectContaining({ kind: "done", label: "done", taskId: "t-001-finished" }));
+    expect(nullDetail.queue.done.map((item) => item.taskId)).toContain("t-001-finished");
+    expect(emptyDetail.queue.done.map((item) => item.taskId)).toContain("t-001-finished");
   });
 
   it("reads recent git history from the repository reflog", async () => {
