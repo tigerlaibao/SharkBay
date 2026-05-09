@@ -4,19 +4,6 @@ import { getConfiguredRoots } from "./config.js";
 import { isPathInside, resolveRepoPath } from "./path-safety.js";
 import type { IpcRuntimeLike, ProjectFileTreeItem, ProjectFilesInput, ProjectFilesResult } from "../shared/types.js";
 
-const skippedDirectoryNames = new Set([
-  ".git",
-  ".next",
-  ".turbo",
-  ".vite",
-  "coverage",
-  "dist",
-  "dist-electron",
-  "node_modules",
-  "out",
-  "release",
-]);
-
 const editableExtensions = new Set([
   ".c",
   ".cc",
@@ -94,38 +81,40 @@ async function listDirectory(repoPath: string, directoryPath: string, containing
   const items: ProjectFileTreeItem[] = [];
 
   for (const entry of entries) {
-    if (entry.isSymbolicLink()) {
-      continue;
-    }
-    if (entry.isDirectory() && skippedDirectoryNames.has(entry.name)) {
-      continue;
-    }
-
     const absolutePath = path.join(directoryPath, entry.name);
     const relativePath = path.relative(repoPath, absolutePath).split(path.sep).join("/");
     if (!relativePath || relativePath.startsWith("../") || path.isAbsolute(relativePath)) {
       continue;
     }
 
-    const realPath = await fs.realpath(absolutePath);
-    if (!isPathInside(repoPath, realPath) || !isPathInside(containingRoot, realPath)) {
-      continue;
-    }
+    const realPath = await fs.realpath(absolutePath).catch(() => null);
+    const stat = entry.isSymbolicLink()
+      ? await fs.stat(absolutePath).catch(() => null)
+      : null;
+    const contained = Boolean(
+      realPath &&
+      isPathInside(repoPath, realPath) &&
+      isPathInside(containingRoot, realPath),
+    );
+    const isDirectory = entry.isDirectory() || Boolean(stat?.isDirectory());
+    const isFile = entry.isFile() || Boolean(stat?.isFile());
 
-    if (entry.isDirectory()) {
+    if (isDirectory) {
       items.push({
         name: entry.name,
         path: relativePath,
         kind: "directory",
         editable: false,
-        children: await listDirectory(repoPath, absolutePath, containingRoot),
+        children: contained && !entry.isSymbolicLink()
+          ? await listDirectory(repoPath, absolutePath, containingRoot)
+          : [],
       });
-    } else if (entry.isFile()) {
+    } else if (isFile || entry.isSymbolicLink()) {
       items.push({
         name: entry.name,
         path: relativePath,
         kind: "file",
-        editable: isEditableProjectFile(relativePath),
+        editable: contained && isEditableProjectFile(relativePath),
       });
     }
   }

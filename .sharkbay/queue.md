@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-076-show-all-files-directories` | Show all files and directories | 2026-05-09 |
 | `t-075-collapsible-files-tree` | Make Files tree collapsible | 2026-05-09 |
 | `t-074-files-tab-nano-open` | Add Files tab with nano launch | 2026-05-09 |
 | `t-073-uninstall-harness-action` | Add uninstall harness action | 2026-05-08 |

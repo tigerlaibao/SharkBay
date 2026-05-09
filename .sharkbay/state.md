@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Files tab tree expand/collapse behavior is complete.
+- Current focus: Files tab now shows all project directories and files by name.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T12:58:49+08:00 | Completed `t-076-show-all-files-directories` by removing name-based Files tab skips so hidden files, `.env` files, `.git`, `node_modules`, build output, and symlink entries are visible while symlink escapes remain non-editable and unexpanded. | `.sharkbay/tasks/t-076-show-all-files-directories/verification.md` |
+| 2026-05-09T12:57:29+08:00 | Opened `t-076-show-all-files-directories` to remove name-based directory/file hiding from the Files tab while preserving configured-root safety. | `.sharkbay/tasks/t-076-show-all-files-directories/contract.md` |
 | 2026-05-09T12:50:16+08:00 | Completed `t-075-collapsible-files-tree` by adding plus/minus directory expansion controls to the Files tab with only root-level entries visible by default. | `.sharkbay/tasks/t-075-collapsible-files-tree/verification.md` |
 | 2026-05-09T12:48:28+08:00 | Opened `t-075-collapsible-files-tree` to make the Files tab tree expandable/collapsible with root-level entries visible by default. | `.sharkbay/tasks/t-075-collapsible-files-tree/contract.md` |
 | 2026-05-09T12:21:21+08:00 | Completed `t-074-files-tab-nano-open` with a right detail Files tab, configured-root-safe project file tree IPC, editable file classification, and `nano` launch through new terminal tabs. | `.sharkbay/tasks/t-074-files-tab-nano-open/verification.md` |

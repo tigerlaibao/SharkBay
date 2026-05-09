@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T12:50:16+08:00",
+  "updatedAt": "2026-05-09T12:58:49+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Files tab tree expand/collapse behavior is complete.",
+    "currentFocus": "Files tab now shows all project directories and files by name.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T12:58:49+08:00",
+      "decision": "Completed t-076-show-all-files-directories by removing name-based Files tab skips so hidden files, .env files, .git, node_modules, build output, and symlink entries are visible while symlink escapes remain non-editable and unexpanded.",
+      "source": ".sharkbay/tasks/t-076-show-all-files-directories/verification.md"
+    },
+    {
+      "date": "2026-05-09T12:57:29+08:00",
+      "decision": "Opened t-076-show-all-files-directories to remove name-based directory/file hiding from the Files tab while preserving configured-root safety.",
+      "source": ".sharkbay/tasks/t-076-show-all-files-directories/contract.md"
+    },
     {
       "date": "2026-05-09T12:50:16+08:00",
       "decision": "Completed t-075-collapsible-files-tree by adding plus/minus directory expansion controls to the Files tab with only root-level entries visible by default.",

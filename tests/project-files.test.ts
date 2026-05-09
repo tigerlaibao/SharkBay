@@ -8,20 +8,38 @@ describe("project file listing", () => {
   it("returns a sorted editable project file tree inside configured roots", async () => {
     const root = await makeTempRoot("project-files");
     const repo = path.join(root, "Fixture");
+    await writeText(path.join(repo, ".env"), "SECRET=test\n");
     await writeText(path.join(repo, "README.md"), "# Fixture\n");
     await writeText(path.join(repo, "src", "App.tsx"), "export function App() { return null; }\n");
     await writeText(path.join(repo, "src", "logo.png"), "not really an image\n");
     await writeText(path.join(repo, "node_modules", "ignored", "index.ts"), "ignored\n");
     await writeText(path.join(repo, ".git", "config"), "ignored\n");
+    await writeText(path.join(repo, "dist", "bundle.js"), "compiled\n");
     await writeText(path.join(root, "outside", "secret.md"), "secret\n");
     await fs.symlink(path.join(root, "outside"), path.join(repo, "linked-outside"));
+    await fs.symlink(path.join(root, "outside", "secret.md"), path.join(repo, "linked-secret.md"));
 
     const result = await listProjectFiles({ userDataPath: root }, { repoPath: repo, configuredRoots: [root] });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.files.map((item) => item.path)).toEqual(["src", "README.md"]);
+    expect(result.files.map((item) => item.path)).toEqual([
+      ".git",
+      "dist",
+      "linked-outside",
+      "node_modules",
+      "src",
+      ".env",
+      "linked-secret.md",
+      "README.md",
+    ]);
+    expect(result.files.find((item) => item.path === ".env")?.editable).toBe(true);
+    expect(result.files.find((item) => item.path === "linked-secret.md")?.editable).toBe(false);
+    expect(result.files.find((item) => item.path === "linked-outside")?.children).toEqual([]);
+    expect(result.files.find((item) => item.path === ".git")?.children?.map((item) => item.path)).toEqual([".git/config"]);
+    expect(result.files.find((item) => item.path === "node_modules")?.children?.map((item) => item.path)).toEqual(["node_modules/ignored"]);
+    expect(result.files.find((item) => item.path === "dist")?.children?.map((item) => item.path)).toEqual(["dist/bundle.js"]);
     const src = result.files.find((item) => item.path === "src");
     expect(src?.children?.map((item) => item.path)).toEqual(["src/App.tsx", "src/logo.png"]);
     expect(src?.children?.find((item) => item.path === "src/App.tsx")?.editable).toBe(true);
