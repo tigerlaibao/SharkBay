@@ -2,8 +2,6 @@ export type DetectionMode = "manifest" | "protocol-fallback";
 
 export type HarnessLayoutKind = "contained" | "legacy";
 
-export type GateStatus = "pass" | "pending" | "blocked" | "unknown";
-
 export type QueueSection = "active" | "backlog" | "done";
 
 export type HarnessJsonFile =
@@ -73,7 +71,6 @@ export type TaskQueueItem = {
   phase: string;
   dependsOn: string[];
   status: string;
-  gateStatus?: GateStatus;
   [key: string]: unknown;
 };
 
@@ -83,30 +80,6 @@ export type ActiveTaskSummary = {
   phase: string;
   status: string | null;
   priority: number | null;
-  gateStatus: GateStatus;
-  requiresUserAction: boolean;
-  userActionReason: string | null;
-};
-
-export type RunnerStatus = "unknown" | "idle" | "running" | "stale" | "blocked" | "waiting_for_human";
-export type RunnerTaskRegistrationStatus = "none" | "active" | "inactive" | "missing" | "mismatched";
-
-export type RunnerSummary = {
-  schemaVersion: number | null;
-  status: RunnerStatus;
-  rawStatus: string | null;
-  sessionId: string | null;
-  owner: string | null;
-  taskId: string | null;
-  phase: string | null;
-  startedAt: string | null;
-  heartbeatAt: string | null;
-  message: string | null;
-  reason: string | null;
-  stale: boolean;
-  staleAfterSeconds: number;
-  taskRegistrationStatus: RunnerTaskRegistrationStatus;
-  taskRegistrationMessage: string | null;
 };
 
 export type HarnessError = {
@@ -181,7 +154,6 @@ export type ProjectSummary = {
   currentBranch: string | null;
   dirtyWorktree: boolean | null;
   activeTask: ActiveTaskSummary | null;
-  runner: RunnerSummary;
   localUrl: string | null;
   testUrl: string | null;
   deploymentUrl: string | null;
@@ -550,28 +522,6 @@ export type HarnessUninstallResult =
       message: string;
       blockers?: string[];
     };
-
-export type PromptGenerationInput = {
-  project: Pick<ProjectDetail, "name" | "path" | "activeTask" | "currentTask">;
-  taskId?: string;
-  phase?: string;
-  requiredChecks?: string[];
-  stopConditions?: string[];
-};
-
-export type NextActionPromptInput = {
-  projectId?: string;
-  repoPath?: string;
-  taskId?: string;
-  phase?: string;
-  project?: Pick<ProjectDetail, "name" | "path" | "activeTask" | "currentTask">;
-  requiredChecks?: string[];
-  stopConditions?: string[];
-};
-
-export type NextActionPromptResult = {
-  prompt: string;
-};
 
 export type TerminalSessionStatus = "running" | "exited";
 

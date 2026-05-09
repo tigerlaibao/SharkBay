@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { addConfiguredRoot, loadAppConfig, removeConfiguredRoot } from "../src/main/config.js";
 import { readProjectDetail } from "../src/main/harness-reader.js";
 import { updateProjectUrls } from "../src/main/harness-writer.js";
-import { generateNextActionPrompt } from "../src/main/prompt-generator.js";
 import { scanConfiguredRoots } from "../src/main/scanner.js";
 import { createSelfHostFixture, makeTempRoot } from "./helpers.js";
 
@@ -101,29 +100,5 @@ describe("self-host workflow", () => {
       expect(stale.reason).toBe("conflict");
     }
     expect(await fs.readFile(stateFile, "utf8")).toBe(afterSaveText);
-  });
-
-  it("generates prompt content with task context, protocol, and handoff discipline", async () => {
-    const root = await makeTempRoot("self-host-prompt");
-    const repo = await createSelfHostFixture(root);
-    const detail = await readProjectDetail(repo, "manifest", { configuredRoots: [root] });
-
-    const prompt = generateNextActionPrompt({
-      project: detail,
-      requiredChecks: ["npm run typecheck", "npm run lint", "npm test", "npm run build", "git diff --check"],
-      stopConditions: ["Stop if files outside the approved scope need changes."],
-    });
-
-    expect(prompt).toContain(repo);
-    expect(prompt).toContain("t-002-self-hosting-ux");
-    expect(prompt).toContain("coding");
-    expect(prompt).toContain("AGENTS.md");
-    expect(prompt).toContain(".agent/protocol.md");
-    expect(prompt).toContain("Do not rely on chat memory");
-    expect(prompt).toContain("Continue autonomously across phases");
-    expect(prompt).toContain("Use subagents");
-    expect(prompt).toContain("focused checkpoint commits");
-    expect(prompt).not.toContain("npm run typecheck");
-    expect(prompt).not.toContain("Stop if files outside the approved scope need changes.");
   });
 });

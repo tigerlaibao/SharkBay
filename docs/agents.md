@@ -24,7 +24,6 @@ When a local dogfood harness exists in this clone, also read its resolved harnes
 - `.agent/manifest.json` - machine-readable project identity
 - `.agent/state.json` - machine-readable repository state
 - `.agent/queue.json` - machine-readable task queue
-- `.agent/runner.json` - optional cooperative runner lifecycle and heartbeat
 - `.agent/protocol.md` - controller workflow
 - `.agent/quality-rules.md` - review and verification gates
 - `.agent/queue.md` - human-readable task queue
@@ -80,8 +79,7 @@ If a command is unavailable, record the missing command and residual risk in `co
 - Existing managed repo writes must go through narrow typed harness JSON patches with revision checks, schema validation, path containment, and atomic write behavior.
 - Preserve user changes.
 - Keep task state on disk when a local harness is present.
-- Register new or ad-hoc harness-managed work in `tasks/<task-id>/status.md`, Active queue, and currentTask before writing `runner.status=running`.
-- Keep runner lifecycle on disk while physically working in a harness-managed clone: write `status=running` only for a visible Active task, refresh `heartbeatAt`, and set `waiting_for_human`, `blocked`, or `idle` when stopping.
+- Register new or ad-hoc harness-managed work in `tasks/<task-id>/status.md`, Active queue, and currentTask before product changes.
 - Prefer small, reviewable changes.
 - Do not skip review or verification gates.
 

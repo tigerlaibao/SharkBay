@@ -8,6 +8,7 @@ User-centered project workbench redesign, read-only root child discovery, autono
 
 | ID | Status | Title | Depends On | Notes |
 | --- | --- | --- | --- | --- |
+| `t-085-remove-needs-action-prompt-protocol` | done | Remove Needs Action and prompt protocol | none | Removed Needs action, handoff/prompt UI/API, prompt generator, gate/user-action parsing, and runner summary parsing while keeping task phases |
 | `t-079-workbench-file-git-polish` | done | Polish Files, task detail, and Git dirty file workflows | none | Files tab is iconless, editable files open with `vim`/`nano` fallback, task detail title sits below back, Repository facts are compact, and Git dirty files can open diff terminal tabs |
 | `t-078-lazy-files-tree` | done | Lazy-load Files tree directories | none | Files tab loads project root immediately and fetches directory children only when expanded |
 | `t-077-files-tab-refresh-icons` | done | Improve Files tab refresh and icons | none | Files tab stays active across project switches, clears stale trees immediately, and uses subtle CSS file/folder icons |

@@ -12,7 +12,6 @@ import type {
   CreateHarnessRepoResult,
   HarnessTemplateSyncUpdateResult,
   HarnessUninstallResult,
-  NextActionPromptResult,
   ProjectCandidate,
   ProjectDetail,
   ProjectFileTreeItem,
@@ -28,7 +27,7 @@ import type {
   TerminalUpdateEvent,
   TaskQueueItem,
 } from "./types";
-import { agentHandoffReason, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, userActionReason, validTerminalResizeDimensions } from "./workflow";
+import { preferredInitialCandidate, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, validTerminalResizeDimensions } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailMode = "overview" | "task";
@@ -41,8 +40,6 @@ type Toast = {
 };
 
 type ArtifactKey = keyof TaskArtifacts;
-
-type CopyState = "idle" | "copied" | "failed";
 
 type SaveState = "idle" | "saving" | "saved" | "conflict" | "error";
 
@@ -174,21 +171,6 @@ const artifactOrder: ArtifactKey[] = [
   "designReviewMarkdown",
   "specMarkdown",
   "decisionsMarkdown",
-];
-
-const workflowRequiredChecks = [
-  "npm run typecheck",
-  "npm run lint",
-  "npm test",
-  "npm run build",
-  "git diff --check",
-  "npm run dev",
-];
-
-const workflowStopConditions = [
-  "Stop before destructive changes, production deployment, publishing, secrets, or files outside the approved scope.",
-  "Stop if required verification cannot run or must be skipped.",
-  "Stop if implementation needs direct agent/tool execution, background automation, or broader filesystem authority.",
 ];
 
 const taskIdCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
@@ -423,32 +405,6 @@ function shellQuote(value: string): string {
   return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
-type PromptTask = {
-  taskId?: string | null;
-  phase?: string | null;
-};
-
-async function generatePrompt(project: ProjectDetail, task?: PromptTask | null): Promise<string> {
-  const bridge = getBridge();
-  const handler = bridge.prompts?.nextAction ?? bridge.generateNextActionPrompt;
-
-  if (!handler) {
-    throw new Error("Prompt generation is not exposed by the preload API.");
-  }
-
-  const result = await handler({
-    project,
-    projectId: project.id,
-    repoPath: project.path,
-    taskId: task?.taskId ?? project.activeTask?.taskId,
-    phase: task?.phase ?? project.activeTask?.phase,
-    requiredChecks: workflowRequiredChecks,
-    stopConditions: workflowStopConditions,
-  });
-
-  return typeof result === "string" ? result : (result as NextActionPromptResult).prompt;
-}
-
 function isEmptyValue(value: string | null | undefined): boolean {
   const normalized = value?.trim().toLowerCase();
   return !normalized || ["none", "null", "unknown", "unset"].includes(normalized);
@@ -465,13 +421,6 @@ function activeTaskTitle(project: ProjectSummary | ProjectDetail | null): string
   }
 
   return !isEmptyValue(task.title) ? task.title ?? null : task.taskId;
-}
-
-function promptTaskForDetail(detail: ProjectDetail): PromptTask | null {
-  if (hasMeaningfulActiveTask(detail.activeTask) && detail.activeTask.phase?.trim().toLowerCase() !== "done") {
-    return detail.activeTask;
-  }
-  return nextReadyBacklogTask(detail);
 }
 
 function compareQueueItems(a: TaskQueueItem, b: TaskQueueItem): number {
@@ -741,8 +690,6 @@ export function App() {
     void refreshDetail();
   }, [selectedProject?.id]);
 
-  const actionProjects = projects.filter(projectNeedsUserAction);
-
   return (
     <div className="app-shell" data-theme={appearanceTheme}>
       <main className="workspace">
@@ -775,7 +722,6 @@ export function App() {
                 appearanceTheme={appearanceTheme}
                 roots={roots}
                 bridgeAvailable={bridgeAvailable}
-                actionProjects={actionProjects}
                 lastScanAt={lastScanAt}
                 loading={loading}
                 projects={projects}
@@ -2120,10 +2066,6 @@ function ProjectDetailPane({
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const resolved = detail?.id === project.id ? detail : project;
   const detailLike = resolved as ProjectDetail;
-  const actionReason = userActionReason(detailLike);
-  const handoffReason = agentHandoffReason(detailLike);
-  const promptReason = actionReason ?? handoffReason;
-  const promptTask = promptTaskForDetail(detailLike);
 
   useEffect(() => {
     setDetailMode("overview");
@@ -2217,9 +2159,6 @@ function ProjectDetailPane({
       >
         <TasksDetailTab
           detail={detailLike}
-          promptReason={promptReason}
-          promptTask={promptTask}
-          setToast={setToast}
           onSelectTask={openTask}
         />
       </div>
@@ -2433,20 +2372,13 @@ function HarnessTemplateSyncPanel({
 
 function TasksDetailTab({
   detail,
-  promptReason,
-  promptTask,
-  setToast,
   onSelectTask,
 }: {
   detail: ProjectDetail;
-  promptReason: string | null;
-  promptTask: PromptTask | null;
-  setToast: (toast: Toast) => void;
   onSelectTask: (taskId: string) => void;
 }) {
   return (
     <>
-      {promptReason && promptTask ? <PromptPanel detail={detail} reason={promptReason} task={promptTask} setToast={setToast} /> : null}
       <QueueTabs detail={detail} onSelectTask={onSelectTask} />
       <Diagnostics detail={detail} />
     </>
@@ -2947,66 +2879,6 @@ function QueueItem({ item, isCurrent, onSelect }: { item: TaskQueueItem; isCurre
   );
 }
 
-function PromptPanel({ detail, reason, task, setToast }: { detail: ProjectDetail; reason: string | null; task: PromptTask; setToast: (toast: Toast) => void }) {
-  const [prompt, setPrompt] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [copyState, setCopyState] = useState<CopyState>("idle");
-
-  useEffect(() => {
-    setPrompt("");
-    setCopyState("idle");
-  }, [detail.id, task.taskId, task.phase, reason]);
-
-  async function loadPrompt() {
-    setLoading(true);
-    setCopyState("idle");
-
-    try {
-      setPrompt(await generatePrompt(detail, task));
-    } catch (error) {
-      setToast({ tone: "error", message: asMessage(error) });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function copyPrompt() {
-    try {
-      if (!navigator.clipboard?.writeText) {
-        throw new Error("Clipboard write is not available. Select the prompt text manually.");
-      }
-      await navigator.clipboard.writeText(prompt);
-      setCopyState("copied");
-      window.setTimeout(() => setCopyState("idle"), 1500);
-    } catch (error) {
-      setCopyState("failed");
-      setToast({ tone: "error", message: asMessage(error) });
-    }
-  }
-
-  return (
-    <section className="subpanel prompt-panel">
-      <div className="panel-title-row">
-        <h4>{reason === "Agent handoff needed" ? "Agent Handoff" : "Needs Action"}</h4>
-        <div className="button-row">
-          <button className="button compact secondary" disabled={loading} onClick={() => void loadPrompt()}>
-            {loading ? "Generating" : "Generate"}
-          </button>
-          {prompt ? (
-            <button className="button compact" onClick={() => void copyPrompt()}>
-              {copyState === "copied" ? "✓ Copied" : "Copy"}
-            </button>
-          ) : null}
-        </div>
-      </div>
-      {copyState === "failed" ? (
-        <div className="feedback-line is-error">Clipboard copy failed. The prompt remains selectable below.</div>
-      ) : null}
-      {prompt ? <textarea className="prompt-box" readOnly value={prompt} /> : null}
-    </section>
-  );
-}
-
 function taskPageTitle(item: TaskQueueItem | null, taskId: string): string {
   const shortId = taskId.match(/^t-(\d+)/i)?.[1];
   const displayId = shortId ? `T${shortId}` : taskId;
@@ -3202,7 +3074,6 @@ function Diagnostics({ detail }: { detail: ProjectDetail }) {
 }
 
 function SettingsView({
-  actionProjects,
   appearanceTheme,
   roots,
   bridgeAvailable,
@@ -3217,7 +3088,6 @@ function SettingsView({
   onRemove,
   onThemeChange,
 }: {
-  actionProjects: ProjectSummary[];
   appearanceTheme: AppearanceTheme;
   roots: RootRecord[];
   bridgeAvailable: boolean;
@@ -3244,7 +3114,7 @@ function SettingsView({
         <div>
           <h3>Settings</h3>
           <div className="path-line">
-            {actionProjects.length ? `${actionProjects.length} project${actionProjects.length === 1 ? "" : "s"} need attention` : "Scan roots and local project access"}
+            Scan roots and local project access
           </div>
         </div>
       </div>
@@ -3254,7 +3124,7 @@ function SettingsView({
             const selected = section.id === activeSection;
             const count = section.id === "project-roots"
               ? roots.length
-              : actionProjects.length + unavailableRootCount + scanErrors.length;
+              : unavailableRootCount + scanErrors.length;
             const meta = section.id === "project-roots"
               ? `${roots.length} root${roots.length === 1 ? "" : "s"}`
               : count ? `${count} issue${count === 1 ? "" : "s"}` : "Clear";
@@ -3304,7 +3174,6 @@ function SettingsView({
               <span>{lastScanAt ? `Last scan ${formatScanTime(lastScanAt)}` : "Not scanned"}</span>
             </div>
             <SettingsStatusPanel
-              actionProjects={actionProjects}
               projects={projects}
               roots={roots}
               scanErrors={scanErrors}
@@ -3373,13 +3242,11 @@ function AppearanceSettingsPanel({
 }
 
 function SettingsStatusPanel({
-  actionProjects,
   projects,
   roots,
   scanErrors,
   unavailableRootCount,
 }: {
-  actionProjects: ProjectSummary[];
   projects: ProjectSummary[];
   roots: RootRecord[];
   scanErrors: string[];
@@ -3392,23 +3259,8 @@ function SettingsStatusPanel({
       <div className="settings-facts-grid">
         <Fact label="Roots" value={String(roots.length)} />
         <Fact label="Projects" value={String(projects.length)} />
-        <Fact label="Needs action" value={String(actionProjects.length)} tone={actionProjects.length ? "warn" : undefined} />
         <Fact label="Unavailable" value={String(unavailableRootCount)} tone={unavailableRootCount ? "warn" : undefined} />
       </div>
-
-      {actionProjects.length ? (
-        <section className="subpanel settings-list-panel">
-          <h4>Needs action</h4>
-          <div className="settings-list">
-            {actionProjects.map((project) => (
-              <div className="settings-list-row" key={project.id}>
-                <span className="truncate">{project.name}</span>
-                <small className="truncate">{userActionReason(project) ?? "Action required"}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       {unavailableRoots.length ? (
         <section className="subpanel settings-list-panel">
@@ -3437,7 +3289,7 @@ function SettingsStatusPanel({
         </section>
       ) : null}
 
-      {!actionProjects.length && !unavailableRoots.length && !scanErrors.length ? (
+      {!unavailableRoots.length && !scanErrors.length ? (
         <div className="empty-state compact-title-row">
           <strong>No issues</strong>
           <span>Settings status is clear.</span>

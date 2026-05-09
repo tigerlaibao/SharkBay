@@ -1239,11 +1239,6 @@ button.project-file-toggle:focus-visible {
   color: #677477;
 }
 
-.prompt-panel {
-  display: grid;
-  gap: 8px;
-}
-
 .confirm-panel {
   display: grid;
   gap: 8px;
@@ -1259,19 +1254,6 @@ button.project-file-toggle:focus-visible {
   color: #7e3028;
   background: #f7e5df;
   border-color: #ecc3b7;
-}
-
-.prompt-box {
-  width: 100%;
-  min-height: 118px;
-  resize: vertical;
-  color: #263235;
-  background: #fffdfa;
-  border: 1px solid #dedad1;
-  border-radius: 6px;
-  padding: 8px;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-size: 12px;
 }
 
 .artifact-view {

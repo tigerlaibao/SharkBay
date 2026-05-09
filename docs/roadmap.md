@@ -8,7 +8,7 @@ SharkBay should become a local-first project workbench, not a dashboard of imple
 
 | Phase | Goal | Deliverables | Gate |
 | --- | --- | --- | --- |
-| 0 | Establish local macOS app foundation | Electron/React app, safe scan roots, project detail, prompt generation | Typecheck, tests, build, and dogfood scan pass |
+| 0 | Establish local macOS app foundation | Electron/React app, safe scan roots, project detail, and project terminals | Typecheck, tests, build, and dogfood scan pass |
 | 1 | Make the UI project-centered | Projects/Settings IA, managed project list, current-task-first detail pane | User can understand what projects exist and what needs attention without reading protocol files |
 | 2 | Discover ordinary local projects | Root child index, managed/unmanaged status, one-click Ripple setup path | User can see all child projects under a root, not only already-managed projects |
 | 3 | Add runtime and repository operations | GitHub metadata, local dev server status, start/stop/restart actions, deployment commands | Operations are explicit, reversible where possible, and visibly logged |

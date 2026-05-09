@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readProjectDetail } from "../src/main/harness-reader.js";
-import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredInitialCandidate, projectNeedsUserAction, projectSummaryFromDetail, resolveSelectedCandidate, userActionReason, validTerminalResizeDimensions } from "../src/renderer/workflow.js";
+import { preferredInitialCandidate, projectSummaryFromDetail, resolveSelectedCandidate, validTerminalResizeDimensions } from "../src/renderer/workflow.js";
 import {
   createSelfHostFixture,
   makeTempRoot,
@@ -31,10 +31,8 @@ describe("renderer workflow contracts", () => {
       "task-artifacts",
       "recent-decisions",
       "harness-errors",
-      "runner-lifecycle",
       "revisions",
       "url-editor",
-      "prompt",
     ]);
     expect(Object.keys(detail.currentTask ?? {}).sort()).toEqual([...workflowArtifactKeys].sort());
     expect(missingWorkflowDetailSurfaces(detail)).toEqual([]);
@@ -47,67 +45,7 @@ describe("renderer workflow contracts", () => {
 
     expect(missingWorkflowDetailSurfaces({ ...detail, currentTask: null })).toEqual([
       "current-task-artifacts",
-      "prompt",
     ]);
-  });
-
-  it("uses stable display gate fallbacks for active workflow tasks", () => {
-    expect(displayGateStatus({ activeTask: { taskId: "t-003", phase: "coding" } })).toBe("pending");
-    expect(displayGateStatus({ activeTask: { taskId: "t-003", phase: "blocked" } })).toBe("blocked");
-    expect(displayGateStatus({ activeTask: { taskId: "t-003", phase: "blocked", gateStatus: "unknown" } })).toBe("blocked");
-    expect(displayGateStatus({ activeTask: { taskId: "t-002", phase: "done" } })).toBe("pass");
-    expect(displayGateStatus({ gateStatus: "unknown", activeTask: { taskId: "t-003", phase: "coding" } })).toBe("pending");
-    expect(displayGateStatus({ gateStatus: "blocked", activeTask: { taskId: "t-003", phase: "coding" } })).toBe("blocked");
-    expect(displayGateStatus({ activeTask: { taskId: "t-003", phase: "coding", gateStatus: "pass" } })).toBe("pass");
-    expect(displayGateStatus({ activeTask: null })).toBe("unknown");
-  });
-
-  it("separates urgent user action from agent handoff state", () => {
-    expect(projectNeedsUserAction({ activeTask: null })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "done" } })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "done" }, gateStatus: "pass" })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-010", phase: "intake", status: "active" } })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "spec" } })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" } })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "design_review" } })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "code_review" } })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "verification" } })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "running" } })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "stale" } })).toBe(true);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "waiting_for_human", reason: "Choose a path" } })).toBe(true);
-    expect(projectNeedsUserAction({ activeTask: null, runner: { status: "waiting_for_human", reason: "Choose a project" } })).toBe(true);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "blocked", reason: "Missing token" } })).toBe(true);
-    expect(projectNeedsUserAction({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "missing" } })).toBe(true);
-    expect(projectNeedsUserAction({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "inactive" } })).toBe(true);
-    expect(projectNeedsUserAction({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "mismatched" } })).toBe(true);
-    expect(projectNeedsUserAction({ activeTask: null, runner: { status: "idle", taskId: "t-999", taskRegistrationStatus: "missing" } })).toBe(false);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "blocked" } })).toBe(true);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding" }, gateStatus: "blocked" })).toBe(true);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding", requiresUserAction: true } })).toBe(true);
-    expect(projectNeedsUserAction({ activeTask: { taskId: "t-009", phase: "coding", userActionReason: "Review generated prompt" } })).toBe(true);
-    expect(userActionReason({ activeTask: { taskId: "t-010", phase: "intake", status: "active" } })).toBeNull();
-    expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "intake", status: "active" } })).toBe("Agent handoff needed");
-    expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "coding" }, runner: { status: "unknown" } })).toBe("Agent handoff needed");
-    expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "coding" }, runner: { status: "running" } })).toBeNull();
-    expect(agentHandoffReason({ activeTask: { taskId: "t-010", phase: "coding" }, runner: { status: "stale" } })).toBeNull();
-    expect(agentHandoffReason({
-      activeTask: { taskId: "t-006", phase: "done" },
-      queue: {
-        backlog: [{ taskId: "t-007", phase: "backlog", status: "backlog", dependsOn: ["t-006"] }],
-        done: [{ taskId: "t-006", phase: "done", status: "done" }],
-      },
-    })).toBe("Agent handoff needed");
-    expect(nextReadyBacklogTask({
-      queue: {
-        backlog: [{ taskId: "t-008", phase: "backlog", status: "backlog", dependsOn: ["t-007"] }],
-        done: [{ taskId: "t-006", phase: "done", status: "done" }],
-      },
-    })).toBeNull();
-    expect(userActionReason({ activeTask: { taskId: "t-009", phase: "coding", requiresUserAction: true, userActionReason: "Approve deploy" } })).toBe("Approve deploy");
-    expect(userActionReason({ activeTask: { taskId: "t-009", phase: "coding" }, runner: { status: "waiting_for_human", reason: "Approve design" } })).toBe("Approve design");
-    expect(userActionReason({ activeTask: null, runner: { status: "waiting_for_human", reason: "Choose a project" } })).toBe("Choose a project");
-    expect(userActionReason({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "missing" } })).toBe("Runner task t-999 is not registered");
-    expect(userActionReason({ activeTask: null, runner: { status: "running", taskId: "t-999", taskRegistrationStatus: "mismatched" } })).toBe("Runner task t-999 does not match currentTask");
   });
 
   it("resolves selected managed projects even when scan candidates are incomplete", () => {
@@ -186,11 +124,7 @@ describe("renderer workflow contracts", () => {
         phase: "done",
         status: "done",
         priority: 2,
-        gateStatus: "pass" as const,
-        requiresUserAction: false,
-        userActionReason: null,
       },
-      runner: null,
       localUrl: null,
       testUrl: null,
       deploymentUrl: null,
@@ -216,7 +150,6 @@ describe("renderer workflow contracts", () => {
         taskId: "t-007-character-explorer-upgrade",
         phase: "done",
       }),
-      runner: null,
       localUrl: null,
       testUrl: null,
       deploymentUrl: null,

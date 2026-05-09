@@ -27,8 +27,6 @@ Local SharkBay process
   |
   +--> Harness template sync checker
   |
-  +--> Prompt generator
-  |
   +--> Terminal session manager
   |
   +--> Project file browser
@@ -86,7 +84,6 @@ Local filesystem repositories
 | Harness uninstall | Remove recognized Ripple harness files after explicit user confirmation | Delete arbitrary project files, trust renderer paths as authority, or broadly rewrite `.gitignore` |
 | Application menu | Expose macOS-native app actions such as Settings | Perform repository reads or writes directly |
 | Dashboard UI | Display project and task lifecycle state | Execute destructive repo operations |
-| Prompt generator | Produce next-action prompts for agents or tools | Pretend execution happened |
 | Terminal manager | Spawn user-driven `node-pty` shell tabs and service-bound dev tabs inside configured project roots | Treat renderer-supplied cwd as filesystem authority or run outside configured roots |
 | Project file browser | List selected project files and directories as project-relative tree data and classify editable text/code files | Expose absolute child paths to the renderer, recurse into paths outside the configured boundary, or edit files directly |
 | Git dirty file browser | List dirty project-relative Git paths and open diff terminal tabs | Expose absolute child paths, mutate Git state, or bypass terminal cwd safety |
@@ -114,7 +111,7 @@ Configured project roots
   -> normalized project records
   -> dashboard list, detail views, and terminal cwd selection
   -> user selects project/task action
-  -> prompt generator, template installer, or terminal session manager handles the action
+  -> template installer, file browser, Git diff launcher, or terminal session manager handles the action
 ```
 
 ## 7. Safety Model

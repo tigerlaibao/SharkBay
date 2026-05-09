@@ -22,10 +22,8 @@ export const workflowDetailSurfaces = [
   "task-artifacts",
   "recent-decisions",
   "harness-errors",
-  "runner-lifecycle",
   "revisions",
   "url-editor",
-  "prompt",
 ] as const;
 
 export async function makeTempRoot(prefix: string): Promise<string> {
@@ -228,7 +226,6 @@ export async function createSelfHostFixture(root: string): Promise<string> {
         phase: "coding",
         dependsOn: ["t-001-sharkbay-mvp-spec"],
         status: "active",
-        gateStatus: "pending",
       },
     ],
     backlog: [
@@ -307,20 +304,12 @@ export function missingWorkflowDetailSurfaces(detail: ProjectDetail): string[] {
     missing.push("harness-errors");
   }
 
-  if (!detail.runner || typeof detail.runner.status !== "string") {
-    missing.push("runner-lifecycle");
-  }
-
   if (!detail.revisions || !["manifest", "state", "queue"].every((key) => hasOwn(detail.revisions, key))) {
     missing.push("revisions");
   }
 
   if (detail.detection !== "manifest" || !detail.revisions?.state || !detail.path) {
     missing.push("url-editor");
-  }
-
-  if (!detail.name || !detail.path || !detail.activeTask?.taskId || !detail.currentTask) {
-    missing.push("prompt");
   }
 
   return missing;

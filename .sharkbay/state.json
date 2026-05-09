@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T16:33:00+08:00",
+  "updatedAt": "2026-05-09T16:48:29+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Project status labels have been removed; terminal activity labels remain.",
+    "currentFocus": "Needs action and handoff/prompt surfaces have been removed.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T16:48:29+08:00",
+      "decision": "Completed t-085-remove-needs-action-prompt-protocol by removing Needs action, handoff/prompt UI/API, gate/user-action parsing, runner summary parsing, and runner lifecycle requirements from the active and template harness protocols while keeping task phases.",
+      "source": ".sharkbay/tasks/t-085-remove-needs-action-prompt-protocol/verification.md"
+    },
+    {
+      "date": "2026-05-09T16:38:14+08:00",
+      "decision": "Opened t-085-remove-needs-action-prompt-protocol to remove Needs action, handoff/prompt, and protocol parsing that only served those surfaces while keeping task phases.",
+      "source": ".sharkbay/tasks/t-085-remove-needs-action-prompt-protocol/contract.md"
+    },
     {
       "date": "2026-05-09T16:33:00+08:00",
       "decision": "Completed t-084-remove-project-status-labels by removing the right Tasks project status strip and the app-derived taskStatus display state while keeping task phases and retained harness protocol consumers.",

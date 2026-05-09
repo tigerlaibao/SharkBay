@@ -4,7 +4,6 @@ import type {
   ActiveTaskSummary,
   DevelopmentMetadata,
   DetectionMode,
-  GateStatus,
   HarnessError,
   IpcRuntimeLike,
   ProjectDetailInput,
@@ -13,12 +12,11 @@ import type {
   QueueSection,
   RecentDecision,
   RevisionMap,
-  RunnerSummary,
   TaskArtifacts,
   TaskQueueItem,
   UrlFields,
 } from "../shared/types.js";
-import { asQueueItem, emptyRunnerSummary, isRecord, normalizeDevelopmentMetadata, normalizeRunnerMetadata, normalizeUrlFields, validateDevelopmentJson, validateRunnerJson } from "../shared/schema.js";
+import { asQueueItem, isRecord, normalizeDevelopmentMetadata, normalizeUrlFields, validateDevelopmentJson } from "../shared/schema.js";
 import { getRuntimeConfigPath, loadAppConfig } from "./config.js";
 import { readGitDirtyFiles, readGitHistory, readGitMetadata } from "./git.js";
 import { detectHarnessLayout, harnessJsonRelativePath, type HarnessLayout } from "./harness-layout.js";
@@ -94,12 +92,10 @@ export async function readProjectDetail(
   const gitHistory = await readGitHistory(repoPath);
   const gitDirtyFiles = readOptions.includeArtifacts === false ? [] : await readGitDirtyFiles(repoPath);
   const development = await readDevelopmentMetadata(repoPath, configuredRoots, layout, errors);
-  const runnerMetadata = await readRunnerMetadata(repoPath, configuredRoots, layout, errors);
 
   const queue = normalizeQueue(queueJson.data);
   const visibleQueue = await mergeTaskDirectoryQueue(repoPath, containingRoot, configuredRoots, layout, queue, errors);
   const activeTask = normalizeActiveTask(visibleQueue, state.data);
-  const runner = annotateRunnerTaskRegistration(runnerMetadata, visibleQueue, readStateCurrentTaskId(state.data), repoPath, layout, errors);
   const urls = readUrls(state.ok, state.data, manifest.data);
   const name = readProjectName(manifest.data, repoPath);
   const repoUrl = readRepoUrl(state.data) || readRepoUrl(manifest.data) || git.githubUrl;
@@ -120,7 +116,6 @@ export async function readProjectDetail(
     currentBranch: git.currentBranch,
     dirtyWorktree: git.dirtyWorktree,
     activeTask,
-    runner,
     localUrl: urls.localUrl,
     testUrl: urls.testUrl,
     deploymentUrl: urls.deploymentUrl,
@@ -192,84 +187,6 @@ async function readVisibleTaskArtifacts(
   const taskIds = [...new Set(Object.values(queue).flat().map((item) => item.taskId).filter((taskId) => Boolean(taskId.trim())))];
   const entries = await Promise.all(taskIds.map(async (taskId) => [taskId, await readTaskArtifacts(repoPath, configuredRoots, layout, taskId, errors)] as const));
   return Object.fromEntries(entries);
-}
-
-async function readRunnerMetadata(repoPath: string, configuredRoots: string[], layout: HarnessLayout, errors: HarnessError[]): Promise<RunnerSummary> {
-  const relativePath = layout.runnerJson;
-  let filePath: string;
-  try {
-    filePath = await resolveReadableRepoFile(repoPath, configuredRoots, relativePath);
-  } catch (error) {
-    errors.push({ file: path.join(repoPath, relativePath), message: error instanceof Error ? error.message : String(error) });
-    return emptyRunnerSummary();
-  }
-
-  const result = await readJsonFile(filePath);
-  if (!result.ok) {
-    if (result.reason !== "missing") {
-      errors.push({ file: filePath, message: result.message });
-    }
-    return emptyRunnerSummary();
-  }
-
-  const validation = validateRunnerJson(result.data);
-  if (!validation.ok) {
-    errors.push({ file: filePath, message: validation.errors.join("; ") });
-    return emptyRunnerSummary();
-  }
-
-  return normalizeRunnerMetadata(result.data);
-}
-
-function annotateRunnerTaskRegistration(
-  runner: RunnerSummary,
-  queue: Record<QueueSection, TaskQueueItem[]>,
-  currentTaskId: string | null,
-  repoPath: string,
-  layout: HarnessLayout,
-  errors: HarnessError[],
-): RunnerSummary {
-  const taskId = runner.taskId?.trim();
-  const claimsWork = Boolean(taskId && ["running", "stale", "blocked", "waiting_for_human"].includes(runner.status));
-
-  if (!claimsWork || !taskId) {
-    return { ...runner, taskRegistrationStatus: "none", taskRegistrationMessage: null };
-  }
-
-  const activeTaskIds = new Set(queue.active.map((item) => item.taskId.trim()).filter(Boolean));
-  const allTaskIds = new Set(Object.values(queue).flatMap((items) => items.map((item) => item.taskId.trim()).filter(Boolean)));
-
-  if (activeTaskIds.has(taskId)) {
-    if (currentTaskId !== taskId) {
-      const message = currentTaskId
-        ? `Runner task ${taskId} is active but harness state currentTask is ${currentTaskId}.`
-        : `Runner task ${taskId} is active but harness state currentTask is missing.`;
-      errors.push({ file: path.join(repoPath, layout.runnerJson), message });
-      return { ...runner, taskRegistrationStatus: "mismatched", taskRegistrationMessage: message };
-    }
-    return { ...runner, taskRegistrationStatus: "active", taskRegistrationMessage: null };
-  }
-
-  const message = allTaskIds.has(taskId)
-    ? `Runner task ${taskId} is registered but is not in the Active queue.`
-    : `Runner task ${taskId} is not registered in the queue or tasks directory.`;
-
-  errors.push({ file: path.join(repoPath, layout.runnerJson), message });
-
-  return {
-    ...runner,
-    taskRegistrationStatus: allTaskIds.has(taskId) ? "inactive" : "missing",
-    taskRegistrationMessage: message,
-  };
-}
-
-function readStateCurrentTaskId(state: unknown): string | null {
-  if (!isRecord(state) || !isRecord(state.currentTask) || typeof state.currentTask.taskId !== "string") {
-    return null;
-  }
-
-  const taskId = state.currentTask.taskId.trim();
-  return taskId || null;
 }
 
 async function readDevelopmentMetadata(repoPath: string, configuredRoots: string[], layout: HarnessLayout, errors: HarnessError[]): Promise<DevelopmentMetadata | null> {
@@ -567,9 +484,6 @@ function normalizeActiveTask(queue: Record<QueueSection, TaskQueueItem[]>, state
       phase: queueTask.phase,
       status: queueTask.status,
       priority: typeof queueTask.priority === "number" ? queueTask.priority : null,
-      gateStatus: readGateStatus(queueTask),
-      requiresUserAction: readRequiresUserAction(queueTask),
-      userActionReason: readUserActionReason(queueTask),
     };
   }
   if (isRecord(state) && isRecord(state.currentTask) && typeof state.currentTask.taskId === "string") {
@@ -584,40 +498,7 @@ function normalizeActiveTask(queue: Record<QueueSection, TaskQueueItem[]>, state
       phase,
       status: typeof currentTask.status === "string" ? currentTask.status : matchingQueueTask?.status ?? null,
       priority: typeof matchingQueueTask?.priority === "number" ? matchingQueueTask.priority : null,
-      gateStatus: matchingQueueTask ? readGateStatus(matchingQueueTask) : "unknown",
-      requiresUserAction: readRequiresUserAction(currentTask),
-      userActionReason: readUserActionReason(currentTask),
     };
-  }
-  return null;
-}
-
-function readStateCurrentTaskPhase(state: unknown): string | null {
-  if (!isRecord(state) || !isRecord(state.currentTask) || typeof state.currentTask.phase !== "string") {
-    return null;
-  }
-  const phase = state.currentTask.phase.trim().toLowerCase();
-  return phase || null;
-}
-
-function readGateStatus(task: TaskQueueItem): GateStatus {
-  if (task.gateStatus === "pass" || task.gateStatus === "pending" || task.gateStatus === "blocked" || task.gateStatus === "unknown") {
-    return task.gateStatus;
-  }
-  if (task.status === "blocked") return "blocked";
-  return "unknown";
-}
-
-function readRequiresUserAction(source: Record<string, unknown>): boolean {
-  return source.requiresUserAction === true || source.userActionRequired === true;
-}
-
-function readUserActionReason(source: Record<string, unknown>): string | null {
-  for (const key of ["userActionReason", "userAction", "approvalReason"]) {
-    const value = source[key];
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
-    }
   }
   return null;
 }
@@ -673,7 +554,6 @@ function unsafeProjectDetail(repoPath: string, detection: DetectionMode, message
     currentBranch: null,
     dirtyWorktree: null,
     activeTask: null,
-    runner: emptyRunnerSummary(),
     localUrl: null,
     testUrl: null,
     deploymentUrl: null,

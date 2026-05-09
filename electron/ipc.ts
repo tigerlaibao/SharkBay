@@ -16,7 +16,6 @@ import {
   updateHarnessState,
   updateProjectUrls
 } from "../src/main/harness-writer.js";
-import { generateNextActionPrompt } from "../src/main/prompt-generator.js";
 import { scanProjects } from "../src/main/scanner.js";
 import { createHarnessRepo } from "../src/main/template-installer.js";
 import { TerminalManager } from "../src/main/terminal.js";
@@ -35,8 +34,6 @@ import type {
   HarnessTemplateSyncUpdateResult,
   LegacyHarnessCleanupCheckInput,
   LegacyHarnessCleanupMigrationResult,
-  NextActionPromptInput,
-  NextActionPromptResult,
   ProjectDetail,
   ProjectDetailInput,
   ProjectFilesInput,
@@ -82,7 +79,6 @@ export type SharkBayIpcServices = {
   migrateLegacyHarness: (input: LegacyHarnessCleanupCheckInput) => Promise<LegacyHarnessCleanupMigrationResult>;
   uninstallHarness: (input: HarnessUninstallInput) => Promise<HarnessUninstallResult>;
   createHarnessRepo: (input: CreateHarnessRepoInput) => Promise<CreateHarnessRepoResult>;
-  nextActionPrompt: (input: NextActionPromptInput) => Promise<NextActionPromptResult>;
   createTerminal: (input: TerminalCreateInput) => Promise<TerminalSession>;
   terminalInput: (input: TerminalInput) => Promise<TerminalSession>;
   resizeTerminal: (input: TerminalResizeInput) => Promise<TerminalSession>;
@@ -106,7 +102,6 @@ const channels = {
   migrateLegacyHarness: "harness:migrateLegacy",
   uninstallHarness: "harness:uninstall",
   createHarnessRepo: "projects:createHarnessRepo",
-  nextActionPrompt: "prompts:nextAction",
   createTerminal: "terminal:create",
   terminalInput: "terminal:input",
   resizeTerminal: "terminal:resize",
@@ -155,7 +150,6 @@ function createDefaultServices(runtime: IpcRuntime): SharkBayIpcServices {
       return uninstallHarness({ ...input, configuredRoots });
     },
     createHarnessRepo: (input) => createHarnessRepo(runtime, input),
-    nextActionPrompt: (input) => generateNextActionPrompt(runtime, input),
     createTerminal: (input) => terminalManager.create(runtime, input),
     terminalInput: (input) => Promise.resolve(terminalManager.input(input)),
     resizeTerminal: (input) => Promise.resolve(terminalManager.resize(input)),
@@ -240,9 +234,6 @@ export function registerIpcHandlers(
   );
   handle<CreateHarnessRepoInput, CreateHarnessRepoResult>(channels.createHarnessRepo, (payload) =>
     services.createHarnessRepo(payload)
-  );
-  handle<NextActionPromptInput, NextActionPromptResult>(channels.nextActionPrompt, (payload) =>
-    services.nextActionPrompt(payload)
   );
   handle<TerminalCreateInput, TerminalSession>(channels.createTerminal, (payload) =>
     services.createTerminal(payload)

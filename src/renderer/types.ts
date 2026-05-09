@@ -1,5 +1,3 @@
-export type GateStatus = "pass" | "pending" | "blocked" | "unknown";
-
 export type DetectionMode = "manifest" | "protocol-fallback";
 
 export type AppearanceTheme = "day" | "night" | "morning";
@@ -37,30 +35,6 @@ export type ActiveTaskSummary = {
   phase: string;
   status?: string | null;
   priority?: number;
-  gateStatus?: GateStatus;
-  requiresUserAction?: boolean;
-  userActionReason?: string | null;
-};
-
-export type RunnerStatus = "unknown" | "idle" | "running" | "stale" | "blocked" | "waiting_for_human";
-export type RunnerTaskRegistrationStatus = "none" | "active" | "inactive" | "missing" | "mismatched";
-
-export type RunnerSummary = {
-  schemaVersion?: number | null;
-  status: RunnerStatus;
-  rawStatus?: string | null;
-  sessionId?: string | null;
-  owner?: string | null;
-  taskId?: string | null;
-  phase?: string | null;
-  startedAt?: string | null;
-  heartbeatAt?: string | null;
-  message?: string | null;
-  reason?: string | null;
-  stale?: boolean;
-  staleAfterSeconds?: number;
-  taskRegistrationStatus?: RunnerTaskRegistrationStatus;
-  taskRegistrationMessage?: string | null;
 };
 
 export type UrlFields = {
@@ -85,8 +59,6 @@ export type ProjectSummary = UrlFields & {
   currentBranch: string | null;
   dirtyWorktree: boolean | null;
   activeTask: ActiveTaskSummary | null;
-  runner?: RunnerSummary;
-  gateStatus?: GateStatus;
   errors?: Array<string | { file?: string; message: string }>;
   harnessTemplate?: HarnessTemplateSyncSummary | null;
   legacyHarnessCleanup?: LegacyHarnessCleanupSummary | null;
@@ -389,20 +361,6 @@ export type CreateHarnessRepoResult = {
   error?: string;
 };
 
-export type NextActionPromptInput = {
-  projectId?: string;
-  repoPath?: string;
-  taskId?: string;
-  phase?: string;
-  project?: Pick<ProjectDetail, "name" | "path" | "activeTask" | "currentTask">;
-  requiredChecks?: string[];
-  stopConditions?: string[];
-};
-
-export type NextActionPromptResult = {
-  prompt: string;
-};
-
 export type TerminalSessionStatus = "running" | "exited";
 
 export type TerminalCreateInput = {
@@ -477,7 +435,6 @@ export type SharkBayBridge = {
   listProjectFiles?: (input: ProjectFilesInput) => Promise<ProjectFilesResult>;
   updateProjectUrls?: (input: UpdateProjectUrlsInput) => Promise<UpdateProjectUrlsResult>;
   createHarnessRepo?: (input: CreateHarnessRepoInput) => Promise<CreateHarnessRepoResult>;
-  generateNextActionPrompt?: (input: NextActionPromptInput) => Promise<NextActionPromptResult | string>;
   config?: {
     listRoots?: () => Promise<AppConfig | RootRecord[] | string[]>;
     addRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
@@ -490,9 +447,6 @@ export type SharkBayBridge = {
     listFiles?: (input: ProjectFilesInput) => Promise<ProjectFilesResult>;
     updateUrls?: (input: UpdateProjectUrlsInput) => Promise<UpdateProjectUrlsResult>;
     createHarnessRepo?: (input: CreateHarnessRepoInput) => Promise<CreateHarnessRepoResult>;
-  };
-  prompts?: {
-    nextAction?: (input: NextActionPromptInput) => Promise<NextActionPromptResult | string>;
   };
   harness?: {
     checkTemplateSync?: (input: HarnessTemplateSyncCheckInput) => Promise<HarnessTemplateSyncCheckResult>;

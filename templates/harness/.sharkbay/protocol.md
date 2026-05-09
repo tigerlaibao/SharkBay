@@ -4,17 +4,9 @@ Read `.sharkbay/manifest.json`, `.sharkbay/state.json`, `.sharkbay/queue.json`, 
 
 Do not skip phase gates. Advance by one phase transition at a time, record that transition in the harness files, then continue to the next phase while the task scope and safety rules allow.
 
-Default to autonomous forward progress. Continue across phases until the task is done, blocked, or a real human intervention is required.
+Default to autonomous forward progress. Continue across phases until the task is done or blocked.
 
-When physically working, publish runner state in optional `.sharkbay/runner.json`:
-
-- Register new or ad-hoc work before claiming runner state: create `.sharkbay/tasks/<task-id>/status.md`, add it to Active in `.sharkbay/queue.json` and `.sharkbay/queue.md`, and update `.sharkbay/state.json` and `.sharkbay/state.md` currentTask.
-- Only write `status=running` after `runner.taskId` is visible as the Active task.
-- If a runner is already `running` for a task that is missing from Active queue/state, repair task registration before product code changes or set `waiting_for_human`/`blocked` with a reason.
-- `running` while actively working; refresh `heartbeatAt` during long work and phase changes.
-- `waiting_for_human` only when a human decision, approval, credential, or external action is required.
-- `blocked` when work cannot proceed without a non-routine dependency or unavailable authority.
-- `idle` when no runner is active and no human decision is being requested.
+Register new or ad-hoc work before product changes: create `.sharkbay/tasks/<task-id>/status.md`, add it to Active in `.sharkbay/queue.json` and `.sharkbay/queue.md`, and update `.sharkbay/state.json` and `.sharkbay/state.md` currentTask.
 
 Record durable decisions, verification evidence, and task state in the harness files on disk.
 
@@ -41,5 +33,5 @@ Commit rules:
 
 - Keep commits focused on one phase or one coherent behavior change.
 - Do not mix unrelated user changes into a checkpoint.
-- Do not commit secrets, generated dependency folders, build output, local logs, or `.sharkbay/runner.json`.
-- If a required checkpoint cannot be made, record the reason in `.sharkbay/tasks/<task-id>/status.md` and stop only when the reason requires human intervention.
+- Do not commit secrets, generated dependency folders, build output, or local logs.
+- If a required checkpoint cannot be made, record the reason in `.sharkbay/tasks/<task-id>/status.md`.

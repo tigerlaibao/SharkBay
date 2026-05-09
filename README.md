@@ -2,17 +2,15 @@
 
 SharkBay is a local-first macOS workbench for managing harness-enabled software projects.
 
-It reads lightweight project metadata from local repositories, shows task, runner, Git, and verification state in one place, opens project-rooted terminal spaces, and helps generate next-action prompts for agents or tools that follow a file-based workflow.
+It reads lightweight project metadata from local repositories, shows task, Git, terminal, and verification state in one place, and opens project-rooted terminal spaces for local work.
 
 ## What It Does
 
 - Scans user-configured local folders for harness-enabled projects.
 - Reads project state from contained `.sharkbay/` harnesses and legacy `.agent`/root `docs`/root `tasks` harnesses.
 - Shows active tasks, queues, lifecycle phase, recent decisions, Git status, and verification artifacts.
-- Tracks runner lifecycle separately from task phase through optional harness runner heartbeat metadata.
 - Presents project detail as focused Tasks, Decisions, Git, and Info tabs.
 - Creates or sets up managed projects from bundled Ripple harness templates.
-- Generates next-action prompts that tell an agent what files to read and which phase to advance.
 - Opens per-project terminal workspaces backed by xterm and `node-pty`, with tabs titled from runtime cwd or foreground commands.
 - Keeps workbench columns resizable and preserves terminal sessions while Settings is open.
 - Keeps filesystem access scoped to configured roots.
@@ -27,7 +25,6 @@ SharkBay expects managed projects to use a small file-based harness:
 - `.sharkbay/state.md` and `.sharkbay/queue.md` for human-readable mirrors.
 - `.sharkbay/docs/` for durable product, architecture, task, and learning records.
 - `.sharkbay/tasks/<task-id>/` for phase artifacts, reviews, verification evidence, and decisions.
-- `.sharkbay/runner.json` for optional local runner lease and heartbeat state.
 - `.sharkbay/development.json` for optional stable project-authored development metadata.
 
 The app is intentionally local-first. Project data stays in local repository files unless the user chooses to publish the repository.

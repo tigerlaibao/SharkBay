@@ -1,4 +1,4 @@
-import type { DevelopmentEndpoint, DevelopmentMetadata, DevelopmentPort, QueueSection, RunnerSummary, TaskQueueItem, UrlFields } from "./types.js";
+import type { DevelopmentEndpoint, DevelopmentMetadata, DevelopmentPort, QueueSection, TaskQueueItem, UrlFields } from "./types.js";
 
 export type ValidationResult = {
   ok: boolean;
@@ -8,10 +8,7 @@ export type ValidationResult = {
 const queueSections: QueueSection[] = ["active", "backlog", "done"];
 const urlFields = ["localUrl", "testUrl", "deploymentUrl"] as const;
 const endpointSections = ["local", "test", "production"] as const;
-const runnerStatuses = ["idle", "running", "blocked", "waiting_for_human"] as const;
 const editableUrlSchemes = new Set(["http:", "https:"]);
-export const runnerStaleAfterSeconds = 300;
-type RunnerStoredStatus = (typeof runnerStatuses)[number];
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -67,51 +64,6 @@ export function normalizeDevelopmentMetadata(source: unknown): DevelopmentMetada
   };
 }
 
-export function normalizeRunnerMetadata(source: unknown, nowMs = Date.now(), staleAfterSeconds = runnerStaleAfterSeconds): RunnerSummary {
-  if (!isRecord(source)) return emptyRunnerSummary(staleAfterSeconds);
-  const rawStatus = normalizeString(source.status);
-  const status: RunnerStoredStatus | null = runnerStatuses.includes(rawStatus as RunnerStoredStatus) ? rawStatus as RunnerStoredStatus : null;
-  const heartbeatAt = normalizeString(source.heartbeatAt);
-  const stale = status === "running" && isStaleHeartbeat(heartbeatAt, nowMs, staleAfterSeconds);
-  return {
-    schemaVersion: typeof source.schemaVersion === "number" ? source.schemaVersion : null,
-    status: stale ? "stale" : status ?? "unknown",
-    rawStatus: rawStatus,
-    sessionId: normalizeString(source.sessionId),
-    owner: normalizeString(source.owner),
-    taskId: normalizeString(source.taskId),
-    phase: normalizeString(source.phase),
-    startedAt: normalizeString(source.startedAt),
-    heartbeatAt,
-    message: normalizeString(source.message),
-    reason: normalizeString(source.reason),
-    stale,
-    staleAfterSeconds,
-    taskRegistrationStatus: "none",
-    taskRegistrationMessage: null,
-  };
-}
-
-export function emptyRunnerSummary(staleAfterSeconds = runnerStaleAfterSeconds): RunnerSummary {
-  return {
-    schemaVersion: null,
-    status: "unknown",
-    rawStatus: null,
-    sessionId: null,
-    owner: null,
-    taskId: null,
-    phase: null,
-    startedAt: null,
-    heartbeatAt: null,
-    message: null,
-    reason: null,
-    stale: false,
-    staleAfterSeconds,
-    taskRegistrationStatus: "none",
-    taskRegistrationMessage: null,
-  };
-}
-
 export function validateManifestJson(data: unknown): ValidationResult {
   const errors: string[] = [];
   if (!isRecord(data)) {
@@ -127,25 +79,6 @@ export function validateManifestJson(data: unknown): ValidationResult {
   }
   if (isRecord(data.runtime)) {
     validateUrlContainer(data.runtime, "runtime", errors);
-  }
-  return { ok: errors.length === 0, errors };
-}
-
-export function validateRunnerJson(data: unknown): ValidationResult {
-  const errors: string[] = [];
-  if (!isRecord(data)) {
-    return { ok: false, errors: ["runner must be an object"] };
-  }
-  if (data.schemaVersion !== undefined && typeof data.schemaVersion !== "number") {
-    errors.push("schemaVersion must be a number when present");
-  }
-  if (!runnerStatuses.includes(data.status as (typeof runnerStatuses)[number])) {
-    errors.push(`status must be one of: ${runnerStatuses.join(", ")}`);
-  }
-  for (const key of ["sessionId", "owner", "taskId", "phase", "startedAt", "heartbeatAt", "message", "reason"]) {
-    if (data[key] !== undefined && data[key] !== null && typeof data[key] !== "string") {
-      errors.push(`${key} must be a string or null when present`);
-    }
   }
   return { ok: errors.length === 0, errors };
 }
@@ -288,13 +221,6 @@ function normalizeString(value: unknown): string | null {
   const trimmed = value.trim();
   if (!trimmed || ["unknown", "none", "null", "unset"].includes(trimmed.toLowerCase())) return null;
   return trimmed;
-}
-
-function isStaleHeartbeat(heartbeatAt: string | null, nowMs: number, staleAfterSeconds: number): boolean {
-  if (!heartbeatAt) return true;
-  const heartbeatMs = Date.parse(heartbeatAt);
-  if (!Number.isFinite(heartbeatMs)) return true;
-  return nowMs - heartbeatMs > staleAfterSeconds * 1000;
 }
 
 function normalizeStringArray(value: unknown): string[] {

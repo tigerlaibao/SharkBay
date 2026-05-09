@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Project status labels have been removed; terminal activity labels remain.
+- Current focus: Needs action and handoff/prompt surfaces have been removed.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T16:48:29+08:00 | Completed `t-085-remove-needs-action-prompt-protocol` by removing Needs action, handoff/prompt UI/API, gate/user-action parsing, runner summary parsing, and runner lifecycle requirements from the active and template harness protocols while keeping task phases. | `.sharkbay/tasks/t-085-remove-needs-action-prompt-protocol/verification.md` |
+| 2026-05-09T16:38:14+08:00 | Opened `t-085-remove-needs-action-prompt-protocol` to remove Needs action, handoff/prompt, and protocol parsing that only served those surfaces while keeping task phases. | `.sharkbay/tasks/t-085-remove-needs-action-prompt-protocol/contract.md` |
 | 2026-05-09T16:33:00+08:00 | Completed `t-084-remove-project-status-labels` by removing the right Tasks project status strip and the app-derived `taskStatus` display state while keeping task phases and retained harness protocol consumers. | `.sharkbay/tasks/t-084-remove-project-status-labels/verification.md` |
 | 2026-05-09T16:26:08+08:00 | Opened `t-084-remove-project-status-labels` to remove right-side project status labels while keeping task phases and auditing removable state/protocol. | `.sharkbay/tasks/t-084-remove-project-status-labels/contract.md` |
 | 2026-05-09T16:25:00+08:00 | Completed `t-083-terminal-input-observation-and-empty-state` by resetting terminal output observation on user input and moving the no-terminal empty state below the tab row. | `.sharkbay/tasks/t-083-terminal-input-observation-and-empty-state/verification.md` |

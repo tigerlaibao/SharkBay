@@ -14,8 +14,6 @@ import type {
   HarnessTemplateSyncUpdateResult,
   LegacyHarnessCleanupCheckInput,
   LegacyHarnessCleanupMigrationResult,
-  NextActionPromptInput,
-  NextActionPromptResult,
   ProjectDetail,
   ProjectDetailInput,
   ProjectFilesInput,
@@ -54,7 +52,6 @@ const channels = {
   migrateLegacyHarness: "harness:migrateLegacy",
   uninstallHarness: "harness:uninstall",
   createHarnessRepo: "projects:createHarnessRepo",
-  nextActionPrompt: "prompts:nextAction",
   createTerminal: "terminal:create",
   terminalInput: "terminal:input",
   resizeTerminal: "terminal:resize",
@@ -106,8 +103,6 @@ const sharkBayApi = {
     invoke<SafeWriteResult>(channels.updateProjectUrls, input),
   createHarnessRepo: (input: CreateHarnessRepoInput) =>
     invoke<CreateHarnessRepoResult>(channels.createHarnessRepo, input),
-  generateNextActionPrompt: (input: NextActionPromptInput) =>
-    invoke<NextActionPromptResult>(channels.nextActionPrompt, input),
   config: {
     listRoots: () => invoke<AppConfig>(channels.listRoots),
     addRoot: (input: RootConfigInput) => invoke<AppConfig>(channels.addRoot, input),
@@ -140,10 +135,6 @@ const sharkBayApi = {
       invoke<LegacyHarnessCleanupMigrationResult>(channels.migrateLegacyHarness, input),
     uninstall: (input: HarnessUninstallInput) =>
       invoke<HarnessUninstallResult>(channels.uninstallHarness, input)
-  },
-  prompts: {
-    nextAction: (input: NextActionPromptInput) =>
-      invoke<NextActionPromptResult>(channels.nextActionPrompt, input)
   },
   terminal: {
     create: (input: TerminalCreateInput) => invoke<TerminalSession>(channels.createTerminal, input),
