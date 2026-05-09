@@ -51,6 +51,7 @@ Key terms:
 | P1 | Project icons | Show recognizable project identity icons in the workbench list | Project rows show circular icons from local app icons, favicons, or the bundled default icon |
 | P1 | Ordinary folder discovery | Show all direct child folders under scan roots | User can see projects that are not managed yet and start one-click Ripple setup |
 | P1 | Project terminal | Open terminal tabs rooted at selected project directories | Selecting any managed or not-setup project opens a shell rooted at that project path |
+| P1 | Project files | Browse selected project files from the right detail column | Files tab shows a project-relative file tree, and editable text/code files can be opened in a new `nano` terminal tab |
 | P1 | Dev service controls | Start and stop discovered `dev` services from the terminal header | Projects with root `dev`/`dev:*` scripts or direct-child `scripts.dev` show script-labeled pills; starting creates a service log terminal tab and stopping removes it |
 | P1 | Harness template sync | Detect when installed Ripple control files drift from SharkBay's tracked `templates/harness/` source | Managed project scan results include current/stale/missing harness template status and stale file names |
 | P1 | Legacy harness migration | Move old `.agent`/root docs/root tasks harness files into `.sharkbay/` only after explicit confirmation | Mixed layouts, conflicts, symlinks, and unrelated root content are preserved or blocked rather than changed silently |

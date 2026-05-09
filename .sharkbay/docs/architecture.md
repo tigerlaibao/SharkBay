@@ -31,6 +31,8 @@ Local SharkBay process
   |
   +--> Terminal session manager
   |
+  +--> Project file browser
+  |
   v
 Local filesystem repositories
 ```
@@ -84,6 +86,7 @@ Local filesystem repositories
 | Dashboard UI | Display project and task lifecycle state | Execute destructive repo operations |
 | Prompt generator | Produce next-action prompts for agents or tools | Pretend execution happened |
 | Terminal manager | Spawn user-driven `node-pty` shell tabs and service-bound dev tabs inside configured project roots | Treat renderer-supplied cwd as filesystem authority or run outside configured roots |
+| Project file browser | List selected project files as project-relative tree data and classify editable text/code files | Follow symlinked directories, expose absolute child paths to the renderer, or edit files directly |
 | Runner, future | Invoke approved agents or tools with approval | Run without logs or user-visible evidence |
 
 ## 5. Self-Hosting Requirement
@@ -138,6 +141,8 @@ Harness uninstall is also explicit and confirmation-gated from the UI. The backe
 Create-repo writes only to an empty target inside configured roots and rejects non-empty targets, existing harness files, and symlink targets.
 
 Terminal sessions are writable process sessions, but their filesystem authority starts from the same configured-root boundary. The main process canonicalizes the requested cwd through `resolveRepoPath` before spawning a `node-pty` shell, and renderer payloads cannot open arbitrary paths outside configured roots. The renderer uses xterm terminal spaces keyed by project candidate so hidden project terminals remain alive while only the selected project's space is visible. Dev-service controls reuse the terminal manager by attaching service metadata and an initial command to a safe PTY session discovered from root `package.json` `dev`/`dev:*` scripts or direct-child `scripts.dev`.
+
+The project file browser reuses the same configured-root boundary. It resolves the selected repository in the main process, returns only project-relative paths, skips heavyweight generated directories, and does not follow symlinked directories. Opening a file delegates to the existing terminal manager by creating a project-rooted terminal tab with a quoted `nano -- <relative-path>` command; SharkBay does not edit file contents directly.
 
 ## 8. Constraints
 

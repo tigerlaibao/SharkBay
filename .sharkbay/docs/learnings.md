@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### File Browsing Should Reuse Terminal Boundaries
+
+**Problem**: A Files tab needs to expose project files and launch editing without turning SharkBay into a broad filesystem editor.
+
+**Cause**: Renderer-visible absolute paths or direct file editing would weaken the existing configured-root and terminal safety model.
+
+**Solution**: Resolve the selected repo in the main process, return only project-relative tree paths, skip symlinks and heavyweight generated directories, and open editable files through an existing project-rooted terminal tab using a quoted `nano -- <relative-path>` command.
+
+**Source**: `.sharkbay/tasks/t-074-files-tab-nano-open/implementation.md`, `src/main/project-files.ts`, `src/renderer/App.tsx`, `tests/project-files.test.ts`.
+
+---
+
 ### Harness Uninstall Must Treat .gitignore As Project-Owned
 
 **Problem**: Removing a Ripple harness from a project also needs to remove old ignore rules, but `.gitignore` may contain unrelated project rules.

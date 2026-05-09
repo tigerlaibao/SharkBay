@@ -53,6 +53,11 @@ export type ProjectDetailInput = {
   detection?: DetectionMode;
 };
 
+export type ProjectFilesInput = {
+  repoPath: string;
+  configuredRoots?: string[];
+};
+
 export type RootScanResult = {
   inputPath: string;
   path: string | null;
@@ -155,6 +160,26 @@ export type ProjectDevService = {
   script: string;
   cwd: string;
 };
+
+export type ProjectFileTreeItem = {
+  name: string;
+  path: string;
+  kind: "directory" | "file";
+  editable: boolean;
+  children?: ProjectFileTreeItem[];
+};
+
+export type ProjectFilesResult =
+  | {
+      ok: true;
+      repoPath: string;
+      files: ProjectFileTreeItem[];
+    }
+  | {
+      ok: false;
+      reason: "unsafe-path" | "io-error";
+      message: string;
+    };
 
 export type ProjectSummary = {
   id: string;

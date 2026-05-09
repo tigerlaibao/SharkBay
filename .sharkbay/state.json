@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-08T20:42:13+08:00",
+  "updatedAt": "2026-05-09T12:21:21+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Confirmation-gated harness uninstall from project context menus is complete.",
+    "currentFocus": "Right-column Files tab with editable-file nano launch is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T12:21:21+08:00",
+      "decision": "Completed t-074-files-tab-nano-open with a right detail Files tab, configured-root-safe project file tree IPC, editable file classification, and nano launch through new terminal tabs.",
+      "source": ".sharkbay/tasks/t-074-files-tab-nano-open/verification.md"
+    },
+    {
+      "date": "2026-05-09T12:14:05+08:00",
+      "decision": "Opened t-074-files-tab-nano-open to add a right detail Files tab that lists selected project files and opens editable files in a new nano terminal tab.",
+      "source": ".sharkbay/tasks/t-074-files-tab-nano-open/contract.md"
+    },
     {
       "date": "2026-05-08T20:42:13+08:00",
       "decision": "Completed t-073-uninstall-harness-action by adding a confirmation-gated Managed-project context menu action, safe harness file removal, exact .gitignore cleanup, and focused verification.",

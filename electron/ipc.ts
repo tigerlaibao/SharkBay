@@ -9,6 +9,7 @@ import { readProjectDetail } from "../src/main/harness-reader.js";
 import { checkHarnessTemplateSync, updateHarnessTemplateFiles } from "../src/main/harness-template-sync.js";
 import { uninstallHarness } from "../src/main/harness-uninstall.js";
 import { migrateLegacyHarnessToContained } from "../src/main/legacy-harness-cleanup.js";
+import { listProjectFiles } from "../src/main/project-files.js";
 import {
   updateHarnessManifest,
   updateHarnessQueue,
@@ -38,6 +39,8 @@ import type {
   NextActionPromptResult,
   ProjectDetail,
   ProjectDetailInput,
+  ProjectFilesInput,
+  ProjectFilesResult,
   ProjectScanInput,
   ProjectSummary,
   ScanProjectsResult,
@@ -69,6 +72,7 @@ export type SharkBayIpcServices = {
   setAppearanceTheme: (input: AppearanceThemeInput) => Promise<AppConfig>;
   scanProjects: (input?: ProjectScanInput) => Promise<ScanProjectsResult>;
   getProjectDetail: (input: ProjectDetailInput) => Promise<ProjectDetail>;
+  listProjectFiles: (input: ProjectFilesInput) => Promise<ProjectFilesResult>;
   updateProjectUrls: (input: UpdateProjectUrlsInput) => Promise<SafeWriteResult>;
   updateHarnessState: (input: HarnessJsonPatchInput) => Promise<SafeWriteResult>;
   updateHarnessManifest: (input: HarnessJsonPatchInput) => Promise<SafeWriteResult>;
@@ -92,6 +96,7 @@ const channels = {
   setAppearanceTheme: "config:setAppearanceTheme",
   scanProjects: "projects:scan",
   getProjectDetail: "projects:getDetail",
+  listProjectFiles: "projects:listFiles",
   updateProjectUrls: "projects:updateUrls",
   updateHarnessState: "harness:updateState",
   updateHarnessManifest: "harness:updateManifest",
@@ -125,6 +130,10 @@ function createDefaultServices(runtime: IpcRuntime): SharkBayIpcServices {
     setAppearanceTheme: (input) => setAppearanceTheme(runtime, input),
     scanProjects: (input) => scanProjects(runtime, input),
     getProjectDetail: (input) => readProjectDetail(runtime, input),
+    listProjectFiles: async (input) => {
+      const configuredRoots = (await getConfiguredRoots(runtime)).configuredRoots;
+      return listProjectFiles(runtime, { ...input, configuredRoots });
+    },
     updateProjectUrls: (input) => updateProjectUrls(runtime, input),
     updateHarnessState: (input) => updateHarnessState(runtime, input),
     updateHarnessManifest: (input) => updateHarnessManifest(runtime, input),
@@ -201,6 +210,9 @@ export function registerIpcHandlers(
   );
   handle<ProjectDetailInput, ProjectDetail>(channels.getProjectDetail, (payload) =>
     services.getProjectDetail(payload)
+  );
+  handle<ProjectFilesInput, ProjectFilesResult>(channels.listProjectFiles, (payload) =>
+    services.listProjectFiles(payload)
   );
   handle<UpdateProjectUrlsInput, SafeWriteResult>(channels.updateProjectUrls, (payload) =>
     services.updateProjectUrls(payload)

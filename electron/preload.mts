@@ -18,6 +18,8 @@ import type {
   NextActionPromptResult,
   ProjectDetail,
   ProjectDetailInput,
+  ProjectFilesInput,
+  ProjectFilesResult,
   ProjectScanInput,
   ProjectSummary,
   ScanProjectsResult,
@@ -42,6 +44,7 @@ const channels = {
   setAppearanceTheme: "config:setAppearanceTheme",
   scanProjects: "projects:scan",
   getProjectDetail: "projects:getDetail",
+  listProjectFiles: "projects:listFiles",
   updateProjectUrls: "projects:updateUrls",
   updateHarnessState: "harness:updateState",
   updateHarnessManifest: "harness:updateManifest",
@@ -97,6 +100,8 @@ const sharkBayApi = {
   scanProjects: (input?: ProjectScanInput) => invoke<ScanProjectsResult>(channels.scanProjects, input),
   getProjectDetail: (input: ProjectDetailInput) =>
     invoke<ProjectDetail>(channels.getProjectDetail, input),
+  listProjectFiles: (input: ProjectFilesInput) =>
+    invoke<ProjectFilesResult>(channels.listProjectFiles, input),
   updateProjectUrls: (input: UpdateProjectUrlsInput) =>
     invoke<SafeWriteResult>(channels.updateProjectUrls, input),
   createHarnessRepo: (input: CreateHarnessRepoInput) =>
@@ -113,6 +118,8 @@ const sharkBayApi = {
     scan: (input?: ProjectScanInput) => invoke<ScanProjectsResult>(channels.scanProjects, input),
     getDetail: (input: ProjectDetailInput) =>
       invoke<ProjectDetail>(channels.getProjectDetail, input),
+    listFiles: (input: ProjectFilesInput) =>
+      invoke<ProjectFilesResult>(channels.listProjectFiles, input),
     updateUrls: (input: UpdateProjectUrlsInput) =>
       invoke<SafeWriteResult>(channels.updateProjectUrls, input),
     createHarnessRepo: (input: CreateHarnessRepoInput) =>

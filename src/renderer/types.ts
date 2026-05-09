@@ -235,6 +235,31 @@ export type ProjectDevService = {
   cwd: string;
 };
 
+export type ProjectFilesInput = {
+  repoPath: string;
+  configuredRoots?: string[];
+};
+
+export type ProjectFileTreeItem = {
+  name: string;
+  path: string;
+  kind: "directory" | "file";
+  editable: boolean;
+  children?: ProjectFileTreeItem[];
+};
+
+export type ProjectFilesResult =
+  | {
+      ok: true;
+      repoPath: string;
+      files: ProjectFileTreeItem[];
+    }
+  | {
+      ok: false;
+      reason: "unsafe-path" | "io-error";
+      message: string;
+    };
+
 export type TaskArtifacts = {
   statusMarkdown?: string | null;
   specMarkdown?: string | null;
@@ -452,6 +477,7 @@ export type SharkBayBridge = {
   setAppearanceTheme?: (input: { theme: AppearanceTheme }) => Promise<AppConfig>;
   scanProjects?: () => Promise<ScanResult | ProjectSummary[]>;
   getProjectDetail?: (input: { projectId?: string; repoPath?: string } | string) => Promise<ProjectDetail>;
+  listProjectFiles?: (input: ProjectFilesInput) => Promise<ProjectFilesResult>;
   updateProjectUrls?: (input: UpdateProjectUrlsInput) => Promise<UpdateProjectUrlsResult>;
   createHarnessRepo?: (input: CreateHarnessRepoInput) => Promise<CreateHarnessRepoResult>;
   generateNextActionPrompt?: (input: NextActionPromptInput) => Promise<NextActionPromptResult | string>;
@@ -464,6 +490,7 @@ export type SharkBayBridge = {
   projects?: {
     scan?: () => Promise<ScanResult | ProjectSummary[]>;
     getDetail?: (input: { projectId?: string; repoPath?: string } | string) => Promise<ProjectDetail>;
+    listFiles?: (input: ProjectFilesInput) => Promise<ProjectFilesResult>;
     updateUrls?: (input: UpdateProjectUrlsInput) => Promise<UpdateProjectUrlsResult>;
     createHarnessRepo?: (input: CreateHarnessRepoInput) => Promise<CreateHarnessRepoResult>;
   };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -16,6 +16,7 @@ import type {
   NextActionPromptResult,
   ProjectCandidate,
   ProjectDetail,
+  ProjectFileTreeItem,
   ProjectSummary,
   RootRecord,
   ScanResult,
@@ -32,7 +33,7 @@ import { agentHandoffReason, displayGateStatus, nextReadyBacklogTask, preferredI
 
 type View = "dashboard" | "settings";
 type DetailMode = "overview" | "task";
-type DetailTab = "tasks" | "decisions" | "git" | "info";
+type DetailTab = "tasks" | "decisions" | "git" | "info" | "files";
 type SettingsSection = "project-roots" | "project-status";
 
 type Toast = {
@@ -72,6 +73,10 @@ type TerminalSpace = {
   activeId: string | null;
 };
 
+type TerminalPaneHandle = {
+  openFileInNano: (projectPath: string, projectName: string, relativePath: string) => Promise<void>;
+};
+
 const minProjectColumnWidth = 216;
 const minDetailColumnWidth = 340;
 const minTerminalColumnWidth = 420;
@@ -86,6 +91,7 @@ const detailTabs: Array<{ id: DetailTab; label: string }> = [
   { id: "decisions", label: "Decisions" },
   { id: "git", label: "Git" },
   { id: "info", label: "Info" },
+  { id: "files", label: "Files" },
 ];
 const settingsSections: Array<{ id: SettingsSection; label: string }> = [
   { id: "project-roots", label: "Project roots" },
@@ -345,6 +351,14 @@ async function uninstallHarness(project: ProjectSummary): Promise<HarnessUninsta
   return handler({ repoPath: project.path });
 }
 
+async function listProjectFiles(project: ProjectSummary | ProjectDetail) {
+  const handler = getBridge().projects?.listFiles ?? getBridge().listProjectFiles;
+  if (!handler) {
+    throw new Error("Project files are not exposed by the preload API.");
+  }
+  return handler({ repoPath: project.path });
+}
+
 async function createTerminal(
   cwd: string,
   title?: string,
@@ -382,6 +396,14 @@ async function closeTerminal(sessionId: string): Promise<void> {
     throw new Error("Terminal close is not exposed by the preload API.");
   }
   await handler({ sessionId });
+}
+
+function nanoCommandFor(relativePath: string): string {
+  return `nano -- ${shellQuote(relativePath)}`;
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
 type PromptTask = {
@@ -841,6 +863,7 @@ function DashboardView({
   const managedCandidates = filteredCandidates.filter((candidate) => candidate.status === "managed");
   const notSetupCandidates = filteredCandidates.filter((candidate) => candidate.status === "not_setup");
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const terminalPaneRef = useRef<TerminalPaneHandle | null>(null);
   const [runningServiceProjectIds, setRunningServiceProjectIds] = useState<Set<string>>(() => new Set());
   const [projectColumnWidth, setProjectColumnWidth] = useState(() =>
     storedColumnWidth(projectColumnStorageKey, defaultProjectColumnWidth, minProjectColumnWidth),
@@ -1065,6 +1088,7 @@ function DashboardView({
 
       <section className="panel terminal-panel">
         <TerminalPane
+          ref={terminalPaneRef}
           appearanceTheme={appearanceTheme}
           candidate={selectedCandidate}
           bridgeAvailable={bridgeAvailable}
@@ -1095,6 +1119,9 @@ function DashboardView({
             project={selectedProject}
             setToast={setToast}
             onRefresh={onRefresh}
+            onOpenFileInNano={(relativePath) =>
+              terminalPaneRef.current?.openFileInNano(selectedProject.path, selectedProject.name, relativePath) ?? Promise.resolve()
+            }
           />
         ) : selectedCandidate ? (
           <NotSetupPane
@@ -1114,21 +1141,21 @@ function DashboardView({
   );
 }
 
-function TerminalPane({
-  appearanceTheme,
-  bridgeAvailable,
-  candidate,
-  isVisible,
-  setToast,
-  onRunningServiceProjectIdsChange,
-}: {
+const TerminalPane = forwardRef<TerminalPaneHandle, {
   appearanceTheme: AppearanceTheme;
   bridgeAvailable: boolean;
   candidate: ProjectCandidate | null;
   isVisible: boolean;
   setToast: (toast: Toast) => void;
   onRunningServiceProjectIdsChange: (projectIds: Set<string>) => void;
-}) {
+}>(function TerminalPane({
+  appearanceTheme,
+  bridgeAvailable,
+  candidate,
+  isVisible,
+  setToast,
+  onRunningServiceProjectIdsChange,
+}, ref) {
   const [spaces, setSpaces] = useState<Record<string, TerminalSpace>>({});
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const spacesRef = useRef<Record<string, TerminalSpace>>({});
@@ -1229,6 +1256,14 @@ function TerminalPane({
     }
     await openProjectTab(candidate.id, candidate.path, candidate.name);
   }
+
+  useImperativeHandle(ref, () => ({
+    openFileInNano: async (projectPath: string, projectName: string, relativePath: string) => {
+      await openProjectTab(projectPath, projectPath, projectName, false, {
+        initialCommand: nanoCommandFor(relativePath),
+      });
+    },
+  }));
 
   async function openProjectTab(
     projectId: string,
@@ -1461,7 +1496,7 @@ function TerminalPane({
       };
     });
   }
-}
+});
 
 function XTermSurface({
   active,
@@ -1922,11 +1957,13 @@ function ProjectDetailPane({
   project,
   setToast,
   onRefresh,
+  onOpenFileInNano,
 }: {
   detail: ProjectDetail | null;
   project: ProjectSummary;
   setToast: (toast: Toast) => void;
   onRefresh: () => Promise<void>;
+  onOpenFileInNano: (relativePath: string) => Promise<void>;
 }) {
   const [detailMode, setDetailMode] = useState<DetailMode>("overview");
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>("tasks");
@@ -2062,6 +2099,20 @@ function ProjectDetailPane({
         role="tabpanel"
       >
         <InfoDetailTab detail={detailLike} />
+      </div>
+      <div
+        aria-labelledby="project-detail-tab-files"
+        className="detail-tab-panel"
+        hidden={activeDetailTab !== "files"}
+        id="project-detail-tabpanel-files"
+        role="tabpanel"
+      >
+        <FilesDetailTab
+          active={activeDetailTab === "files"}
+          detail={detailLike}
+          setToast={setToast}
+          onOpenFileInNano={onOpenFileInNano}
+        />
       </div>
     </div>
   );
@@ -2275,6 +2326,136 @@ function GitDetailTab({ detail }: { detail: ProjectDetail }) {
 
 function InfoDetailTab({ detail }: { detail: ProjectDetail }) {
   return <ProjectInfoCard detail={detail} />;
+}
+
+function FilesDetailTab({
+  active,
+  detail,
+  setToast,
+  onOpenFileInNano,
+}: {
+  active: boolean;
+  detail: ProjectDetail;
+  setToast: (toast: Toast) => void;
+  onOpenFileInNano: (relativePath: string) => Promise<void>;
+}) {
+  const [state, setState] = useState<{
+    loading: boolean;
+    error: string | null;
+    files: ProjectFileTreeItem[];
+  }>({ loading: false, error: null, files: [] });
+
+  useEffect(() => {
+    if (!active) {
+      return;
+    }
+
+    let cancelled = false;
+    setState((current) => ({ ...current, loading: true, error: null }));
+    void listProjectFiles(detail)
+      .then((result) => {
+        if (cancelled) {
+          return;
+        }
+        if (!result.ok) {
+          setState({ loading: false, error: result.message, files: [] });
+          return;
+        }
+        setState({ loading: false, error: null, files: result.files });
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setState({ loading: false, error: asMessage(error), files: [] });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [active, detail.id, detail.path]);
+
+  async function openFile(item: ProjectFileTreeItem) {
+    if (item.kind !== "file" || !item.editable) {
+      return;
+    }
+    try {
+      await onOpenFileInNano(item.path);
+    } catch (error) {
+      setToast({ tone: "error", message: asMessage(error) });
+    }
+  }
+
+  if (state.loading && !state.files.length) {
+    return <EmptyState title="Loading files" body="Reading project files." />;
+  }
+
+  if (state.error) {
+    return <EmptyState title="Files unavailable" body={state.error} />;
+  }
+
+  if (!state.files.length) {
+    return <EmptyState title="No files" body="This project has no visible files." />;
+  }
+
+  return (
+    <section className="subpanel files-card">
+      <div className="project-file-tree" role="tree" aria-label="Project files">
+        {state.files.map((item) => (
+          <ProjectFileTreeItemRow
+            item={item}
+            key={item.path}
+            level={1}
+            onOpenFile={openFile}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProjectFileTreeItemRow({
+  item,
+  level,
+  onOpenFile,
+}: {
+  item: ProjectFileTreeItem;
+  level: number;
+  onOpenFile: (item: ProjectFileTreeItem) => Promise<void>;
+}) {
+  const expandable = item.kind === "directory" && Boolean(item.children?.length);
+  const disabled = item.kind === "file" && !item.editable;
+  return (
+    <>
+      <button
+        aria-disabled={disabled || undefined}
+        aria-expanded={item.kind === "directory" ? expandable : undefined}
+        className={cx("project-file-row", item.kind === "directory" && "is-directory", disabled && "is-disabled")}
+        role="treeitem"
+        style={{ "--file-tree-level": level } as CSSProperties}
+        title={item.path}
+        type="button"
+        onDoubleClick={() => void onOpenFile(item)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            void onOpenFile(item);
+          }
+        }}
+      >
+        <span className="project-file-icon" aria-hidden="true">
+          {item.kind === "directory" ? ">" : ""}
+        </span>
+        <span className="project-file-name">{item.name}</span>
+      </button>
+      {item.children?.map((child) => (
+        <ProjectFileTreeItemRow
+          item={child}
+          key={child.path}
+          level={level + 1}
+          onOpenFile={onOpenFile}
+        />
+      ))}
+    </>
+  );
 }
 
 function ProjectFactsCard({ detail }: { detail: ProjectDetail }) {
