@@ -1,9 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T13:17:53+08:00",
+  "updatedAt": "2026-05-09T15:32:37+08:00",
   "active": [],
   "backlog": [],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-079-workbench-file-git-polish",
+      "title": "Polish Files, task detail, and Git dirty file workflows",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-09"
+    },
     {
       "priority": 1,
       "taskId": "t-078-lazy-files-tree",

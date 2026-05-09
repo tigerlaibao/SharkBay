@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T13:17:53+08:00",
+  "updatedAt": "2026-05-09T15:32:37+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Lazy Files tab directory loading is complete.",
+    "currentFocus": "Files/task detail/Git dirty file workflow polish is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T15:32:37+08:00",
+      "decision": "Completed t-079-workbench-file-git-polish by removing Files icons, launching editable files with vim fallback nano, placing task detail titles below back, compacting Repository facts, and adding dirty-file diff terminal launch.",
+      "source": ".sharkbay/tasks/t-079-workbench-file-git-polish/verification.md"
+    },
+    {
+      "date": "2026-05-09T15:25:45+08:00",
+      "decision": "Opened t-079-workbench-file-git-polish for requested Files, task detail, and Git tab workflow polish.",
+      "source": ".sharkbay/tasks/t-079-workbench-file-git-polish/contract.md"
+    },
     {
       "date": "2026-05-09T13:17:53+08:00",
       "decision": "Completed t-078-lazy-files-tree by changing Files tab listing from eager recursive traversal to one-directory lazy loading with safe relative directoryPath requests.",

@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Lazy Files tab directory loading is complete.
+- Current focus: Files/task detail/Git dirty file workflow polish is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T15:32:37+08:00 | Completed `t-079-workbench-file-git-polish` by removing Files icons, launching editable files with `vim` fallback `nano`, placing task detail titles below back, compacting Repository facts, and adding dirty-file diff terminal launch. | `.sharkbay/tasks/t-079-workbench-file-git-polish/verification.md` |
+| 2026-05-09T15:25:45+08:00 | Opened `t-079-workbench-file-git-polish` for requested Files, task detail, and Git tab workflow polish. | `.sharkbay/tasks/t-079-workbench-file-git-polish/contract.md` |
 | 2026-05-09T13:17:53+08:00 | Completed `t-078-lazy-files-tree` by changing Files tab listing from eager recursive traversal to one-directory lazy loading with safe relative `directoryPath` requests. | `.sharkbay/tasks/t-078-lazy-files-tree/verification.md` |
 | 2026-05-09T13:16:02+08:00 | Opened `t-078-lazy-files-tree` to replace eager recursive Files tab traversal with one-directory-at-a-time lazy loading. | `.sharkbay/tasks/t-078-lazy-files-tree/contract.md` |
 | 2026-05-09T13:10:26+08:00 | Completed `t-077-files-tab-refresh-icons` by preserving the Files tab across project switches, clearing stale file trees immediately, and adding subtle CSS-only Files/file/folder icons. | `.sharkbay/tasks/t-077-files-tab-refresh-icons/verification.md` |

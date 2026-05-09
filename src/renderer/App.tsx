@@ -74,7 +74,8 @@ type TerminalSpace = {
 };
 
 type TerminalPaneHandle = {
-  openFileInNano: (projectPath: string, projectName: string, relativePath: string) => Promise<void>;
+  openFileInEditor: (projectPath: string, projectName: string, relativePath: string) => Promise<void>;
+  openGitDiff: (projectPath: string, projectName: string, relativePath: string) => Promise<void>;
 };
 
 const minProjectColumnWidth = 216;
@@ -398,8 +399,18 @@ async function closeTerminal(sessionId: string): Promise<void> {
   await handler({ sessionId });
 }
 
-function nanoCommandFor(relativePath: string): string {
-  return `nano -- ${shellQuote(relativePath)}`;
+function editorCommandFor(relativePath: string): string {
+  const quotedPath = shellQuote(relativePath);
+  return `if command -v vim >/dev/null 2>&1; then vim -- ${quotedPath}; else nano -- ${quotedPath}; fi`;
+}
+
+function gitDiffCommandFor(relativePath: string): string {
+  const quotedPath = shellQuote(relativePath);
+  return [
+    `git --no-pager diff -- ${quotedPath}`,
+    `git --no-pager diff --cached -- ${quotedPath}`,
+    `if git ls-files --others --exclude-standard -- ${quotedPath} | grep -Fqx -- ${quotedPath}; then git --no-pager diff --no-index -- /dev/null ${quotedPath} || true; fi`,
+  ].join("; ");
 }
 
 function shellQuote(value: string): string {
@@ -1119,8 +1130,11 @@ function DashboardView({
             project={selectedProject}
             setToast={setToast}
             onRefresh={onRefresh}
-            onOpenFileInNano={(relativePath) =>
-              terminalPaneRef.current?.openFileInNano(selectedProject.path, selectedProject.name, relativePath) ?? Promise.resolve()
+            onOpenFileInEditor={(relativePath) =>
+              terminalPaneRef.current?.openFileInEditor(selectedProject.path, selectedProject.name, relativePath) ?? Promise.resolve()
+            }
+            onOpenGitDiff={(relativePath) =>
+              terminalPaneRef.current?.openGitDiff(selectedProject.path, selectedProject.name, relativePath) ?? Promise.resolve()
             }
           />
         ) : selectedCandidate ? (
@@ -1258,9 +1272,14 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   }
 
   useImperativeHandle(ref, () => ({
-    openFileInNano: async (projectPath: string, projectName: string, relativePath: string) => {
+    openFileInEditor: async (projectPath: string, projectName: string, relativePath: string) => {
       await openProjectTab(projectPath, projectPath, projectName, false, {
-        initialCommand: nanoCommandFor(relativePath),
+        initialCommand: editorCommandFor(relativePath),
+      });
+    },
+    openGitDiff: async (projectPath: string, projectName: string, relativePath: string) => {
+      await openProjectTab(projectPath, projectPath, projectName, false, {
+        initialCommand: gitDiffCommandFor(relativePath),
       });
     },
   }));
@@ -1957,13 +1976,15 @@ function ProjectDetailPane({
   project,
   setToast,
   onRefresh,
-  onOpenFileInNano,
+  onOpenFileInEditor,
+  onOpenGitDiff,
 }: {
   detail: ProjectDetail | null;
   project: ProjectSummary;
   setToast: (toast: Toast) => void;
   onRefresh: () => Promise<void>;
-  onOpenFileInNano: (relativePath: string) => Promise<void>;
+  onOpenFileInEditor: (relativePath: string) => Promise<void>;
+  onOpenGitDiff: (relativePath: string) => Promise<void>;
 }) {
   const [detailMode, setDetailMode] = useState<DetailMode>("overview");
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>("tasks");
@@ -2053,7 +2074,6 @@ function ProjectDetailPane({
             onKeyDown={(event) => handleDetailTabKeyDown(event, tab.id)}
             onClick={() => openDetailTab(tab.id)}
           >
-            {tab.id === "files" ? <span className="detail-tab-icon is-files" aria-hidden="true" /> : null}
             {tab.label}
           </button>
         ))}
@@ -2090,7 +2110,7 @@ function ProjectDetailPane({
         id="project-detail-tabpanel-git"
         role="tabpanel"
       >
-        <GitDetailTab detail={detailLike} />
+        <GitDetailTab detail={detailLike} setToast={setToast} onOpenGitDiff={onOpenGitDiff} />
       </div>
       <div
         aria-labelledby="project-detail-tab-info"
@@ -2112,7 +2132,7 @@ function ProjectDetailPane({
           active={activeDetailTab === "files"}
           detail={detailLike}
           setToast={setToast}
-          onOpenFileInNano={onOpenFileInNano}
+          onOpenFileInEditor={onOpenFileInEditor}
         />
       </div>
     </div>
@@ -2312,10 +2332,19 @@ function DecisionsDetailTab({ detail }: { detail: ProjectDetail }) {
   );
 }
 
-function GitDetailTab({ detail }: { detail: ProjectDetail }) {
+function GitDetailTab({
+  detail,
+  setToast,
+  onOpenGitDiff,
+}: {
+  detail: ProjectDetail;
+  setToast: (toast: Toast) => void;
+  onOpenGitDiff: (relativePath: string) => Promise<void>;
+}) {
   return (
     <>
       <ProjectFactsCard detail={detail} />
+      <DirtyFilesPanel detail={detail} setToast={setToast} onOpenGitDiff={onOpenGitDiff} />
       {detail.gitHistory?.length || detail.currentBranch ? (
         <GitHistoryItems events={detail.gitHistory ?? []} limit={null} />
       ) : (
@@ -2333,12 +2362,12 @@ function FilesDetailTab({
   active,
   detail,
   setToast,
-  onOpenFileInNano,
+  onOpenFileInEditor,
 }: {
   active: boolean;
   detail: ProjectDetail;
   setToast: (toast: Toast) => void;
-  onOpenFileInNano: (relativePath: string) => Promise<void>;
+  onOpenFileInEditor: (relativePath: string) => Promise<void>;
 }) {
   const [state, setState] = useState<{
     loading: boolean;
@@ -2386,7 +2415,7 @@ function FilesDetailTab({
       return;
     }
     try {
-      await onOpenFileInNano(item.path);
+      await onOpenFileInEditor(item.path);
     } catch (error) {
       setToast({ tone: "error", message: asMessage(error) });
     }
@@ -2528,7 +2557,6 @@ function ProjectFileTreeItemRow({
             }
           }}
         >
-          <span className={cx("project-file-glyph", item.kind === "directory" ? "is-folder" : "is-file")} aria-hidden="true" />
           <span className="project-file-name">{item.name}</span>
         </button>
       </div>
@@ -2557,6 +2585,46 @@ function updateProjectFileChildren(items: ProjectFileTreeItem[], targetPath: str
     }
     return item;
   });
+}
+
+function DirtyFilesPanel({
+  detail,
+  setToast,
+  onOpenGitDiff,
+}: {
+  detail: ProjectDetail;
+  setToast: (toast: Toast) => void;
+  onOpenGitDiff: (relativePath: string) => Promise<void>;
+}) {
+  const dirtyFiles = detail.gitDirtyFiles ?? [];
+  return (
+    <section className="subpanel dirty-files-card">
+      <div className="panel-title-row compact-title-row">
+        <h4>Dirty Files</h4>
+        <span className="form-note">{dirtyFiles.length ? `${dirtyFiles.length} changed` : "Clean"}</span>
+      </div>
+      {dirtyFiles.length ? (
+        <div className="dirty-file-list">
+          {dirtyFiles.map((file) => (
+            <button
+              className="dirty-file-row"
+              key={`${file.status}-${file.path}`}
+              title={`${file.status} ${file.path}`}
+              type="button"
+              onDoubleClick={() => {
+                void onOpenGitDiff(file.path).catch((error) => setToast({ tone: "error", message: asMessage(error) }));
+              }}
+            >
+              <span className="dirty-file-status">{file.status}</span>
+              <span className="dirty-file-path">{file.path}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="muted-row compact-muted-row">No dirty files.</div>
+      )}
+    </section>
+  );
 }
 
 function ProjectFactsCard({ detail }: { detail: ProjectDetail }) {
@@ -2880,7 +2948,7 @@ function TaskDetailPage({ detail, taskId, onBack }: { detail: ProjectDetail; tas
 
   return (
     <div className="detail-layout task-detail-page">
-      <div className="detail-header">
+      <div className="detail-header task-detail-header">
         <button aria-label="Back to tasks" className="icon-button" title="Back to tasks" type="button" onClick={onBack}>
           <ArrowLeftIcon />
         </button>

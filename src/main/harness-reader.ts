@@ -21,7 +21,7 @@ import type {
 } from "../shared/types.js";
 import { asQueueItem, emptyRunnerSummary, isRecord, normalizeDevelopmentMetadata, normalizeRunnerMetadata, normalizeUrlFields, validateDevelopmentJson, validateRunnerJson } from "../shared/schema.js";
 import { getRuntimeConfigPath, loadAppConfig } from "./config.js";
-import { readGitHistory, readGitMetadata } from "./git.js";
+import { readGitDirtyFiles, readGitHistory, readGitMetadata } from "./git.js";
 import { detectHarnessLayout, harnessJsonRelativePath, type HarnessLayout } from "./harness-layout.js";
 import { checkHarnessTemplateSync } from "./harness-template-sync.js";
 import { checkLegacyHarnessCleanup } from "./legacy-harness-cleanup.js";
@@ -49,6 +49,7 @@ export async function readProjectSummary(repoPath: string, detection: DetectionM
     taskArtifacts: _taskArtifacts,
     recentDecisions: _decisions,
     gitHistory: _gitHistory,
+    gitDirtyFiles: _gitDirtyFiles,
     development: _development,
     revisions: _revisions,
     ...summary
@@ -92,6 +93,7 @@ export async function readProjectDetail(
   const queueJson = await readHarnessJson(repoPath, configuredRoots, layout, ".agent/queue.json", errors);
   const git = await readGitMetadata(repoPath);
   const gitHistory = await readGitHistory(repoPath);
+  const gitDirtyFiles = readOptions.includeArtifacts === false ? [] : await readGitDirtyFiles(repoPath);
   const development = await readDevelopmentMetadata(repoPath, configuredRoots, layout, errors);
   const runnerMetadata = await readRunnerMetadata(repoPath, configuredRoots, layout, errors);
 
@@ -133,6 +135,7 @@ export async function readProjectDetail(
     taskArtifacts,
     recentDecisions,
     gitHistory,
+    gitDirtyFiles,
     development,
     revisions: {
       manifest: manifest.revision,
@@ -763,6 +766,7 @@ function unsafeProjectDetail(repoPath: string, detection: DetectionMode, message
     taskArtifacts: {},
     recentDecisions: [],
     gitHistory: [],
+    gitDirtyFiles: [],
     development: null,
     revisions: { manifest: null, state: null, queue: null },
   };

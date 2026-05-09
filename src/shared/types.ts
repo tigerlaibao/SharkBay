@@ -272,6 +272,13 @@ export type GitEvent = {
   date: string;
 };
 
+export type GitDirtyFile = {
+  path: string;
+  status: string;
+  staged: string;
+  unstaged: string;
+};
+
 export type RevisionMap = {
   manifest: RevisionToken | null;
   state: RevisionToken | null;
@@ -284,6 +291,7 @@ export type ProjectDetail = ProjectSummary & {
   taskArtifacts: Record<string, TaskArtifacts>;
   recentDecisions: RecentDecision[];
   gitHistory: GitEvent[];
+  gitDirtyFiles: GitDirtyFile[];
   development: DevelopmentMetadata | null;
   revisions: RevisionMap;
 };

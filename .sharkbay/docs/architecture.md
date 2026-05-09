@@ -33,6 +33,8 @@ Local SharkBay process
   |
   +--> Project file browser
   |
+  +--> Git dirty file browser
+  |
   v
 Local filesystem repositories
 ```
@@ -87,6 +89,7 @@ Local filesystem repositories
 | Prompt generator | Produce next-action prompts for agents or tools | Pretend execution happened |
 | Terminal manager | Spawn user-driven `node-pty` shell tabs and service-bound dev tabs inside configured project roots | Treat renderer-supplied cwd as filesystem authority or run outside configured roots |
 | Project file browser | List selected project files and directories as project-relative tree data and classify editable text/code files | Expose absolute child paths to the renderer, recurse into paths outside the configured boundary, or edit files directly |
+| Git dirty file browser | List dirty project-relative Git paths and open diff terminal tabs | Expose absolute child paths, mutate Git state, or bypass terminal cwd safety |
 | Runner, future | Invoke approved agents or tools with approval | Run without logs or user-visible evidence |
 
 ## 5. Self-Hosting Requirement
@@ -142,7 +145,9 @@ Create-repo writes only to an empty target inside configured roots and rejects n
 
 Terminal sessions are writable process sessions, but their filesystem authority starts from the same configured-root boundary. The main process canonicalizes the requested cwd through `resolveRepoPath` before spawning a `node-pty` shell, and renderer payloads cannot open arbitrary paths outside configured roots. The renderer uses xterm terminal spaces keyed by project candidate so hidden project terminals remain alive while only the selected project's space is visible. Dev-service controls reuse the terminal manager by attaching service metadata and an initial command to a safe PTY session discovered from root `package.json` `dev`/`dev:*` scripts or direct-child `scripts.dev`.
 
-The project file browser reuses the same configured-root boundary. It resolves the selected repository in the main process, returns only project-relative paths, and does not hide files or directories by name, including hidden files, `.git`, `node_modules`, and build output directories. The initial Files tab load reads only the project root directory; expanding a directory requests that directory's immediate children on demand. Symlink entries are shown, but symlink targets outside the selected project/configured-root boundary are not recursively listed or marked editable. Opening a file delegates to the existing terminal manager by creating a project-rooted terminal tab with a quoted `nano -- <relative-path>` command; SharkBay does not edit file contents directly.
+The project file browser reuses the same configured-root boundary. It resolves the selected repository in the main process, returns only project-relative paths, and does not hide files or directories by name, including hidden files, `.git`, `node_modules`, and build output directories. The initial Files tab load reads only the project root directory; expanding a directory requests that directory's immediate children on demand. Symlink entries are shown, but symlink targets outside the selected project/configured-root boundary are not recursively listed or marked editable. Opening a file delegates to the existing terminal manager by creating a project-rooted terminal tab that runs `vim -- <relative-path>` when `vim` is available and falls back to `nano -- <relative-path>`; SharkBay does not edit file contents directly.
+
+The Git detail tab reads dirty file names from `git status --porcelain=v1 -uall` during project detail reads. The renderer shows compact relative paths only, and double-clicking a dirty file opens a project-rooted terminal tab that runs `git diff` commands for the selected path. The terminal manager still validates cwd against configured roots before spawning any process.
 
 ## 8. Constraints
 

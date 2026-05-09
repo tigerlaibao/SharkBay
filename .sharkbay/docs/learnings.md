@@ -8,9 +8,9 @@ Record durable lessons here. Newest entries go first.
 
 **Cause**: Renderer-visible absolute paths or direct file editing would weaken the existing configured-root and terminal safety model.
 
-**Solution**: Resolve the selected repo in the main process, return only project-relative tree paths, show every project entry by name including hidden/generated directories, and open editable files through an existing project-rooted terminal tab using a quoted `nano -- <relative-path>` command. Symlink entries are visible, but symlink targets outside the selected project/configured-root boundary are not recursively listed or marked editable.
+**Solution**: Resolve the selected repo in the main process, return only project-relative tree paths, show every project entry by name including hidden/generated directories, and open editable files through an existing project-rooted terminal tab using quoted `vim -- <relative-path>` with `nano` fallback. Symlink entries are visible, but symlink targets outside the selected project/configured-root boundary are not recursively listed or marked editable.
 
-**Source**: `.sharkbay/tasks/t-074-files-tab-nano-open/implementation.md`, `.sharkbay/tasks/t-076-show-all-files-directories/implementation.md`, `src/main/project-files.ts`, `src/renderer/App.tsx`, `tests/project-files.test.ts`.
+**Source**: `.sharkbay/tasks/t-074-files-tab-nano-open/implementation.md`, `.sharkbay/tasks/t-076-show-all-files-directories/implementation.md`, `.sharkbay/tasks/t-079-workbench-file-git-polish/implementation.md`, `src/main/project-files.ts`, `src/renderer/App.tsx`, `tests/project-files.test.ts`.
 
 ---
 
