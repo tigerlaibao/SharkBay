@@ -29,6 +29,7 @@ import type {
 } from "./types";
 import {
   preferredInitialCandidate,
+  projectTerminalActivityStates,
   projectSummaryFromDetail,
   projectToCandidate,
   resolveSelectedCandidate,
@@ -1138,15 +1139,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   }, [onRunningServiceProjectIdsChange, spaces]);
 
   useEffect(() => {
-    const nextStates: Record<string, ProjectTerminalActivityState> = {};
-    for (const space of Object.values(spaces)) {
-      if (space.tabs.some((tab) => tab.activityState === "working")) {
-        nextStates[space.projectId] = "working";
-      } else if (space.tabs.some((tab) => tab.activityState === "done")) {
-        nextStates[space.projectId] = "idle";
-      }
-    }
-    onTerminalActivityProjectStatesChange(nextStates);
+    onTerminalActivityProjectStatesChange(projectTerminalActivityStates(Object.values(spaces)));
   }, [onTerminalActivityProjectStatesChange, spaces]);
 
   useEffect(() => {

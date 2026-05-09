@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Service Tabs Should Not Drive Activity Labels
+
+**Problem**: Long-running dev service tabs opened through service controls can continuously produce output and make the project row look like user-directed terminal work is active.
+
+**Cause**: Project row terminal activity labels aggregated every terminal tab, including service-bound tabs that already have a separate blue running-service indicator.
+
+**Solution**: Compute project `working` / `idle` labels from non-service terminal tabs only. Keep service tabs in the separate service running aggregation.
+
+**Source**: `.sharkbay/tasks/t-087-exclude-service-tabs-from-activity-labels/implementation.md`, `src/renderer/workflow.ts`, `src/renderer/App.tsx`, `tests/renderer-workflow.test.ts`.
+
+---
+
 ### Terminal Focus Events Are Not User Typing
 
 **Problem**: Clicking another project could make a working terminal label disappear briefly, then reappear after sustained output.

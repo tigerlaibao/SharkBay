@@ -1,9 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T17:04:44+08:00",
+  "updatedAt": "2026-05-09T17:07:29+08:00",
   "active": [],
   "backlog": [],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-087-exclude-service-tabs-from-activity-labels",
+      "title": "Exclude service tabs from terminal activity labels",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-09"
+    },
     {
       "priority": 1,
       "taskId": "t-086-project-terminal-label-persistence",

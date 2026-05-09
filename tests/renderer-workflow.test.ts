@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readProjectDetail } from "../src/main/harness-reader.js";
 import {
   preferredInitialCandidate,
+  projectTerminalActivityStates,
   projectSummaryFromDetail,
   resolveSelectedCandidate,
   shouldResetTerminalObservationForInput,
@@ -139,6 +140,42 @@ describe("renderer workflow contracts", () => {
     expect(shouldResetTerminalObservationForInput("a")).toBe(true);
     expect(shouldResetTerminalObservationForInput("\r")).toBe(true);
     expect(shouldResetTerminalObservationForInput("\u001b[A")).toBe(true);
+  });
+
+  it("excludes service tabs from project terminal activity labels", () => {
+    expect(
+      projectTerminalActivityStates([
+        {
+          projectId: "project-a",
+          tabs: [
+            { activityState: "working", session: { service: { id: "dev" } } },
+            { activityState: "done", session: { service: { id: "worker" } } },
+          ],
+        },
+      ]),
+    ).toEqual({});
+
+    expect(
+      projectTerminalActivityStates([
+        {
+          projectId: "project-a",
+          tabs: [
+            { activityState: "done", session: { service: { id: "dev" } } },
+            { activityState: "working", session: {} },
+          ],
+        },
+        {
+          projectId: "project-b",
+          tabs: [
+            { activityState: "working", session: { service: { id: "dev" } } },
+            { activityState: "done", session: {} },
+          ],
+        },
+      ]),
+    ).toEqual({
+      "project-a": "working",
+      "project-b": "idle",
+    });
   });
 
   it("projects fresh detail status back into the list summary shape", () => {

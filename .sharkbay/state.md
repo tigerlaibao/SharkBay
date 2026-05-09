@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Project terminal working labels persist across project selection and idle labels are yellow.
+- Current focus: Service-started terminal tabs no longer contribute to project working/idle labels.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T17:07:29+08:00 | Completed `t-087-exclude-service-tabs-from-activity-labels` by extracting project terminal activity aggregation and filtering out service-started tabs while leaving service running indicators intact. | `.sharkbay/tasks/t-087-exclude-service-tabs-from-activity-labels/verification.md` |
+| 2026-05-09T17:06:21+08:00 | Opened `t-087-exclude-service-tabs-from-activity-labels` to stop service-started terminal tabs from contributing to left project row working/idle labels. | `.sharkbay/tasks/t-087-exclude-service-tabs-from-activity-labels/contract.md` |
 | 2026-05-09T17:04:44+08:00 | Completed `t-086-project-terminal-label-persistence` by filtering xterm focus in/out control sequences from terminal input activity resets, using stable candidate/project/path keys for project-row terminal labels, and restoring yellow idle styling. | `.sharkbay/tasks/t-086-project-terminal-label-persistence/verification.md` |
 | 2026-05-09T17:01:21+08:00 | Opened `t-086-project-terminal-label-persistence` to fix a T083 regression where left project terminal working labels disappear after selecting another project, and to make idle labels yellow. | `.sharkbay/tasks/t-086-project-terminal-label-persistence/contract.md` |
 | 2026-05-09T16:48:29+08:00 | Completed `t-085-remove-needs-action-prompt-protocol` by removing Needs action, handoff/prompt UI/API, gate/user-action parsing, runner summary parsing, and runner lifecycle requirements from the active and template harness protocols while keeping task phases. | `.sharkbay/tasks/t-085-remove-needs-action-prompt-protocol/verification.md` |

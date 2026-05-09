@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T17:04:44+08:00",
+  "updatedAt": "2026-05-09T17:07:29+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Project terminal working labels persist across project selection and idle labels are yellow.",
+    "currentFocus": "Service-started terminal tabs no longer contribute to project working/idle labels.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T17:07:29+08:00",
+      "decision": "Completed t-087-exclude-service-tabs-from-activity-labels by extracting project terminal activity aggregation and filtering out service-started tabs while leaving service running indicators intact.",
+      "source": ".sharkbay/tasks/t-087-exclude-service-tabs-from-activity-labels/verification.md"
+    },
+    {
+      "date": "2026-05-09T17:06:21+08:00",
+      "decision": "Opened t-087-exclude-service-tabs-from-activity-labels to stop service-started terminal tabs from contributing to left project row working/idle labels.",
+      "source": ".sharkbay/tasks/t-087-exclude-service-tabs-from-activity-labels/contract.md"
+    },
     {
       "date": "2026-05-09T17:04:44+08:00",
       "decision": "Completed t-086-project-terminal-label-persistence by filtering xterm focus in/out control sequences from terminal input activity resets, using stable candidate/project/path keys for project-row terminal labels, and restoring yellow idle styling.",

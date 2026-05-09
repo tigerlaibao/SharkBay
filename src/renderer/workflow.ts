@@ -14,6 +14,18 @@ export type WorkflowProjectCandidate = {
 
 export type WorkflowProjectTerminalActivityState = "working" | "idle";
 
+export type WorkflowTerminalActivityTab = {
+  activityState: "idle" | "working" | "done";
+  session: {
+    service?: unknown;
+  };
+};
+
+export type WorkflowTerminalActivitySpace = {
+  projectId: string;
+  tabs: WorkflowTerminalActivityTab[];
+};
+
 export type WorkflowProjectSummary = {
   id: string;
   name: string;
@@ -104,4 +116,19 @@ export function terminalActivityForCandidate(
 
 export function shouldResetTerminalObservationForInput(data: string): boolean {
   return data !== "\u001b[I" && data !== "\u001b[O";
+}
+
+export function projectTerminalActivityStates(
+  spaces: Iterable<WorkflowTerminalActivitySpace>,
+): Record<string, WorkflowProjectTerminalActivityState> {
+  const nextStates: Record<string, WorkflowProjectTerminalActivityState> = {};
+  for (const space of spaces) {
+    const activityTabs = space.tabs.filter((tab) => !tab.session.service);
+    if (activityTabs.some((tab) => tab.activityState === "working")) {
+      nextStates[space.projectId] = "working";
+    } else if (activityTabs.some((tab) => tab.activityState === "done")) {
+      nextStates[space.projectId] = "idle";
+    }
+  }
+  return nextStates;
 }
