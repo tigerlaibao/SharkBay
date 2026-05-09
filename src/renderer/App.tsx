@@ -351,12 +351,12 @@ async function uninstallHarness(project: ProjectSummary): Promise<HarnessUninsta
   return handler({ repoPath: project.path });
 }
 
-async function listProjectFiles(project: ProjectSummary | ProjectDetail) {
+async function listProjectFiles(project: ProjectSummary | ProjectDetail, directoryPath?: string) {
   const handler = getBridge().projects?.listFiles ?? getBridge().listProjectFiles;
   if (!handler) {
     throw new Error("Project files are not exposed by the preload API.");
   }
-  return handler({ repoPath: project.path });
+  return handler({ repoPath: project.path, directoryPath });
 }
 
 async function createTerminal(
@@ -2346,6 +2346,8 @@ function FilesDetailTab({
     files: ProjectFileTreeItem[];
   }>({ loading: false, error: null, files: [] });
   const [expandedDirectories, setExpandedDirectories] = useState<Set<string>>(() => new Set());
+  const [loadingDirectories, setLoadingDirectories] = useState<Set<string>>(() => new Set());
+  const activeFilesProjectPath = useRef(detail.path);
 
   useEffect(() => {
     if (!active) {
@@ -2353,7 +2355,9 @@ function FilesDetailTab({
     }
 
     let cancelled = false;
+    activeFilesProjectPath.current = detail.path;
     setExpandedDirectories(new Set());
+    setLoadingDirectories(new Set());
     setState({ loading: true, error: null, files: [] });
     void listProjectFiles(detail)
       .then((result) => {
@@ -2388,14 +2392,50 @@ function FilesDetailTab({
     }
   }
 
-  function toggleDirectory(path: string) {
+  async function toggleDirectory(item: ProjectFileTreeItem) {
+    if (loadingDirectories.has(item.path)) {
+      return;
+    }
+    if (expandedDirectories.has(item.path)) {
+      setExpandedDirectories((current) => {
+        const next = new Set(current);
+        next.delete(item.path);
+        return next;
+      });
+      return;
+    }
+
+    if (item.children === undefined) {
+      setLoadingDirectories((current) => new Set(current).add(item.path));
+      try {
+        const result = await listProjectFiles(detail, item.path);
+        if (activeFilesProjectPath.current !== detail.path) {
+          return;
+        }
+        if (!result.ok) {
+          throw new Error(result.message);
+        }
+        setState((current) => ({
+          ...current,
+          files: updateProjectFileChildren(current.files, item.path, result.files),
+        }));
+      } catch (error) {
+        setToast({ tone: "error", message: asMessage(error) });
+        return;
+      } finally {
+        if (activeFilesProjectPath.current === detail.path) {
+          setLoadingDirectories((current) => {
+            const next = new Set(current);
+            next.delete(item.path);
+            return next;
+          });
+        }
+      }
+    }
+
     setExpandedDirectories((current) => {
       const next = new Set(current);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
+      next.add(item.path);
       return next;
     });
   }
@@ -2421,6 +2461,7 @@ function FilesDetailTab({
             item={item}
             key={item.path}
             level={1}
+            loadingDirectories={loadingDirectories}
             onToggleDirectory={toggleDirectory}
             onOpenFile={openFile}
           />
@@ -2434,17 +2475,20 @@ function ProjectFileTreeItemRow({
   expandedDirectories,
   item,
   level,
+  loadingDirectories,
   onToggleDirectory,
   onOpenFile,
 }: {
   expandedDirectories: Set<string>;
   item: ProjectFileTreeItem;
   level: number;
-  onToggleDirectory: (path: string) => void;
+  loadingDirectories: Set<string>;
+  onToggleDirectory: (item: ProjectFileTreeItem) => Promise<void>;
   onOpenFile: (item: ProjectFileTreeItem) => Promise<void>;
 }) {
-  const expandable = item.kind === "directory" && Boolean(item.children?.length);
+  const expandable = item.kind === "directory" && (item.children === undefined || item.children.length > 0);
   const expanded = expandable && expandedDirectories.has(item.path);
+  const loading = loadingDirectories.has(item.path);
   const disabled = item.kind === "file" && !item.editable;
   return (
     <>
@@ -2462,9 +2506,9 @@ function ProjectFileTreeItemRow({
             className="project-file-toggle"
             disabled={!expandable}
             type="button"
-            onClick={() => onToggleDirectory(item.path)}
+            onClick={() => void onToggleDirectory(item)}
           >
-            {expandable ? (expanded ? "-" : "+") : ""}
+            {loading ? "." : expandable ? (expanded ? "-" : "+") : ""}
           </button>
         ) : (
           <span className="project-file-toggle" aria-hidden="true" />
@@ -2477,7 +2521,7 @@ function ProjectFileTreeItemRow({
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               if (item.kind === "directory" && expandable) {
-                onToggleDirectory(item.path);
+                void onToggleDirectory(item);
                 return;
               }
               void onOpenFile(item);
@@ -2494,12 +2538,25 @@ function ProjectFileTreeItemRow({
           item={child}
           key={child.path}
           level={level + 1}
+          loadingDirectories={loadingDirectories}
           onToggleDirectory={onToggleDirectory}
           onOpenFile={onOpenFile}
         />
       )) : null}
     </>
   );
+}
+
+function updateProjectFileChildren(items: ProjectFileTreeItem[], targetPath: string, children: ProjectFileTreeItem[]): ProjectFileTreeItem[] {
+  return items.map((item) => {
+    if (item.path === targetPath) {
+      return { ...item, children };
+    }
+    if (item.children?.length) {
+      return { ...item, children: updateProjectFileChildren(item.children, targetPath, children) };
+    }
+    return item;
+  });
 }
 
 function ProjectFactsCard({ detail }: { detail: ProjectDetail }) {

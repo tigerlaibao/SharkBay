@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T13:10:26+08:00",
+  "updatedAt": "2026-05-09T13:17:53+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Files tab project switching and icons are complete.",
+    "currentFocus": "Lazy Files tab directory loading is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T13:17:53+08:00",
+      "decision": "Completed t-078-lazy-files-tree by changing Files tab listing from eager recursive traversal to one-directory lazy loading with safe relative directoryPath requests.",
+      "source": ".sharkbay/tasks/t-078-lazy-files-tree/verification.md"
+    },
+    {
+      "date": "2026-05-09T13:16:02+08:00",
+      "decision": "Opened t-078-lazy-files-tree to replace eager recursive Files tab traversal with one-directory-at-a-time lazy loading.",
+      "source": ".sharkbay/tasks/t-078-lazy-files-tree/contract.md"
+    },
     {
       "date": "2026-05-09T13:10:26+08:00",
       "decision": "Completed t-077-files-tab-refresh-icons by preserving the Files tab across project switches, clearing stale file trees immediately, and adding subtle CSS-only Files/file/folder icons.",

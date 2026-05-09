@@ -238,6 +238,7 @@ export type ProjectDevService = {
 export type ProjectFilesInput = {
   repoPath: string;
   configuredRoots?: string[];
+  directoryPath?: string;
 };
 
 export type ProjectFileTreeItem = {

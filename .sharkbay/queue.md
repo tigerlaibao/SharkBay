@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-078-lazy-files-tree` | Lazy-load Files tree directories | 2026-05-09 |
 | `t-077-files-tab-refresh-icons` | Improve Files tab refresh and icons | 2026-05-09 |
 | `t-076-show-all-files-directories` | Show all files and directories | 2026-05-09 |
 | `t-075-collapsible-files-tree` | Make Files tree collapsible | 2026-05-09 |

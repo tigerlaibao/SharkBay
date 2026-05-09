@@ -54,7 +54,8 @@ export async function listProjectFiles(runtime: IpcRuntimeLike, input: ProjectFi
   try {
     const configuredRoots = input.configuredRoots ?? (await getConfiguredRoots(runtime)).configuredRoots;
     const safeRepo = await resolveRepoPath(input.repoPath, configuredRoots);
-    const files = await listDirectory(safeRepo.repoPath, safeRepo.repoPath, safeRepo.containingRoot);
+    const directoryPath = await resolveRequestedDirectory(safeRepo.repoPath, safeRepo.containingRoot, input.directoryPath);
+    const files = await listDirectory(safeRepo.repoPath, directoryPath, safeRepo.containingRoot);
     return { ok: true, repoPath: safeRepo.repoPath, files };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -63,6 +64,39 @@ export async function listProjectFiles(runtime: IpcRuntimeLike, input: ProjectFi
       : "io-error";
     return { ok: false, reason, message };
   }
+}
+
+async function resolveRequestedDirectory(repoPath: string, containingRoot: string, requestedPath: string | undefined): Promise<string> {
+  const normalized = normalizeRelativeDirectoryPath(requestedPath);
+  if (!normalized) {
+    return repoPath;
+  }
+
+  const directoryPath = path.join(repoPath, ...normalized.split("/"));
+  const realPath = await fs.realpath(directoryPath);
+  const stat = await fs.stat(realPath);
+  if (!stat.isDirectory()) {
+    throw new Error("Requested path is not a directory");
+  }
+  if (!isPathInside(repoPath, realPath) || !isPathInside(containingRoot, realPath)) {
+    throw new Error("Requested directory is outside configured roots");
+  }
+  return realPath;
+}
+
+function normalizeRelativeDirectoryPath(requestedPath: string | undefined): string {
+  const trimmed = requestedPath?.trim();
+  if (!trimmed || trimmed === ".") {
+    return "";
+  }
+  if (path.isAbsolute(trimmed) || /[\0\r\n]/.test(trimmed)) {
+    throw new Error("Directory path is unsafe");
+  }
+  const parts = trimmed.split(/[\\/]+/).filter(Boolean);
+  if (parts.includes("..")) {
+    throw new Error("Directory path is unsafe");
+  }
+  return parts.join("/");
 }
 
 export function isEditableProjectFile(relativePath: string): boolean {
@@ -105,9 +139,7 @@ async function listDirectory(repoPath: string, directoryPath: string, containing
         path: relativePath,
         kind: "directory",
         editable: false,
-        children: contained && !entry.isSymbolicLink()
-          ? await listDirectory(repoPath, absolutePath, containingRoot)
-          : [],
+        children: contained && !entry.isSymbolicLink() ? undefined : [],
       });
     } else if (isFile || entry.isSymbolicLink()) {
       items.push({

@@ -37,13 +37,23 @@ describe("project file listing", () => {
     expect(result.files.find((item) => item.path === ".env")?.editable).toBe(true);
     expect(result.files.find((item) => item.path === "linked-secret.md")?.editable).toBe(false);
     expect(result.files.find((item) => item.path === "linked-outside")?.children).toEqual([]);
-    expect(result.files.find((item) => item.path === ".git")?.children?.map((item) => item.path)).toEqual([".git/config"]);
-    expect(result.files.find((item) => item.path === "node_modules")?.children?.map((item) => item.path)).toEqual(["node_modules/ignored"]);
-    expect(result.files.find((item) => item.path === "dist")?.children?.map((item) => item.path)).toEqual(["dist/bundle.js"]);
+    expect(result.files.find((item) => item.path === ".git")?.children).toBeUndefined();
+    expect(result.files.find((item) => item.path === "node_modules")?.children).toBeUndefined();
+    expect(result.files.find((item) => item.path === "dist")?.children).toBeUndefined();
     const src = result.files.find((item) => item.path === "src");
-    expect(src?.children?.map((item) => item.path)).toEqual(["src/App.tsx", "src/logo.png"]);
-    expect(src?.children?.find((item) => item.path === "src/App.tsx")?.editable).toBe(true);
-    expect(src?.children?.find((item) => item.path === "src/logo.png")?.editable).toBe(false);
+    expect(src?.children).toBeUndefined();
+
+    const srcResult = await listProjectFiles({ userDataPath: root }, { repoPath: repo, configuredRoots: [root], directoryPath: "src" });
+    expect(srcResult.ok).toBe(true);
+    if (!srcResult.ok) return;
+    expect(srcResult.files.map((item) => item.path)).toEqual(["src/App.tsx", "src/logo.png"]);
+    expect(srcResult.files.find((item) => item.path === "src/App.tsx")?.editable).toBe(true);
+    expect(srcResult.files.find((item) => item.path === "src/logo.png")?.editable).toBe(false);
+
+    const nodeModulesResult = await listProjectFiles({ userDataPath: root }, { repoPath: repo, configuredRoots: [root], directoryPath: "node_modules" });
+    expect(nodeModulesResult.ok).toBe(true);
+    if (!nodeModulesResult.ok) return;
+    expect(nodeModulesResult.files.map((item) => item.path)).toEqual(["node_modules/ignored"]);
   });
 
   it("rejects repositories outside configured roots", async () => {

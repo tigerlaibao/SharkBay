@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Files tab project switching and icons are complete.
+- Current focus: Lazy Files tab directory loading is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T13:17:53+08:00 | Completed `t-078-lazy-files-tree` by changing Files tab listing from eager recursive traversal to one-directory lazy loading with safe relative `directoryPath` requests. | `.sharkbay/tasks/t-078-lazy-files-tree/verification.md` |
+| 2026-05-09T13:16:02+08:00 | Opened `t-078-lazy-files-tree` to replace eager recursive Files tab traversal with one-directory-at-a-time lazy loading. | `.sharkbay/tasks/t-078-lazy-files-tree/contract.md` |
 | 2026-05-09T13:10:26+08:00 | Completed `t-077-files-tab-refresh-icons` by preserving the Files tab across project switches, clearing stale file trees immediately, and adding subtle CSS-only Files/file/folder icons. | `.sharkbay/tasks/t-077-files-tab-refresh-icons/verification.md` |
 | 2026-05-09T13:08:57+08:00 | Opened `t-077-files-tab-refresh-icons` to make Files tab project switching update immediately and add low-key file/folder icons. | `.sharkbay/tasks/t-077-files-tab-refresh-icons/contract.md` |
 | 2026-05-09T12:58:49+08:00 | Completed `t-076-show-all-files-directories` by removing name-based Files tab skips so hidden files, `.env` files, `.git`, `node_modules`, build output, and symlink entries are visible while symlink escapes remain non-editable and unexpanded. | `.sharkbay/tasks/t-076-show-all-files-directories/verification.md` |

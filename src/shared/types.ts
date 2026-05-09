@@ -56,6 +56,7 @@ export type ProjectDetailInput = {
 export type ProjectFilesInput = {
   repoPath: string;
   configuredRoots?: string[];
+  directoryPath?: string;
 };
 
 export type RootScanResult = {
