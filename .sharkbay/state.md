@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Files/task detail/Git dirty file workflow polish is complete.
+- Current focus: Terminal tab output activity indicator is complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T15:42:00+08:00 | Completed `t-080-terminal-output-activity-light` by making terminal tab indicators turn green on recent PTY output and dim after quiet time. | `.sharkbay/tasks/t-080-terminal-output-activity-light/verification.md` |
+| 2026-05-09T15:36:02+08:00 | Opened `t-080-terminal-output-activity-light` to make terminal tab indicators reflect recent PTY output across all commands. | `.sharkbay/tasks/t-080-terminal-output-activity-light/contract.md` |
 | 2026-05-09T15:32:37+08:00 | Completed `t-079-workbench-file-git-polish` by removing Files icons, launching editable files with `vim` fallback `nano`, placing task detail titles below back, compacting Repository facts, and adding dirty-file diff terminal launch. | `.sharkbay/tasks/t-079-workbench-file-git-polish/verification.md` |
 | 2026-05-09T15:25:45+08:00 | Opened `t-079-workbench-file-git-polish` for requested Files, task detail, and Git tab workflow polish. | `.sharkbay/tasks/t-079-workbench-file-git-polish/contract.md` |
 | 2026-05-09T13:17:53+08:00 | Completed `t-078-lazy-files-tree` by changing Files tab listing from eager recursive traversal to one-directory lazy loading with safe relative `directoryPath` requests. | `.sharkbay/tasks/t-078-lazy-files-tree/verification.md` |

@@ -63,6 +63,7 @@ type TerminalTab = {
   terminal: XTerm;
   fitAddon: FitAddon;
   disposables: Disposable[];
+  outputActive: boolean;
 };
 
 type TerminalSpace = {
@@ -81,6 +82,7 @@ type TerminalPaneHandle = {
 const minProjectColumnWidth = 216;
 const minDetailColumnWidth = 340;
 const minTerminalColumnWidth = 420;
+const terminalOutputActivityTimeoutMs = 1600;
 const defaultProjectColumnWidth = minProjectColumnWidth;
 const defaultDetailColumnWidth = minDetailColumnWidth;
 const resizerColumnWidth = 12;
@@ -1174,6 +1176,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const spacesRef = useRef<Record<string, TerminalSpace>>({});
   const creatingProjects = useRef(new Set<string>());
+  const activityTimers = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
   const activeSpace = activeProjectId ? spaces[activeProjectId] ?? null : null;
   const selectedSpace = candidate?.id ? spaces[candidate.id] ?? null : null;
   const visibleSpace = selectedSpace ?? activeSpace;
@@ -1184,6 +1187,13 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   useEffect(() => {
     spacesRef.current = spaces;
   }, [spaces]);
+
+  useEffect(() => () => {
+    for (const timer of activityTimers.current.values()) {
+      window.clearTimeout(timer);
+    }
+    activityTimers.current.clear();
+  }, []);
 
   useEffect(() => {
     const runningProjectIds = new Set(
@@ -1299,6 +1309,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
         terminal: terminal.instance,
         fitAddon: terminal.fitAddon,
         disposables: terminal.disposables,
+        outputActive: false,
       };
 
       setSpaces((current) => {
@@ -1350,9 +1361,47 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   function appendTerminalOutput(event: TerminalDataEvent) {
     const tab = findTerminalTab(spacesRef.current, event.sessionId);
     tab?.terminal.write(event.data);
+    markTerminalOutputActive(event.sessionId);
+  }
+
+  function markTerminalOutputActive(sessionId: string) {
+    const tab = findTerminalTab(spacesRef.current, sessionId);
+    if (!tab || tab.session.status !== "running") {
+      return;
+    }
+
+    if (!tab.outputActive) {
+      setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => ({
+        ...currentTab,
+        outputActive: true,
+      })));
+    }
+
+    const existingTimer = activityTimers.current.get(sessionId);
+    if (existingTimer) {
+      window.clearTimeout(existingTimer);
+    }
+    const timer = window.setTimeout(() => {
+      activityTimers.current.delete(sessionId);
+      setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => ({
+        ...currentTab,
+        outputActive: false,
+      })));
+    }, terminalOutputActivityTimeoutMs);
+    activityTimers.current.set(sessionId, timer);
+  }
+
+  function clearTerminalActivityTimer(sessionId: string) {
+    const timer = activityTimers.current.get(sessionId);
+    if (!timer) {
+      return;
+    }
+    window.clearTimeout(timer);
+    activityTimers.current.delete(sessionId);
   }
 
   function markTerminalExit(event: TerminalExitEvent) {
+    clearTerminalActivityTimer(event.sessionId);
     const message = `\r\n[process exited${event.exitCode === null ? "" : ` with code ${event.exitCode}`}${event.signal ? `, signal ${event.signal}` : ""}]\r\n`;
     const match = findTerminalTabWithSpace(spacesRef.current, event.sessionId);
     if (match?.tab.session.service) {
@@ -1364,6 +1413,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     match?.tab.terminal.write(message);
     setSpaces((current) => mapTerminalTab(current, event.sessionId, (currentTab) => ({
       ...currentTab,
+      outputActive: false,
       session: { ...currentTab.session, status: "exited" },
     })));
   }
@@ -1387,6 +1437,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   }
 
   function removeTerminalTab(sessionId: string, match: ReturnType<typeof findTerminalTabWithSpace>) {
+    clearTerminalActivityTimer(sessionId);
     match?.tab.disposables.forEach((disposable) => disposable.dispose());
     match?.tab.terminal.dispose();
     setSpaces((current) => {
@@ -1456,7 +1507,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
                         type="button"
                         onClick={() => setActiveTab(space.projectId, tab.session.id)}
                       >
-                        <span className={cx("terminal-state", tab.session.status === "exited" && "is-exited")} />
+                        <span className={cx("terminal-state", tab.outputActive && "is-active", tab.session.status === "exited" && "is-exited")} />
                         <span className="truncate">{tab.session.title}</span>
                       </button>
                       <button

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T15:32:37+08:00",
+  "updatedAt": "2026-05-09T15:42:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Files/task detail/Git dirty file workflow polish is complete.",
+    "currentFocus": "Terminal tab output activity indicator is complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T15:42:00+08:00",
+      "decision": "Completed t-080-terminal-output-activity-light by making terminal tab indicators turn green on recent PTY output and dim after quiet time.",
+      "source": ".sharkbay/tasks/t-080-terminal-output-activity-light/verification.md"
+    },
+    {
+      "date": "2026-05-09T15:36:02+08:00",
+      "decision": "Opened t-080-terminal-output-activity-light to make terminal tab indicators reflect recent PTY output across all commands.",
+      "source": ".sharkbay/tasks/t-080-terminal-output-activity-light/contract.md"
+    },
     {
       "date": "2026-05-09T15:32:37+08:00",
       "decision": "Completed t-079-workbench-file-git-polish by removing Files icons, launching editable files with vim fallback nano, placing task detail titles below back, compacting Repository facts, and adding dirty-file diff terminal launch.",

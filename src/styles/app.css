@@ -1900,12 +1900,18 @@ button.project-file-toggle:focus-visible {
 .terminal-state {
   width: 7px;
   height: 7px;
-  background: #4c845d;
+  background: #aeb8b5;
   border-radius: 999px;
+}
+
+.terminal-state.is-active {
+  background: #4c845d;
+  box-shadow: 0 0 0 3px rgba(76, 132, 93, 0.14);
 }
 
 .terminal-state.is-exited {
   background: #8b9693;
+  box-shadow: none;
 }
 
 .terminal-tab-close {
@@ -2377,6 +2383,20 @@ button.project-file-toggle:focus-visible {
   border-color: #4e6d73;
 }
 
+.app-shell[data-theme="night"] .terminal-state {
+  background: #526360;
+}
+
+.app-shell[data-theme="night"] .terminal-state.is-active {
+  background: #93d7a4;
+  box-shadow: 0 0 0 3px rgba(147, 215, 164, 0.14);
+}
+
+.app-shell[data-theme="night"] .terminal-state.is-exited {
+  background: #7d8986;
+  box-shadow: none;
+}
+
 .app-shell[data-theme="night"] .terminal-tabs {
   border-bottom-color: #263639;
 }
@@ -2494,11 +2514,17 @@ button.project-file-toggle:focus-visible {
 }
 
 .app-shell[data-theme="morning"] .terminal-state {
+  background: #586865;
+}
+
+.app-shell[data-theme="morning"] .terminal-state.is-active {
   background: #6fd28c;
+  box-shadow: 0 0 0 3px rgba(111, 210, 140, 0.14);
 }
 
 .app-shell[data-theme="morning"] .terminal-state.is-exited {
   background: #8b9693;
+  box-shadow: none;
 }
 
 .app-shell[data-theme="morning"] .terminal-tab-close {
