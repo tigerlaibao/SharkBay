@@ -800,15 +800,15 @@ body.is-resizing-columns * {
 }
 
 .terminal-activity-pill.is-working {
-  color: #285735;
-  background: #dceddf;
-  border: 1px solid #c4ddc9;
+  color: #ffffff;
+  background: #2f7d54;
+  border: 0;
 }
 
 .terminal-activity-pill.is-idle {
-  color: #7a5520;
-  background: #f3e1bd;
-  border: 1px solid #dfc98d;
+  color: #ffffff;
+  background: #2f7d54;
+  border: 0;
 }
 
 .detail-layout {
@@ -2152,11 +2152,16 @@ button.project-file-toggle:focus-visible {
 }
 
 .app-shell[data-theme="night"] .phase-done,
-.app-shell[data-theme="night"] .worktree-pill,
-.app-shell[data-theme="night"] .terminal-activity-pill.is-working {
+.app-shell[data-theme="night"] .worktree-pill {
   color: rgba(184, 223, 195, 0.78);
   background: rgba(111, 210, 140, 0.11);
   border-color: rgba(111, 210, 140, 0.16);
+}
+
+.app-shell[data-theme="night"] .terminal-activity-pill.is-working {
+  color: #ffffff;
+  background: #2f7d54;
+  border: 0;
 }
 
 .app-shell[data-theme="night"] .phase-blocked {
@@ -2165,11 +2170,16 @@ button.project-file-toggle:focus-visible {
   border-color: rgba(229, 139, 126, 0.2);
 }
 
-.app-shell[data-theme="night"] .worktree-pill.is-dirty,
-.app-shell[data-theme="night"] .terminal-activity-pill.is-idle {
+.app-shell[data-theme="night"] .worktree-pill.is-dirty {
   color: rgba(229, 203, 145, 0.8);
   background: rgba(215, 189, 120, 0.13);
   border-color: rgba(215, 189, 120, 0.18);
+}
+
+.app-shell[data-theme="night"] .terminal-activity-pill.is-idle {
+  color: #ffffff;
+  background: #2f7d54;
+  border: 0;
 }
 
 .app-shell[data-theme="night"] .project-row-status .worktree-pill,
