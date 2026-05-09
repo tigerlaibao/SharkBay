@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T16:02:00+08:00",
+  "updatedAt": "2026-05-09T16:14:00+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Terminal working state lights are complete.",
+    "currentFocus": "Project status placement and terminal activity labels are complete.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T16:14:00+08:00",
+      "decision": "Completed t-082-project-status-and-terminal-labels by moving project status pills to the Tasks tab and showing aggregated terminal working/idle labels in the project list.",
+      "source": ".sharkbay/tasks/t-082-project-status-and-terminal-labels/verification.md"
+    },
+    {
+      "date": "2026-05-09T16:07:41+08:00",
+      "decision": "Opened t-082-project-status-and-terminal-labels to move project status pills into Tasks and show aggregated terminal working/idle labels in the project list.",
+      "source": ".sharkbay/tasks/t-082-project-status-and-terminal-labels/contract.md"
+    },
     {
       "date": "2026-05-09T16:02:00+08:00",
       "decision": "Completed t-081-terminal-working-state-lights by making service indicators blue and terminal tabs use sustained-output green plus quiet-complete yellow states.",

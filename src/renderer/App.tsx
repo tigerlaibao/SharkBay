@@ -59,6 +59,7 @@ type Disposable = {
 };
 
 type TerminalActivityState = "idle" | "working" | "done";
+type ProjectTerminalActivityState = "working" | "idle";
 
 type TerminalTab = {
   session: TerminalSession;
@@ -882,6 +883,7 @@ function DashboardView({
   const gridRef = useRef<HTMLDivElement | null>(null);
   const terminalPaneRef = useRef<TerminalPaneHandle | null>(null);
   const [runningServiceProjectIds, setRunningServiceProjectIds] = useState<Set<string>>(() => new Set());
+  const [terminalActivityByProjectId, setTerminalActivityByProjectId] = useState<Record<string, ProjectTerminalActivityState>>({});
   const [projectColumnWidth, setProjectColumnWidth] = useState(() =>
     storedColumnWidth(projectColumnStorageKey, defaultProjectColumnWidth, minProjectColumnWidth),
   );
@@ -1055,6 +1057,7 @@ function DashboardView({
             group="managed"
             projectById={projectById}
             runningServiceProjectIds={runningServiceProjectIds}
+            terminalActivityByProjectId={terminalActivityByProjectId}
             selectedId={selectedCandidate?.id ?? null}
             title="Managed"
             onSelect={setSelectedId}
@@ -1068,6 +1071,7 @@ function DashboardView({
             group="not_setup"
             projectById={projectById}
             runningServiceProjectIds={runningServiceProjectIds}
+            terminalActivityByProjectId={terminalActivityByProjectId}
             selectedId={selectedCandidate?.id ?? null}
             title="Not setup"
             onSelect={setSelectedId}
@@ -1114,6 +1118,11 @@ function DashboardView({
           onRunningServiceProjectIdsChange={(nextIds) =>
             setRunningServiceProjectIds((currentIds) =>
               sameStringSet(currentIds, nextIds) ? currentIds : nextIds,
+            )
+          }
+          onTerminalActivityProjectStatesChange={(nextStates) =>
+            setTerminalActivityByProjectId((currentStates) =>
+              sameProjectTerminalActivityStates(currentStates, nextStates) ? currentStates : nextStates,
             )
           }
         />
@@ -1168,6 +1177,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   isVisible: boolean;
   setToast: (toast: Toast) => void;
   onRunningServiceProjectIdsChange: (projectIds: Set<string>) => void;
+  onTerminalActivityProjectStatesChange: (states: Record<string, ProjectTerminalActivityState>) => void;
 }>(function TerminalPane({
   appearanceTheme,
   bridgeAvailable,
@@ -1175,6 +1185,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   isVisible,
   setToast,
   onRunningServiceProjectIdsChange,
+  onTerminalActivityProjectStatesChange,
 }, ref) {
   const [spaces, setSpaces] = useState<Record<string, TerminalSpace>>({});
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -1212,6 +1223,18 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     );
     onRunningServiceProjectIdsChange(runningProjectIds);
   }, [onRunningServiceProjectIdsChange, spaces]);
+
+  useEffect(() => {
+    const nextStates: Record<string, ProjectTerminalActivityState> = {};
+    for (const space of Object.values(spaces)) {
+      if (space.tabs.some((tab) => tab.activityState === "working")) {
+        nextStates[space.projectId] = "working";
+      } else if (space.tabs.some((tab) => tab.activityState === "done")) {
+        nextStates[space.projectId] = "idle";
+      }
+    }
+    onTerminalActivityProjectStatesChange(nextStates);
+  }, [onTerminalActivityProjectStatesChange, spaces]);
 
   useEffect(() => {
     for (const space of Object.values(spacesRef.current)) {
@@ -1883,11 +1906,24 @@ function sameStringSet(left: Set<string>, right: Set<string>): boolean {
   return true;
 }
 
+function sameProjectTerminalActivityStates(
+  left: Record<string, ProjectTerminalActivityState>,
+  right: Record<string, ProjectTerminalActivityState>,
+): boolean {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) {
+    return false;
+  }
+  return leftKeys.every((key) => left[key] === right[key]);
+}
+
 function ProjectTable({
   candidates,
   group,
   projectById,
   runningServiceProjectIds,
+  terminalActivityByProjectId,
   selectedId,
   title,
   onContextMenu,
@@ -1897,6 +1933,7 @@ function ProjectTable({
   group: CandidateGroup;
   projectById: Map<string, ProjectSummary>;
   runningServiceProjectIds: Set<string>;
+  terminalActivityByProjectId: Record<string, ProjectTerminalActivityState>;
   selectedId: string | null;
   title: string;
   onSelect: (id: string) => void;
@@ -1915,14 +1952,8 @@ function ProjectTable({
         {candidates.map((candidate) => {
           const project = candidate.managedProjectId ? projectById.get(candidate.managedProjectId) : null;
           const taskTitle = activeTaskTitle(project ?? null);
-          const phase = project ? phaseOf(project) : null;
-          const gate = project ? gateOf(project) : null;
-          const showGate = gate === "blocked";
-          const actionReason = project ? userActionReason(project) : null;
-          const runnerLabel = project ? runnerStatusLabel(project) : null;
-          const harnessStatus = project?.harnessTemplate?.status;
-          const showHarnessStatus = harnessStatus === "stale" || harnessStatus === "missing";
           const hasRunningService = runningServiceProjectIds.has(candidate.id);
+          const terminalActivity = terminalActivityByProjectId[candidate.id] ?? null;
 
           return (
             <button
@@ -1942,11 +1973,11 @@ function ProjectTable({
               </span>
               {project ? (
                 <span className="project-row-status">
-                  {phase && phase !== "unknown" ? <span className={cx("phase-pill", phaseClass(phase), taskStatusClass(project))}>{phase}</span> : null}
-                  {actionReason ? <span className="status-pill status-blocked" title={actionReason}>needs action</span> : null}
-                  {runnerLabel ? <span className={cx("runner-pill", runnerStatusClass(project))}>{runnerLabel}</span> : null}
-                  {showGate && gate ? <StatusPill status={gate} /> : null}
-                  {showHarnessStatus ? <span className={cx("harness-pill", harnessStatus === "missing" && "is-missing")}>harness {harnessStatus}</span> : null}
+                  {terminalActivity ? (
+                    <span className={cx("terminal-activity-pill", terminalActivity === "working" ? "is-working" : "is-idle")}>
+                      {terminalActivity}
+                    </span>
+                  ) : null}
                   {project.dirtyWorktree !== false ? (
                     <span className={cx("worktree-pill", project.dirtyWorktree && "is-dirty")}>
                       {project.dirtyWorktree === null ? "git unknown" : "dirty"}
@@ -2423,10 +2454,35 @@ function TasksDetailTab({
 }) {
   return (
     <>
+      <ProjectStatusStrip detail={detail} />
       {promptReason && promptTask ? <PromptPanel detail={detail} reason={promptReason} task={promptTask} setToast={setToast} /> : null}
       <QueueTabs detail={detail} onSelectTask={onSelectTask} />
       <Diagnostics detail={detail} />
     </>
+  );
+}
+
+function ProjectStatusStrip({ detail }: { detail: ProjectDetail }) {
+  const phase = phaseOf(detail);
+  const gate = gateOf(detail);
+  const showGate = gate === "blocked";
+  const actionReason = userActionReason(detail);
+  const runnerLabel = runnerStatusLabel(detail);
+  const harnessStatus = detail.harnessTemplate?.status;
+  const showHarnessStatus = harnessStatus === "stale" || harnessStatus === "missing";
+
+  if ((!phase || phase === "unknown") && !actionReason && !runnerLabel && !showGate && !showHarnessStatus) {
+    return null;
+  }
+
+  return (
+    <section className="project-status-strip" aria-label="Project status">
+      {phase && phase !== "unknown" ? <span className={cx("phase-pill", phaseClass(phase), taskStatusClass(detail))}>{phase}</span> : null}
+      {actionReason ? <span className="status-pill status-blocked" title={actionReason}>needs action</span> : null}
+      {runnerLabel ? <span className={cx("runner-pill", runnerStatusClass(detail))}>{runnerLabel}</span> : null}
+      {showGate && gate ? <StatusPill status={gate} /> : null}
+      {showHarnessStatus ? <span className={cx("harness-pill", harnessStatus === "missing" && "is-missing")}>harness {harnessStatus}</span> : null}
+    </section>
   );
 }
 

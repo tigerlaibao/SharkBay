@@ -3,7 +3,7 @@
 ## Repository Status
 
 - Project type: local-first macOS app / developer tool
-- Current focus: Terminal working state lights are complete.
+- Current focus: Project status placement and terminal activity labels are complete.
 - Last controller run: 2026-05-07T19:49:39+08:00 opened `t-045-workbench-column-inset-balance`
 
 ## Repository Identity
@@ -27,6 +27,8 @@
 
 | Date | Decision | Source |
 | --- | --- | --- |
+| 2026-05-09T16:14:00+08:00 | Completed `t-082-project-status-and-terminal-labels` by moving project status pills to the Tasks tab and showing aggregated terminal working/idle labels in the project list. | `.sharkbay/tasks/t-082-project-status-and-terminal-labels/verification.md` |
+| 2026-05-09T16:07:41+08:00 | Opened `t-082-project-status-and-terminal-labels` to move project status pills into Tasks and show aggregated terminal working/idle labels in the project list. | `.sharkbay/tasks/t-082-project-status-and-terminal-labels/contract.md` |
 | 2026-05-09T16:02:00+08:00 | Completed `t-081-terminal-working-state-lights` by making service indicators blue and terminal tabs use sustained-output green plus quiet-complete yellow states. | `.sharkbay/tasks/t-081-terminal-working-state-lights/verification.md` |
 | 2026-05-09T15:57:02+08:00 | Opened `t-081-terminal-working-state-lights` to separate blue service indicators from terminal sustained-output working/done lights. | `.sharkbay/tasks/t-081-terminal-working-state-lights/contract.md` |
 | 2026-05-09T15:42:00+08:00 | Completed `t-080-terminal-output-activity-light` by making terminal tab indicators turn green on recent PTY output and dim after quiet time. | `.sharkbay/tasks/t-080-terminal-output-activity-light/verification.md` |

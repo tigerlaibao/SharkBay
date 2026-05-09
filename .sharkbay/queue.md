@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-082-project-status-and-terminal-labels` | Move project status to Tasks and show terminal activity labels | 2026-05-09 |
 | `t-081-terminal-working-state-lights` | Refine terminal working state lights | 2026-05-09 |
 | `t-080-terminal-output-activity-light` | Show terminal tab output activity | 2026-05-09 |
 | `t-079-workbench-file-git-polish` | Polish Files, task detail, and Git dirty file workflows | 2026-05-09 |

@@ -687,7 +687,8 @@ body.is-resizing-columns * {
 .project-row-status .status-pill,
 .project-row-status .runner-pill,
 .project-row-status .worktree-pill,
-.project-row-status .harness-pill {
+.project-row-status .harness-pill,
+.project-row-status .terminal-activity-pill {
   min-height: 16px;
   border: 0;
   padding: 1px 5px;
@@ -746,7 +747,8 @@ body.is-resizing-columns * {
 .status-pill,
 .runner-pill,
 .worktree-pill,
-.harness-pill {
+.harness-pill,
+.terminal-activity-pill {
   display: inline-flex;
   align-items: center;
   max-width: 100%;
@@ -849,6 +851,18 @@ body.is-resizing-columns * {
   border-color: #dfc09a;
 }
 
+.terminal-activity-pill.is-working {
+  color: #285735;
+  background: #dceddf;
+  border: 1px solid #c4ddc9;
+}
+
+.terminal-activity-pill.is-idle {
+  color: #7a5520;
+  background: #f3e1bd;
+  border: 1px solid #dfc98d;
+}
+
 .harness-pill {
   color: #6a4b17;
   background: #f1e3c2;
@@ -871,6 +885,14 @@ body.is-resizing-columns * {
   overflow-y: auto;
   padding-right: 2px;
   scrollbar-width: none;
+}
+
+.project-status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
 .detail-layout::-webkit-scrollbar {
@@ -2176,7 +2198,8 @@ button.project-file-toggle:focus-visible {
 .app-shell[data-theme="night"] .status-pill,
 .app-shell[data-theme="night"] .runner-pill,
 .app-shell[data-theme="night"] .worktree-pill,
-.app-shell[data-theme="night"] .harness-pill {
+.app-shell[data-theme="night"] .harness-pill,
+.app-shell[data-theme="night"] .terminal-activity-pill {
   color: rgba(217, 229, 223, 0.76);
   background: rgba(217, 229, 223, 0.07);
   border: 1px solid rgba(217, 229, 223, 0.12);
@@ -2203,7 +2226,8 @@ button.project-file-toggle:focus-visible {
 .app-shell[data-theme="night"] .phase-done,
 .app-shell[data-theme="night"] .task-done,
 .app-shell[data-theme="night"] .status-pass,
-.app-shell[data-theme="night"] .worktree-pill {
+.app-shell[data-theme="night"] .worktree-pill,
+.app-shell[data-theme="night"] .terminal-activity-pill.is-working {
   color: rgba(184, 223, 195, 0.78);
   background: rgba(111, 210, 140, 0.11);
   border-color: rgba(111, 210, 140, 0.16);
@@ -2222,7 +2246,8 @@ button.project-file-toggle:focus-visible {
 .app-shell[data-theme="night"] .task-ready,
 .app-shell[data-theme="night"] .status-pending,
 .app-shell[data-theme="night"] .worktree-pill.is-dirty,
-.app-shell[data-theme="night"] .harness-pill {
+.app-shell[data-theme="night"] .harness-pill,
+.app-shell[data-theme="night"] .terminal-activity-pill.is-idle {
   color: rgba(229, 203, 145, 0.8);
   background: rgba(215, 189, 120, 0.13);
   border-color: rgba(215, 189, 120, 0.18);
@@ -2242,7 +2267,8 @@ button.project-file-toggle:focus-visible {
 .app-shell[data-theme="night"] .project-row-status .status-pill,
 .app-shell[data-theme="night"] .project-row-status .runner-pill,
 .app-shell[data-theme="night"] .project-row-status .worktree-pill,
-.app-shell[data-theme="night"] .project-row-status .harness-pill {
+.app-shell[data-theme="night"] .project-row-status .harness-pill,
+.app-shell[data-theme="night"] .project-row-status .terminal-activity-pill {
   border: 0;
 }
 
