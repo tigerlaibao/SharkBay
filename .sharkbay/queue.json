@@ -1,9 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T16:48:29+08:00",
+  "updatedAt": "2026-05-09T17:04:44+08:00",
   "active": [],
   "backlog": [],
   "done": [
+    {
+      "priority": 1,
+      "taskId": "t-086-project-terminal-label-persistence",
+      "title": "Persist project terminal labels across selection",
+      "phase": "done",
+      "dependsOn": [],
+      "status": "done",
+      "completedAt": "2026-05-09"
+    },
     {
       "priority": 1,
       "taskId": "t-085-remove-needs-action-prompt-protocol",

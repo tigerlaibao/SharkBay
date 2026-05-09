@@ -14,6 +14,7 @@
 
 | Task ID | Title | Completed |
 | --- | --- | --- |
+| `t-086-project-terminal-label-persistence` | Persist project terminal labels across selection | 2026-05-09 |
 | `t-085-remove-needs-action-prompt-protocol` | Remove Needs Action and prompt protocol | 2026-05-09 |
 | `t-084-remove-project-status-labels` | Remove project status labels | 2026-05-09 |
 | `t-083-terminal-input-observation-and-empty-state` | Refine terminal input observation and empty state layout | 2026-05-09 |

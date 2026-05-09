@@ -2,6 +2,18 @@
 
 Record durable lessons here. Newest entries go first.
 
+### Terminal Focus Events Are Not User Typing
+
+**Problem**: Clicking another project could make a working terminal label disappear briefly, then reappear after sustained output.
+
+**Cause**: xterm can emit focus in/out control sequences through `onData`; T083 treated every `onData` event as user input and reset the output observation window.
+
+**Solution**: Continue sending focus control sequences to the PTY, but filter `ESC [ I` and `ESC [ O` out of the renderer's user-input observation reset.
+
+**Source**: `.sharkbay/tasks/t-086-project-terminal-label-persistence/implementation.md`, `src/renderer/workflow.ts`, `src/renderer/App.tsx`, `tests/renderer-workflow.test.ts`.
+
+---
+
 ### File Browsing Should Reuse Terminal Boundaries
 
 **Problem**: A Files tab needs to expose project files and launch editing without turning SharkBay into a broad filesystem editor.

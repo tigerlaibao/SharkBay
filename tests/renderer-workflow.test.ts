@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { readProjectDetail } from "../src/main/harness-reader.js";
-import { preferredInitialCandidate, projectSummaryFromDetail, resolveSelectedCandidate, validTerminalResizeDimensions } from "../src/renderer/workflow.js";
+import {
+  preferredInitialCandidate,
+  projectSummaryFromDetail,
+  resolveSelectedCandidate,
+  shouldResetTerminalObservationForInput,
+  terminalActivityForCandidate,
+  validTerminalResizeDimensions,
+} from "../src/renderer/workflow.js";
 import {
   createSelfHostFixture,
   makeTempRoot,
@@ -107,6 +114,31 @@ describe("renderer workflow contracts", () => {
     expect(preferredInitialCandidate([notSetup, managed])).toBe(managed);
     expect(preferredInitialCandidate([notSetup])).toBe(notSetup);
     expect(preferredInitialCandidate([])).toBeNull();
+  });
+
+  it("resolves project row terminal activity from stable candidate, project, or path keys", () => {
+    const candidate = {
+      id: "candidate:/workspace/App",
+      name: "App",
+      path: "/workspace/App",
+      rootPath: "/workspace",
+      status: "managed" as const,
+      managedProjectId: "project:/workspace/App",
+      detection: "manifest" as const,
+    };
+
+    expect(terminalActivityForCandidate(candidate, { "candidate:/workspace/App": "working" })).toBe("working");
+    expect(terminalActivityForCandidate(candidate, { "project:/workspace/App": "idle" })).toBe("idle");
+    expect(terminalActivityForCandidate(candidate, { "/workspace/App": "working" })).toBe("working");
+    expect(terminalActivityForCandidate(candidate, {})).toBeNull();
+  });
+
+  it("does not treat terminal focus control sequences as user input", () => {
+    expect(shouldResetTerminalObservationForInput("\u001b[I")).toBe(false);
+    expect(shouldResetTerminalObservationForInput("\u001b[O")).toBe(false);
+    expect(shouldResetTerminalObservationForInput("a")).toBe(true);
+    expect(shouldResetTerminalObservationForInput("\r")).toBe(true);
+    expect(shouldResetTerminalObservationForInput("\u001b[A")).toBe(true);
   });
 
   it("projects fresh detail status back into the list summary shape", () => {

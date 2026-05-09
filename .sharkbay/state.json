@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09T16:48:29+08:00",
+  "updatedAt": "2026-05-09T17:04:44+08:00",
   "repository": {
     "isGitRepository": true,
     "gitRoot": "<repo-root>",
@@ -13,7 +13,7 @@
   "project": {
     "name": "SharkBay",
     "type": "local-first-macos-app",
-    "currentFocus": "Needs action and handoff/prompt surfaces have been removed.",
+    "currentFocus": "Project terminal working labels persist across project selection and idle labels are yellow.",
     "localUrl": "unknown",
     "deploymentUrl": "unknown",
     "testUrl": "unknown"
@@ -25,6 +25,16 @@
     "blockedBy": []
   },
   "recentDecisions": [
+    {
+      "date": "2026-05-09T17:04:44+08:00",
+      "decision": "Completed t-086-project-terminal-label-persistence by filtering xterm focus in/out control sequences from terminal input activity resets, using stable candidate/project/path keys for project-row terminal labels, and restoring yellow idle styling.",
+      "source": ".sharkbay/tasks/t-086-project-terminal-label-persistence/verification.md"
+    },
+    {
+      "date": "2026-05-09T17:01:21+08:00",
+      "decision": "Opened t-086-project-terminal-label-persistence to fix a T083 regression where left project terminal working labels disappear after selecting another project, and to make idle labels yellow.",
+      "source": ".sharkbay/tasks/t-086-project-terminal-label-persistence/contract.md"
+    },
     {
       "date": "2026-05-09T16:48:29+08:00",
       "decision": "Completed t-085-remove-needs-action-prompt-protocol by removing Needs action, handoff/prompt UI/API, gate/user-action parsing, runner summary parsing, and runner lifecycle requirements from the active and template harness protocols while keeping task phases.",

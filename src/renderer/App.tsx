@@ -27,7 +27,16 @@ import type {
   TerminalUpdateEvent,
   TaskQueueItem,
 } from "./types";
-import { preferredInitialCandidate, projectSummaryFromDetail, projectToCandidate, resolveSelectedCandidate, validTerminalResizeDimensions } from "./workflow";
+import {
+  preferredInitialCandidate,
+  projectSummaryFromDetail,
+  projectToCandidate,
+  resolveSelectedCandidate,
+  shouldResetTerminalObservationForInput,
+  terminalActivityForCandidate,
+  validTerminalResizeDimensions,
+} from "./workflow";
+import type { WorkflowProjectTerminalActivityState } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailMode = "overview" | "task";
@@ -55,7 +64,7 @@ type Disposable = {
 };
 
 type TerminalActivityState = "idle" | "working" | "done";
-type ProjectTerminalActivityState = "working" | "idle";
+type ProjectTerminalActivityState = WorkflowProjectTerminalActivityState;
 
 type TerminalTab = {
   session: TerminalSession;
@@ -1645,7 +1654,9 @@ function createXTerm(
   instance.loadAddon(fitAddon);
   instance.loadAddon(new WebLinksAddon());
   const inputDisposable = instance.onData((data) => {
-    onInput(sessionId);
+    if (shouldResetTerminalObservationForInput(data)) {
+      onInput(sessionId);
+    }
     void sendTerminalInput(sessionId, data).catch((error) => {
       setToast({ tone: "error", message: asMessage(error) });
     });
@@ -1891,7 +1902,8 @@ function ProjectTable({
           const project = candidate.managedProjectId ? projectById.get(candidate.managedProjectId) : null;
           const taskTitle = activeTaskTitle(project ?? null);
           const hasRunningService = runningServiceProjectIds.has(candidate.id);
-          const terminalActivity = terminalActivityByProjectId[candidate.id] ?? null;
+          const terminalActivity = terminalActivityForCandidate(candidate, terminalActivityByProjectId);
+          const hasProjectStatus = Boolean(terminalActivity) || Boolean(project && project.dirtyWorktree !== false);
 
           return (
             <button
@@ -1909,14 +1921,14 @@ function ProjectTable({
                 {taskTitle ? <span className="cell-subtitle truncate">{taskTitle}</span> : null}
                 <span className="cell-subtitle truncate">{candidate.path}</span>
               </span>
-              {project ? (
+              {hasProjectStatus ? (
                 <span className="project-row-status">
                   {terminalActivity ? (
                     <span className={cx("terminal-activity-pill", terminalActivity === "working" ? "is-working" : "is-idle")}>
                       {terminalActivity}
                     </span>
                   ) : null}
-                  {project.dirtyWorktree !== false ? (
+                  {project && project.dirtyWorktree !== false ? (
                     <span className={cx("worktree-pill", project.dirtyWorktree && "is-dirty")}>
                       {project.dirtyWorktree === null ? "git unknown" : "dirty"}
                     </span>

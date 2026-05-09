@@ -12,6 +12,8 @@ export type WorkflowProjectCandidate = {
   services?: Array<{ id: string; label: string; command: string; script: string; cwd: string }>;
 };
 
+export type WorkflowProjectTerminalActivityState = "working" | "idle";
+
 export type WorkflowProjectSummary = {
   id: string;
   name: string;
@@ -88,4 +90,18 @@ export function resolveSelectedCandidate(
 
 export function preferredInitialCandidate(candidates: WorkflowProjectCandidate[]): WorkflowProjectCandidate | null {
   return candidates.find((item) => item.status === "managed") ?? candidates[0] ?? null;
+}
+
+export function terminalActivityForCandidate(
+  candidate: Pick<WorkflowProjectCandidate, "id" | "managedProjectId" | "path">,
+  statesByProjectId: Record<string, WorkflowProjectTerminalActivityState>,
+): WorkflowProjectTerminalActivityState | null {
+  return statesByProjectId[candidate.id]
+    ?? (candidate.managedProjectId ? statesByProjectId[candidate.managedProjectId] : undefined)
+    ?? statesByProjectId[candidate.path]
+    ?? null;
+}
+
+export function shouldResetTerminalObservationForInput(data: string): boolean {
+  return data !== "\u001b[I" && data !== "\u001b[O";
 }
