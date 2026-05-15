@@ -3,6 +3,7 @@ export type AppearanceTheme = "day" | "night" | "morning";
 export type AppConfig = {
   schemaVersion: 1;
   configuredRoots: string[];
+  configuredProjects: string[];
   appearanceTheme: AppearanceTheme;
   updatedAt: string;
 };
@@ -17,6 +18,14 @@ export type RootConfigInput = {
 };
 
 export type RemoveRootInput = RootConfigInput;
+
+export type ProjectConfigInput = {
+  path: string;
+};
+
+export type RemoveProjectInput = {
+  path: string;
+};
 
 export type AppearanceThemeInput = {
   theme: AppearanceTheme;
@@ -59,6 +68,7 @@ export type ProjectFileTreeItem = {
 export type ProjectFilesInput = {
   repoPath: string;
   configuredRoots?: string[];
+  configuredProjects?: string[];
   directoryPath?: string;
 };
 

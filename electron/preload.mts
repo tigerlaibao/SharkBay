@@ -13,10 +13,12 @@ import type {
   BrowserResizeInput,
   BrowserSession,
   BrowserUpdateEvent,
+  ProjectConfigInput,
   ProjectScanInput,
   ProjectDetail,
   ProjectFilesInput,
   ProjectFilesResult,
+  RemoveProjectInput,
   RemoveRootInput,
   RootConfigInput,
   ScanProjectsResult,
@@ -60,6 +62,9 @@ const sharkBayApi = {
     listRoots: () => invoke<AppConfig>(channels.listRoots),
     addRoot: (input: RootConfigInput) => invoke<AppConfig>(channels.addRoot, input),
     removeRoot: (input: RemoveRootInput) => invoke<AppConfig>(channels.removeRoot, input),
+    addProject: (input: ProjectConfigInput) => invoke<AppConfig>(channels.addProject, input),
+    removeProject: (input: RemoveProjectInput) => invoke<AppConfig>(channels.removeProject, input),
+    pickProjectFolder: () => invoke<{ cancelled: boolean; paths: string[] }>(channels.pickProjectFolder),
     setAppearanceTheme: (input: AppearanceThemeInput) => invoke<AppConfig>(channels.setAppearanceTheme, input)
   },
   projects: {

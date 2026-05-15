@@ -47,8 +47,59 @@ export async function scanConfiguredRoots(configuredRoots: string[], options: { 
 }
 
 export async function scanProjects(runtime: IpcRuntimeLike, input?: ProjectScanInput): Promise<ScanProjectsResult> {
-  const configuredRoots = (await loadAppConfig(getRuntimeConfigPath(runtime))).configuredRoots;
-  return scanConfiguredRoots(configuredRoots, { maxDepth: input?.maxDepth });
+  const config = await loadAppConfig(getRuntimeConfigPath(runtime));
+  const rootResult = await scanConfiguredRoots(config.configuredRoots, { maxDepth: input?.maxDepth });
+
+  // Resolve manually added projects and merge with scanned results
+  const manualCandidates = await resolveManualProjects(config.configuredProjects);
+  const merged = mergeProjectCandidates(rootResult.candidates, manualCandidates);
+
+  return { roots: rootResult.roots, candidates: merged };
+}
+
+async function resolveManualProjects(configuredProjects: string[]): Promise<ProjectCandidate[]> {
+  const candidates: ProjectCandidate[] = [];
+
+  for (const projectPath of configuredProjects) {
+    try {
+      const real = await fs.realpath(path.resolve(projectPath));
+      const stat = await fs.stat(real);
+      if (!stat.isDirectory()) continue;
+
+      const name = path.basename(real);
+      const [iconSources, services, gitMetadata] = await Promise.all([
+        resolveProjectIconSources(real, [real]),
+        discoverProjectDevServices(real),
+        readGitMetadata(real),
+      ]);
+      candidates.push({
+        id: real,
+        name,
+        path: real,
+        rootPath: real,
+        iconSources,
+        services,
+        dirtyWorktree: gitMetadata.dirtyWorktree,
+      });
+    } catch {
+      // Skip projects that can't be resolved (missing, permission errors, etc.)
+    }
+  }
+
+  return candidates;
+}
+
+function mergeProjectCandidates(scanned: ProjectCandidate[], manual: ProjectCandidate[]): ProjectCandidate[] {
+  const seen = new Map<string, ProjectCandidate>();
+  for (const candidate of scanned) {
+    seen.set(candidate.path, candidate);
+  }
+  for (const candidate of manual) {
+    if (!seen.has(candidate.path)) {
+      seen.set(candidate.path, candidate);
+    }
+  }
+  return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function findGitRepos(rootPath: string, maxDepth: number): Promise<string[]> {

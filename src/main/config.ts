@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { AppearanceTheme, AppearanceThemeInput, AppConfig, IpcRuntimeLike, RemoveRootInput, RootConfigInput } from "../shared/types.js";
+import type { AppearanceTheme, AppearanceThemeInput, AppConfig, IpcRuntimeLike, ProjectConfigInput, RemoveProjectInput, RemoveRootInput, RootConfigInput } from "../shared/types.js";
 import { isRecord } from "../shared/schema.js";
 import { writeJsonAtomic, readJsonFile } from "./json-file.js";
 
@@ -19,6 +19,7 @@ export function createDefaultConfig(): AppConfig {
   return {
     schemaVersion: 1,
     configuredRoots: [],
+    configuredProjects: [],
     appearanceTheme: "day",
     updatedAt: today(),
   };
@@ -72,6 +73,34 @@ export async function removeConfiguredRoot(first: string | IpcRuntimeLike, secon
   return config;
 }
 
+export async function addConfiguredProject(projectPath: string, configPath?: string): Promise<AppConfig>;
+export async function addConfiguredProject(runtime: IpcRuntimeLike, input: ProjectConfigInput): Promise<AppConfig>;
+export async function addConfiguredProject(first: string | IpcRuntimeLike, second?: string | ProjectConfigInput): Promise<AppConfig> {
+  const projectPath = typeof first === "string" ? first : projectFromInput(second);
+  const configPath = typeof first === "string" ? second as string | undefined : getRuntimeConfigPath(first);
+  const config = await loadAppConfig(configPath);
+  const absolute = path.resolve(projectPath);
+  if (!config.configuredProjects.includes(absolute)) {
+    config.configuredProjects.push(absolute);
+  }
+  config.updatedAt = today();
+  await saveAppConfig(config, configPath);
+  return config;
+}
+
+export async function removeConfiguredProject(projectPath: string, configPath?: string): Promise<AppConfig>;
+export async function removeConfiguredProject(runtime: IpcRuntimeLike, input: RemoveProjectInput): Promise<AppConfig>;
+export async function removeConfiguredProject(first: string | IpcRuntimeLike, second?: string | RemoveProjectInput): Promise<AppConfig> {
+  const projectPath = typeof first === "string" ? first : projectFromInput(second);
+  const configPath = typeof first === "string" ? second as string | undefined : getRuntimeConfigPath(first);
+  const config = await loadAppConfig(configPath);
+  const absolute = path.resolve(projectPath);
+  config.configuredProjects = config.configuredProjects.filter((p) => p !== absolute);
+  config.updatedAt = today();
+  await saveAppConfig(config, configPath);
+  return config;
+}
+
 export async function setAppearanceTheme(theme: AppearanceTheme, configPath?: string): Promise<AppConfig>;
 export async function setAppearanceTheme(runtime: IpcRuntimeLike, input: AppearanceThemeInput): Promise<AppConfig>;
 export async function setAppearanceTheme(first: AppearanceTheme | IpcRuntimeLike, second?: string | AppearanceThemeInput): Promise<AppConfig> {
@@ -93,12 +122,24 @@ function rootFromInput(input: string | RootConfigInput | RemoveRootInput | undef
   return rootPath;
 }
 
+function projectFromInput(input: string | ProjectConfigInput | RemoveProjectInput | undefined): string {
+  if (typeof input === "string") return input;
+  const projectPath = input?.path;
+  if (!projectPath) {
+    throw new Error("Project path is required");
+  }
+  return projectPath;
+}
+
 function normalizeAppConfig(value: unknown): AppConfig {
   if (!isRecord(value)) return createDefaultConfig();
   return {
     schemaVersion: 1,
     configuredRoots: Array.isArray(value.configuredRoots)
       ? [...new Set(value.configuredRoots.filter((item): item is string => typeof item === "string").map((item) => path.resolve(item)))]
+      : [],
+    configuredProjects: Array.isArray(value.configuredProjects)
+      ? [...new Set(value.configuredProjects.filter((item): item is string => typeof item === "string").map((item) => path.resolve(item)))]
       : [],
     appearanceTheme: normalizeAppearanceTheme(value.appearanceTheme),
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : today(),

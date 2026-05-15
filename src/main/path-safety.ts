@@ -42,16 +42,31 @@ export async function resolveConfiguredRoots(configuredRoots: string[]): Promise
   return results;
 }
 
-export async function resolveRepoPath(repoPath: string, configuredRoots: string[]): Promise<SafeRepoPath> {
-  const roots = await availableRootPaths(configuredRoots);
-  if (roots.length === 0) {
-    throw new Error("No configured roots are available");
-  }
-
+export async function resolveRepoPath(repoPath: string, configuredRoots: string[], configuredProjects?: string[]): Promise<SafeRepoPath> {
   const realRepo = await fs.realpath(path.resolve(repoPath));
   const stat = await fs.stat(realRepo);
   if (!stat.isDirectory()) {
     throw new Error("Repository path is not a directory");
+  }
+
+  // Check if the repo is a manually configured project (self-rooted)
+  if (configuredProjects && configuredProjects.length > 0) {
+    for (const projectPath of configuredProjects) {
+      try {
+        const realProject = await fs.realpath(path.resolve(projectPath));
+        if (realRepo === realProject || isPathInside(realProject, realRepo)) {
+          return { repoPath: realRepo, containingRoot: realProject };
+        }
+      } catch {
+        // Skip unresolvable project paths
+      }
+    }
+  }
+
+  // Fall back to configured roots containment check
+  const roots = await availableRootPaths(configuredRoots);
+  if (roots.length === 0 && (!configuredProjects || configuredProjects.length === 0)) {
+    throw new Error("No configured roots are available");
   }
 
   const containingRoot = roots.find((root) => isPathInside(root, realRepo));
@@ -66,12 +81,13 @@ export async function resolveReadableRepoFile(
   repoPath: string,
   configuredRoots: string[],
   relativePath: string,
+  configuredProjects?: string[],
 ): Promise<string> {
   if (path.isAbsolute(relativePath) || relativePath.split(path.sep).includes("..")) {
     throw new Error("Relative file path is unsafe");
   }
 
-  const safeRepo = await resolveRepoPath(repoPath, configuredRoots);
+  const safeRepo = await resolveRepoPath(repoPath, configuredRoots, configuredProjects);
   const filePath = path.join(safeRepo.repoPath, relativePath);
   try {
     const stat = await fs.lstat(filePath);
