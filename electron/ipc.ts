@@ -1,8 +1,10 @@
-import { BrowserWindow, ipcMain } from "electron";
+import { BrowserWindow, dialog, ipcMain } from "electron";
 import {
   addConfiguredRoot,
+  addConfiguredProject,
   getConfiguredRoots,
   removeConfiguredRoot,
+  removeConfiguredProject,
   setAppearanceTheme
 } from "../src/main/config.js";
 import { listProjectFiles } from "../src/main/project-files.js";
@@ -22,10 +24,12 @@ import type {
   BrowserResizeInput,
   BrowserSession,
   BrowserUpdateEvent,
+  ProjectConfigInput,
   ProjectScanInput,
   ProjectDetail,
   ProjectFilesInput,
   ProjectFilesResult,
+  RemoveProjectInput,
   RemoveRootInput,
   RootConfigInput,
   ScanProjectsResult,
@@ -61,8 +65,10 @@ export function closeAllTerminalSessions(): void {
 }
 
 async function getProjectDetail(runtime: IpcRuntime, input: { repoPath?: string }): Promise<ProjectDetail> {
-  const configuredRoots = (await getConfiguredRoots(runtime)).configuredRoots;
-  const safeRepo = await resolveRepoPath(input.repoPath ?? "", configuredRoots);
+  const config = await getConfiguredRoots(runtime);
+  const configuredRoots = config.configuredRoots;
+  const configuredProjects = config.configuredProjects;
+  const safeRepo = await resolveRepoPath(input.repoPath ?? "", configuredRoots, configuredProjects);
   const repoPath = safeRepo.repoPath;
   const [gitMeta, gitHistory, gitDirtyFiles, iconSources] = await Promise.all([
     readGitMetadata(repoPath),
@@ -130,6 +136,19 @@ export function registerIpcHandlers(
   handle<void, AppConfig>(channels.listRoots, () => getConfiguredRoots(runtime));
   handle<RootConfigInput, AppConfig>(channels.addRoot, (payload) => addConfiguredRoot(runtime, payload));
   handle<RemoveRootInput, AppConfig>(channels.removeRoot, (payload) => removeConfiguredRoot(runtime, payload));
+  handle<ProjectConfigInput, AppConfig>(channels.addProject, (payload) => addConfiguredProject(runtime, payload));
+  handle<RemoveProjectInput, AppConfig>(channels.removeProject, (payload) => removeConfiguredProject(runtime, payload));
+  ipcMain.removeHandler(channels.pickProjectFolder);
+  ipcMain.handle(channels.pickProjectFolder, async (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) return { cancelled: true, paths: [] };
+    const result = await dialog.showOpenDialog(window, {
+      title: "Select project folder",
+      properties: ["openDirectory", "multiSelections"],
+      message: "Choose one or more project directories to add",
+    });
+    return { cancelled: result.canceled, paths: result.filePaths };
+  });
   handle<AppearanceThemeInput, AppConfig>(channels.setAppearanceTheme, (payload) =>
     setAppearanceTheme(runtime, payload).then((config) => {
       callbacks.onAppearanceThemeChanged?.(config.appearanceTheme);
@@ -143,8 +162,8 @@ export function registerIpcHandlers(
     getProjectDetail(runtime, payload)
   );
   handle<ProjectFilesInput, ProjectFilesResult>(channels.listProjectFiles, async (payload) => {
-    const configuredRoots = (await getConfiguredRoots(runtime)).configuredRoots;
-    return listProjectFiles(runtime, { ...payload, configuredRoots });
+    const config = await getConfiguredRoots(runtime);
+    return listProjectFiles(runtime, { ...payload, configuredRoots: config.configuredRoots, configuredProjects: config.configuredProjects });
   });
   handle<void, AgentCli[]>(channels.listAgentClis, () => listAvailableAgentClis());
   ipcMain.removeHandler(channels.createBrowser);

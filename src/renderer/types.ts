@@ -11,6 +11,7 @@ export type RootRecord = {
 export type AppConfig = {
   schemaVersion?: number;
   configuredRoots: string[];
+  configuredProjects?: string[];
   appearanceTheme?: AppearanceTheme;
   updatedAt?: string;
 };
@@ -214,6 +215,9 @@ export type SharkBayBridge = {
     listRoots?: () => Promise<AppConfig | RootRecord[] | string[]>;
     addRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
     removeRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
+    addProject?: (input: { path: string }) => Promise<AppConfig | void>;
+    removeProject?: (input: { path: string }) => Promise<AppConfig | void>;
+    pickProjectFolder?: () => Promise<{ cancelled: boolean; paths: string[] }>;
     setAppearanceTheme?: (input: { theme: AppearanceTheme }) => Promise<AppConfig>;
   };
   projects?: {

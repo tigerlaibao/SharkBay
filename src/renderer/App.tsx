@@ -39,7 +39,7 @@ import type { WorkflowProjectTerminalActivityState } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailTab = "git" | "files";
-type SettingsSection = "project-roots" | "project-status";
+type SettingsSection = "projects" | "project-roots" | "project-status";
 
 type Toast = {
   tone: "info" | "error" | "success";
@@ -109,7 +109,8 @@ const detailTabs: Array<{ id: DetailTab; label: string }> = [
   { id: "files", label: "Files" },
 ];
 const settingsSections: Array<{ id: SettingsSection; label: string }> = [
-  { id: "project-roots", label: "Project roots" },
+  { id: "projects", label: "Projects" },
+  { id: "project-roots", label: "Scan roots" },
   { id: "project-status", label: "Status" },
 ];
 
@@ -231,6 +232,31 @@ async function removeRoot(path: string): Promise<void> {
   const handler = getBridge().config?.removeRoot;
   if (!handler) throw new Error("Root remove is not exposed by the preload API.");
   await handler({ path, rootPath: path });
+}
+
+async function addProject(path: string): Promise<void> {
+  const handler = getBridge().config?.addProject;
+  if (!handler) throw new Error("Project add is not exposed by the preload API.");
+  await handler({ path });
+}
+
+async function removeProject(path: string): Promise<void> {
+  const handler = getBridge().config?.removeProject;
+  if (!handler) throw new Error("Project remove is not exposed by the preload API.");
+  await handler({ path });
+}
+
+async function pickAndAddProjects(): Promise<string[]> {
+  const picker = getBridge().config?.pickProjectFolder;
+  if (!picker) throw new Error("Folder picker is not exposed by the preload API.");
+  const result = await picker();
+  if (result.cancelled || result.paths.length === 0) return [];
+  const addHandler = getBridge().config?.addProject;
+  if (!addHandler) throw new Error("Project add is not exposed by the preload API.");
+  for (const p of result.paths) {
+    await addHandler({ path: p });
+  }
+  return result.paths;
 }
 
 async function scanProjects(): Promise<ScanResult> {
@@ -380,6 +406,7 @@ function appearanceDescription(theme: AppearanceTheme): string {
 export function App() {
   const [view, setView] = useState<View>("dashboard");
   const [roots, setRoots] = useState<RootRecord[]>([]);
+  const [configuredProjects, setConfiguredProjects] = useState<string[]>([]);
   const [candidates, setCandidates] = useState<ProjectCandidate[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ProjectDetail | null>(null);
@@ -411,6 +438,7 @@ export function App() {
       const rootList = normalizeRoots(rootConfig);
       if (isAppConfig(rootConfig)) {
         setAppearanceTheme(normalizeAppearanceTheme(rootConfig.appearanceTheme));
+        setConfiguredProjects(rootConfig.configuredProjects ?? []);
       }
       const nextCandidates = scan.candidates ?? [];
       const normalizedRootErrors = normalizeRoots(scan.roots);
@@ -500,6 +528,8 @@ export function App() {
               setSelectedId={setSelectedId}
               setToast={setToast}
               onRefresh={refreshWorkspace}
+              onOpenSettings={() => setView("settings")}
+              onPickProject={async () => { const paths = await pickAndAddProjects(); if (paths.length) await refreshProjects({ showToast: true }); }}
             />
           </div>
           {view === "settings" ? (
@@ -507,6 +537,7 @@ export function App() {
               <SettingsView
                 appearanceTheme={appearanceTheme}
                 roots={roots}
+                configuredProjects={configuredProjects}
                 bridgeAvailable={bridgeAvailable}
                 lastScanAt={lastScanAt}
                 loading={loading}
@@ -517,6 +548,9 @@ export function App() {
                 onScan={async () => { await refreshProjects({ showToast: true }); }}
                 onAdd={async (path) => { await addRoot(path); await refreshRoots(); await refreshProjects({ showToast: true }); }}
                 onRemove={async (path) => { await removeRoot(path); await refreshRoots(); await refreshProjects({ showToast: true }); }}
+                onAddProject={async (path) => { await addProject(path); await refreshProjects({ showToast: true }); }}
+                onRemoveProject={async (path) => { await removeProject(path); await refreshProjects({ showToast: true }); }}
+                onPickProject={async () => { const paths = await pickAndAddProjects(); if (paths.length) await refreshProjects({ showToast: true }); }}
                 onThemeChange={async (theme) => {
                   const config = await updateAppearanceTheme(theme);
                   setAppearanceTheme(normalizeAppearanceTheme(config.appearanceTheme));
@@ -542,6 +576,8 @@ function DashboardView({
   setSelectedId,
   setToast,
   onRefresh,
+  onOpenSettings,
+  onPickProject,
 }: {
   appearanceTheme: AppearanceTheme;
   bridgeAvailable: boolean;
@@ -554,6 +590,8 @@ function DashboardView({
   setSelectedId: (value: string) => void;
   setToast: (toast: Toast) => void;
   onRefresh: () => Promise<void>;
+  onOpenSettings: () => void;
+  onPickProject: () => Promise<void>;
 }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const terminalPaneRef = useRef<TerminalPaneHandle | null>(null);
@@ -662,20 +700,34 @@ function DashboardView({
     <div className={cx("dashboard-grid", detailPanelHidden && "is-detail-hidden")} ref={gridRef} style={gridStyle}>
       <section className="project-panel">
         <div className="project-window-drag-strip" aria-hidden="true" />
+        <div className="project-panel-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px 4px" }}>
+          <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", opacity: 0.6 }}>Projects</span>
+          <button aria-label="Add project" className="icon-button" title="Add project folder" type="button" onClick={() => void onPickProject()}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </button>
+        </div>
         {scanErrors.length ? (
           <div className="inline-errors">
             {scanErrors.map((error) => (<div key={error}>{error}</div>))}
           </div>
         ) : null}
         <div className="project-sections">
-          <ProjectList
-            agentStatusByProjectPath={agentStatusByProjectPath}
-            candidates={filteredCandidates}
-            runningServiceProjectIds={runningServiceProjectIds}
-            terminalActivityByProjectId={terminalActivityByProjectId}
-            selectedId={selectedCandidate?.id ?? null}
-            onSelect={setSelectedId}
-          />
+          {filteredCandidates.length ? (
+            <ProjectList
+              agentStatusByProjectPath={agentStatusByProjectPath}
+              candidates={filteredCandidates}
+              runningServiceProjectIds={runningServiceProjectIds}
+              terminalActivityByProjectId={terminalActivityByProjectId}
+              selectedId={selectedCandidate?.id ?? null}
+              onSelect={setSelectedId}
+            />
+          ) : (
+            <div className="empty-state compact-title-row" style={{ padding: "24px 16px" }}>
+              <strong>No projects</strong>
+              <span>Add a project directory to get started.</span>
+              <button className="button" type="button" style={{ marginTop: "12px" }} onClick={() => void onPickProject()}>Add Project</button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -724,7 +776,7 @@ function DashboardView({
             }
           />
         ) : (
-          <EmptyState title="No project selected" body="Open Settings to add a scan root, then scan for projects." />
+          <EmptyState title="No project selected" body="Open Settings to add a project or configure a scan root." />
         )}
       </section>
     </div>
@@ -1669,24 +1721,24 @@ function updateProjectFileChildren(items: ProjectFileTreeItem[], targetPath: str
   });
 }
 
-function SettingsView({ appearanceTheme, roots, bridgeAvailable, lastScanAt, loading, candidates, scanErrors, setToast, onBack, onScan, onAdd, onRemove, onThemeChange }: {
-  appearanceTheme: AppearanceTheme; roots: RootRecord[]; bridgeAvailable: boolean; lastScanAt: string | null; loading: boolean; candidates: ProjectCandidate[]; scanErrors: string[]; setToast: (toast: Toast) => void;
-  onBack: () => void; onScan: () => Promise<void>; onAdd: (path: string) => Promise<void>; onRemove: (path: string) => Promise<void>; onThemeChange: (theme: AppearanceTheme) => Promise<void>;
+function SettingsView({ appearanceTheme, roots, configuredProjects, bridgeAvailable, lastScanAt, loading, candidates, scanErrors, setToast, onBack, onScan, onAdd, onRemove, onAddProject, onRemoveProject, onPickProject, onThemeChange }: {
+  appearanceTheme: AppearanceTheme; roots: RootRecord[]; configuredProjects: string[]; bridgeAvailable: boolean; lastScanAt: string | null; loading: boolean; candidates: ProjectCandidate[]; scanErrors: string[]; setToast: (toast: Toast) => void;
+  onBack: () => void; onScan: () => Promise<void>; onAdd: (path: string) => Promise<void>; onRemove: (path: string) => Promise<void>; onAddProject: (path: string) => Promise<void>; onRemoveProject: (path: string) => Promise<void>; onPickProject: () => Promise<void>; onThemeChange: (theme: AppearanceTheme) => Promise<void>;
 }) {
   const unavailableRootCount = roots.filter((root) => root.unavailable || root.available === false).length;
-  const [activeSection, setActiveSection] = useState<SettingsSection>("project-roots");
+  const [activeSection, setActiveSection] = useState<SettingsSection>("projects");
 
   return (
     <div className="settings-layout">
       <div className="detail-header settings-header">
         <button aria-label="Back to projects" className="icon-button" title="Back to projects" type="button" onClick={onBack}><ArrowLeftIcon /></button>
-        <div><h3>Settings</h3><div className="path-line">Scan roots and local project access</div></div>
+        <div><h3>Settings</h3><div className="path-line">Manage projects and scan roots</div></div>
       </div>
       <div className="settings-shell">
         <aside className="settings-nav" aria-label="Settings sections">
           {settingsSections.map((section) => {
-            const count = section.id === "project-roots" ? roots.length : unavailableRootCount + scanErrors.length;
-            const meta = section.id === "project-roots" ? `${roots.length} root${roots.length === 1 ? "" : "s"}` : count ? `${count} issue${count === 1 ? "" : "s"}` : "Clear";
+            const count = section.id === "projects" ? configuredProjects.length : section.id === "project-roots" ? roots.length : unavailableRootCount + scanErrors.length;
+            const meta = section.id === "projects" ? `${configuredProjects.length} project${configuredProjects.length === 1 ? "" : "s"}` : section.id === "project-roots" ? `${roots.length} root${roots.length === 1 ? "" : "s"}` : count ? `${count} issue${count === 1 ? "" : "s"}` : "Clear";
             return (
               <button aria-current={section.id === activeSection ? "page" : undefined} className={cx("settings-nav-item", section.id === activeSection && "is-selected")} key={section.id} type="button" onClick={() => setActiveSection(section.id)}>
                 <span>{section.label}</span><small>{meta}</small>
@@ -1695,9 +1747,13 @@ function SettingsView({ appearanceTheme, roots, bridgeAvailable, lastScanAt, loa
           })}
         </aside>
         <section className="settings-content" aria-label="Settings content">
-          <div className="settings-section-panel" hidden={activeSection !== "project-roots"}>
-            <div className="settings-section-heading"><h4>Project roots</h4><span>{candidates.length} project{candidates.length === 1 ? "" : "s"}</span></div>
+          <div className="settings-section-panel" hidden={activeSection !== "projects"}>
+            <div className="settings-section-heading"><h4>Projects</h4><span>{configuredProjects.length} project{configuredProjects.length === 1 ? "" : "s"}</span></div>
             <AppearanceSettingsPanel appearanceTheme={appearanceTheme} setToast={setToast} onThemeChange={onThemeChange} />
+            <ProjectWorkflowPanel bridgeAvailable={bridgeAvailable} configuredProjects={configuredProjects} onPickProject={onPickProject} onRemoveProject={onRemoveProject} setToast={setToast} />
+          </div>
+          <div className="settings-section-panel" hidden={activeSection !== "project-roots"}>
+            <div className="settings-section-heading"><h4>Scan roots</h4><span>{candidates.length} project{candidates.length === 1 ? "" : "s"}</span></div>
             <RootWorkflowPanel bridgeAvailable={bridgeAvailable} lastScanAt={lastScanAt} loading={loading} candidates={candidates} roots={roots} scanErrors={scanErrors} unavailableRootCount={unavailableRootCount} onAdd={onAdd} onRemove={onRemove} onScan={onScan} setToast={setToast} />
           </div>
           <div className="settings-section-panel" hidden={activeSection !== "project-status"}>
@@ -1780,6 +1836,48 @@ function RootWorkflowPanel({ bridgeAvailable, lastScanAt, loading, candidates, r
               <span className="truncate" title={root.path}>{root.path}</span>
               {root.unavailable || root.available === false ? <span className="root-state">Unavailable</span> : null}
               <button className="button secondary compact" disabled={busyPath === root.path} type="button" onClick={() => void remove(root.path)}>Remove</button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ProjectWorkflowPanel({ bridgeAvailable, configuredProjects, onPickProject, onRemoveProject, setToast }: {
+  bridgeAvailable: boolean; configuredProjects: string[];
+  onPickProject: () => Promise<void>; onRemoveProject: (path: string) => Promise<void>; setToast: (toast: Toast) => void;
+}) {
+  const [busyPath, setBusyPath] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
+  const firstRun = configuredProjects.length === 0;
+
+  async function pick() {
+    setPicking(true);
+    try { await onPickProject(); } catch (error) { setToast({ tone: "error", message: asMessage(error) }); } finally { setPicking(false); }
+  }
+
+  async function remove(pathToRemove: string) {
+    setBusyPath(pathToRemove);
+    try { await onRemoveProject(pathToRemove); setToast({ tone: "success", message: "Project removed." }); } catch (error) { setToast({ tone: "error", message: asMessage(error) }); } finally { setBusyPath(null); }
+  }
+
+  return (
+    <section className={cx("workflow-panel", firstRun && "is-first-run")}>
+      <div className="workflow-copy">
+        <div className="eyebrow">{firstRun ? "Add projects" : "Configured projects"}</div>
+        <h3>{firstRun ? "Add a project" : "Manage projects"}</h3>
+        <p>Select project directories to add them to your workspace.</p>
+      </div>
+      <div style={{ padding: "0 16px 16px" }}>
+        <button className="button" disabled={!bridgeAvailable || picking} type="button" onClick={() => void pick()}>{picking ? "Selecting…" : "Add Project Folder…"}</button>
+      </div>
+      {configuredProjects.length ? (
+        <div className="root-list" aria-label="Configured projects">
+          {configuredProjects.map((projectPath) => (
+            <div className="root-row" key={projectPath}>
+              <span className="truncate" title={projectPath}>{projectPath}</span>
+              <button className="button secondary compact" disabled={busyPath === projectPath} type="button" onClick={() => void remove(projectPath)}>Remove</button>
             </div>
           ))}
         </div>

@@ -52,8 +52,10 @@ const editableFilenames = new Set([
 
 export async function listProjectFiles(runtime: IpcRuntimeLike, input: ProjectFilesInput): Promise<ProjectFilesResult> {
   try {
-    const configuredRoots = input.configuredRoots ?? (await getConfiguredRoots(runtime)).configuredRoots;
-    const safeRepo = await resolveRepoPath(input.repoPath, configuredRoots);
+    const config = input.configuredRoots ? null : await getConfiguredRoots(runtime);
+    const configuredRoots = input.configuredRoots ?? config?.configuredRoots ?? [];
+    const configuredProjects = input.configuredProjects ?? config?.configuredProjects ?? [];
+    const safeRepo = await resolveRepoPath(input.repoPath, configuredRoots, configuredProjects);
     const directoryPath = await resolveRequestedDirectory(safeRepo.repoPath, safeRepo.containingRoot, input.directoryPath);
     const files = await listDirectory(safeRepo.repoPath, directoryPath, safeRepo.containingRoot);
     return { ok: true, repoPath: safeRepo.repoPath, files };
