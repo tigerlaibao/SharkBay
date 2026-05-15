@@ -81,12 +81,13 @@ export async function resolveReadableRepoFile(
   repoPath: string,
   configuredRoots: string[],
   relativePath: string,
+  configuredProjects?: string[],
 ): Promise<string> {
   if (path.isAbsolute(relativePath) || relativePath.split(path.sep).includes("..")) {
     throw new Error("Relative file path is unsafe");
   }
 
-  const safeRepo = await resolveRepoPath(repoPath, configuredRoots);
+  const safeRepo = await resolveRepoPath(repoPath, configuredRoots, configuredProjects);
   const filePath = path.join(safeRepo.repoPath, relativePath);
   try {
     const stat = await fs.lstat(filePath);

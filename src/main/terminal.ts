@@ -296,7 +296,7 @@ export async function resolveTerminalCwd(runtime: IpcRuntimeLike, cwd: string): 
     throw new Error("Terminal cwd is required");
   }
   const config = await getConfiguredRoots(runtime);
-  const safeRepo = await resolveRepoPath(cwd, config.configuredRoots);
+  const safeRepo = await resolveRepoPath(cwd, config.configuredRoots, config.configuredProjects);
   return safeRepo.repoPath;
 }
 
