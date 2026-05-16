@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { randomBytes } from "node:crypto";
+import { resolveCommandPath } from "./command-path.js";
 
 const execFileAsync = promisify(execFile);
 const ROOT_ADAPTER_FILES = ["AGENTS.md"] as const;
@@ -22,15 +23,23 @@ export type GitHubIdentity = {
 };
 
 export async function resolveGitHubIdentity(): Promise<GitHubIdentity> {
-  const { stdout } = await execFileAsync("gh", ["api", "user", "--jq", ".login + \"\\n\" + (.id|tostring) + \"\\n\" + .avatar_url"], { timeout: 10_000 });
+  const ghPath = await resolveGitHubCliPath();
+  const { stdout } = await execFileAsync(ghPath, ["api", "user", "--jq", ".login + \"\\n\" + (.id|tostring) + \"\\n\" + .avatar_url"], { timeout: 10_000 });
   const [login, id, avatarUrl] = stdout.trim().split("\n");
   if (!login || !id) throw new Error("Failed to resolve GitHub identity from gh CLI");
   return { login: login!, id: Number(id), avatarUrl: avatarUrl ?? "" };
 }
 
 export async function checkRepoPermission(repo: string, login: string): Promise<string> {
-  const { stdout } = await execFileAsync("gh", ["api", `repos/${repo}/collaborators/${login}/permission`, "--jq", ".permission"], { timeout: 10_000 });
+  const ghPath = await resolveGitHubCliPath();
+  const { stdout } = await execFileAsync(ghPath, ["api", `repos/${repo}/collaborators/${login}/permission`, "--jq", ".permission"], { timeout: 10_000 });
   return stdout.trim();
+}
+
+async function resolveGitHubCliPath(): Promise<string> {
+  const executablePath = await resolveCommandPath("gh");
+  if (executablePath) return executablePath;
+  throw new Error("Teamwork requires the GitHub CLI (`gh`). Install it with `brew install gh`, then run `gh auth login`.");
 }
 
 export function generateMachineId(): string {
