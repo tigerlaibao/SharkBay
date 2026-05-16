@@ -1,31 +1,44 @@
 # SharkBay
 
-SharkBay is a local-first macOS workbench for software projects.
-
-It scans user-configured folders for local Git repositories, shows repository status and project files, and opens project-rooted terminal spaces for day-to-day development work.
+SharkBay is a local-first macOS workbench for software projects. It helps you keep a set of local repositories visible, open project-scoped terminals and browser tabs, inspect Git state, and coordinate agent work through local Markdown task records.
 
 ## What It Does
 
-- Scans only folders configured by the user.
-- Discovers Git repositories under those roots.
-- Shows each project with local icon candidates, Git branch, dirty files, recent Git activity, and a lazy file tree.
+- Adds individual project folders and scans user-configured parent folders for Git repositories.
+- Shows project icons, branch names, dirty worktree state, dirty files, recent Git activity, and a lazy file tree.
 - Opens per-project terminal workspaces backed by xterm and `node-pty`.
-- Detects common `package.json` dev scripts and exposes them as service pills.
-- Keeps workbench columns resizable and preserves terminal sessions while Settings is open.
-- Keeps filesystem and terminal access scoped to configured roots.
+- Detects common development services from `package.json` `dev` / `dev:*` scripts and supported Python CLI web commands.
+- Opens embedded browser tabs for local or web URLs from the same project workspace.
+- Discovers installed agent CLIs such as Codex, Claude Code, Gemini, Kiro, DeepSeek, Qwen, and OpenCode, then launches them in visible project terminals.
+- Watches recent Codex and Claude transcript files for short project status snippets.
+- Supports SharkBay Teamwork: a project-local `.sharkbay` harness, Markdown task files, read-only team context mirror, and optional sync through a GitHub remote branch.
+- Provides Settings for configured projects, scan roots, scan status, and day/night/morning appearance themes.
+
+## Documentation
+
+- [Documentation index](docs/index.md)
+- [Product notes](docs/product.md)
+- [Architecture](docs/architecture.md)
+- [Development guide](docs/development.md)
+- [Testing](docs/testing.md)
+- [Release and packaging](docs/release.md)
+- [Teamwork](docs/teamwork.md)
+- [Agent guide](docs/agents.md)
+- [Roadmap](docs/roadmap.md)
 
 ## Project Model
 
-SharkBay treats a project as a local Git repository inside a configured scan root. It does not require project-specific control files or templates.
+SharkBay treats a project as a local directory selected by the user or a Git repository discovered below a configured scan root.
 
-Project metadata is discovered from ordinary repository files:
+Project metadata is discovered from ordinary repository files and local tools:
 
-- `.git` identifies a project.
-- Git commands provide branch, history, dirty-worktree, and changed-file data.
-- `package.json` contributes dev service commands when scripts are present.
-- Common icon locations such as `resources/project-icon.png`, `public/favicon.png`, and monorepo web app public folders provide project avatars.
+- `.git` identifies repositories during root scans.
+- Git commands provide branch, remote, reflog, dirty-worktree, and changed-file data.
+- `package.json` and selected `pyproject.toml` patterns contribute development service commands.
+- Common icon locations and Electron Builder icon fields provide project avatars.
+- Teamwork metadata is stored inside the target repository only after Teamwork is explicitly installed for that project.
 
-The app is intentionally local-first. SharkBay reads local files and spawns local shells; it does not publish repository data or run remote operations unless a future explicit feature does so.
+The app is local-first by default. It reads local files and spawns local shells inside configured project boundaries. Network and remote Git operations are limited to explicit features such as Teamwork install/sync and web content opened in embedded or external browsers.
 
 ## Tech Stack
 
@@ -39,10 +52,12 @@ The app is intentionally local-first. SharkBay reads local files and spawns loca
 
 ## Requirements
 
+- macOS for the desktop app workflow
 - Node.js `>=20.11`
 - npm
-- macOS for the desktop app workflow
 - Native build tooling required by Electron native modules, including `node-pty`
+- Git for repository metadata
+- GitHub CLI `gh` only when using SharkBay Teamwork sync
 
 ## Development
 
@@ -88,19 +103,25 @@ Create distributable macOS artifacts:
 npm run dist
 ```
 
-Outputs are written to `release/`, including `release/mac-arm64/SharkBay.app`, a DMG, and a zip archive. Local builds use ad-hoc signing unless signing/notarization credentials are configured.
+Outputs are written to `release/`. Local builds use ad-hoc signing unless signing and notarization credentials are configured.
+
+## Runtime Data
+
+- App config is stored in Electron `userData` as `config.json`.
+- Resizable column widths are stored in renderer `localStorage`.
+- Embedded browser tabs use Electron partition `persist:sharkbay-browser`.
+- Teamwork installs repo-local `.sharkbay/` files and a generated local `AGENTS.md`.
+- Teamwork sync uses the remote branch `sharkbay-team-context` and mirrors records into `.sharkbay/team-context/`.
+- Agent status watching reads recent local Codex and Claude transcript files from the user's home directory.
 
 ## Safety Notes
 
-SharkBay is designed around explicit local boundaries:
+SharkBay keeps project operations scoped to user-configured projects and scan roots:
 
-- Configured roots are loaded from app config in the main process.
-- Renderer-provided paths are resolved against configured roots before filesystem, Git, file-listing, or terminal operations.
+- Renderer-provided paths are resolved in the main process against persisted configured roots/projects before filesystem, Git, terminal, file-tree, or Teamwork operations run.
 - Project files are exposed through scoped file-tree listing, not arbitrary path reads.
-- Terminal sessions are spawned only after the main process resolves the requested cwd inside configured roots.
-- External URLs are opened through Electron shell handling rather than inside privileged app contexts.
-- Direct agent execution is not part of the current product surface.
-
-## Repository Status
-
-This repository is the SharkBay desktop app source. Local scan configuration is stored in the user's SharkBay app config, not in this repository.
+- Terminal sessions are spawned only after the main process resolves the requested cwd inside an allowed project boundary.
+- Embedded browser tabs accept only `http:` and `https:` URLs; unsafe schemes fall back to `about:blank`.
+- New windows from app and embedded browser content are opened through Electron shell handling instead of privileged app contexts.
+- Agent CLIs are not run as hidden background services; when launched, they run in ordinary visible project terminal tabs.
+- Teamwork remote operations require an explicit install action, a GitHub origin, authenticated `gh`, and write/admin repository permission.

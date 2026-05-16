@@ -1,76 +1,65 @@
 # Agent Guide
 
-This file provides guidance to automation agents and contributors when working in this repository.
-
-## Project Overview
-
-- Product: SharkBay
-- Project type: local-first macOS app / developer tool
-- Current repository mode: product source for a generic Git project workbench
+This file gives automation agents and contributors the repository-specific context needed to work safely in SharkBay.
 
 ## Required Reading
 
-Start with public project context:
+Before making persistent project changes, read:
 
-- `README.md` - project overview and development commands
-- `docs/product.md` - product requirements, when present
-- `docs/architecture.md` - architecture and module boundaries, when present
-- `docs/roadmap.md` - near-term product direction
-- `scripts/README.md` - validation script conventions
+- `AGENTS.md` for SharkBay Teamwork task-record requirements in this worktree.
+- `.sharkbay/harness/protocol.md` when present.
+- `README.md` for project overview and commands.
+- `docs/index.md` for the documentation map.
+- `docs/architecture.md` for process, IPC, storage, and safety boundaries.
+- `docs/development.md` for validation and packaging commands.
+- `docs/teamwork.md` before changing Teamwork behavior.
 
-Some older clones may still contain private local work-state directories. Treat those as user data. Do not recreate or modify local task histories unless the user explicitly asks.
+## Project Shape
+
+- Product: SharkBay
+- Project type: local-first macOS Electron developer workbench
+- Renderer: React and global CSS, concentrated in `src/renderer/App.tsx`
+- Main process: Electron IPC handlers and runtime services in `electron/` and `src/main/`
+- Shared contracts: `src/shared/`
+- Tests: Vitest unit tests under `tests/`
 
 ## Development Commands
 
 | Action | Command |
 | --- | --- |
 | Install dependencies | `npm install` |
-| Start dev server | `npm run dev` |
-| Run lint/static check | `npm run lint` |
+| Start dev app | `npm run dev` |
+| Run static checks | `npm run lint` |
 | Run typecheck | `npm run typecheck` |
 | Run tests | `npm test` |
 | Build | `npm run build` |
+| Package unpacked app | `npm run pack` |
+| Build distributable app | `npm run dist` |
+| Rebuild native modules | `npm run rebuild:native` |
 | Check whitespace | `git diff --check` |
 
-## Automation Scripts
+`npm run lint` currently runs the TypeScript typecheck.
 
-Use `scripts/` for project-local validation helpers that make verification repeatable.
+## Work Rules
 
-Conventions:
+- Preserve user changes and unrelated dirty files.
+- Keep changes scoped to the requested behavior.
+- Prefer existing modules, IPC patterns, types, and tests over new abstractions.
+- Treat renderer-provided filesystem paths as untrusted; main-process handlers must re-resolve them against persisted configured projects or roots.
+- Do not weaken path safety, IPC exposure, Teamwork ownership checks, or generated-file overwrite guards.
+- When updating docs, keep README high-level and put implementation detail in `docs/`.
 
-- Prefer small scripts with clear names, such as `scripts/check-fixtures.ts`.
-- Scripts must print useful pass/fail evidence.
-- Scripts should return non-zero on failure.
-- Do not hide important failures behind broad catch blocks.
-- Record script command, exit code, and output excerpt in the relevant task notes or final report.
+## Verification
 
-## Code Review Preconditions
+Run the checks relevant to the touched surface. Prefer this order for code changes:
 
-Before completing review-level work, run the checks relevant to the touched surface.
+1. `npm run typecheck`
+2. `npm test`
+3. `npm run build`
+4. Task-specific manual or scripted verification
 
-Prefer this order:
+For docs-only changes, at minimum inspect the changed files and run a lightweight repository check such as `git diff --check`.
 
-1. lint
-2. typecheck
-3. unit tests
-4. build
-5. task-specific verification scripts
+## Teamwork Task Records
 
-If a command is unavailable, record the missing command and residual risk.
-
-## Key Constraints
-
-- Work inside this repository.
-- SharkBay itself must only manage directories configured by the user inside the app.
-- Runtime IPC/service entry points must treat persisted configured roots as authoritative; renderer-supplied roots are not trusted.
-- Preserve user changes.
-- Prefer small, reviewable changes.
-- Do not skip review or verification gates.
-- Do not weaken filesystem, IPC, schema, credential, production-data, or destructive-action safeguards in the name of simplicity.
-
-## Behavioral Discipline
-
-- Clarify material ambiguity before implementation by recording assumptions, tradeoffs, or blocking questions.
-- Prefer the simplest implementation that satisfies the task.
-- Keep changes traceable to the user goal, review finding, or verification failure.
-- Map each done criterion to concrete verification evidence.
+This worktree uses SharkBay Teamwork. Create or update `.sharkbay/tasks/*.md` records before persistent project changes, and complete the task record after verification. Do not edit `.sharkbay/team-context/` directly.
