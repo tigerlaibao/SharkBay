@@ -22,6 +22,14 @@ import type {
   RemoveRootInput,
   RootConfigInput,
   ScanProjectsResult,
+  TaskViewModel,
+  TeamworkGetTasksInput,
+  TeamworkInstallInput,
+  TeamworkStatus,
+  TeamworkTasksChangedEvent,
+  TeamworkUninstallInput,
+  TeamworkUninstallResult,
+  GitHubIdentity,
   TerminalCloseInput,
   TerminalCreateInput,
   TerminalDataEvent,
@@ -113,6 +121,20 @@ const sharkBayApi = {
       const listener = (_event: Electron.IpcRendererEvent, payload: AgentProjectStatusEvent) => callback(payload);
       ipcRenderer.on(channels.agentStatus, listener);
       return () => ipcRenderer.removeListener(channels.agentStatus, listener);
+    }
+  },
+  teamwork: {
+    getTasks: (input: TeamworkGetTasksInput) => invoke<TaskViewModel[]>(channels.teamworkGetTasks, input),
+    getStatus: (input: { repoPath: string }) => invoke<TeamworkStatus>(channels.teamworkGetStatus, input),
+    install: (input: TeamworkInstallInput) => invoke<TeamworkStatus>(channels.teamworkInstall, input),
+    enable: (input: { repoPath: string }) => invoke<TeamworkStatus>(channels.teamworkEnable, input),
+    uninstall: (input: TeamworkUninstallInput) => invoke<TeamworkUninstallResult>(channels.teamworkUninstall, input),
+    resolveIdentity: () => invoke<GitHubIdentity>(channels.teamworkResolveIdentity),
+    syncNow: (input: { repoPath: string }) => invoke<void>(channels.teamworkSyncNow, input),
+    onTasksChanged: (callback: (event: TeamworkTasksChangedEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: TeamworkTasksChangedEvent) => callback(payload);
+      ipcRenderer.on(channels.teamworkTasksChanged, listener);
+      return () => ipcRenderer.removeListener(channels.teamworkTasksChanged, listener);
     }
   }
 };

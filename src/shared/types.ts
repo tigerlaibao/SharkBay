@@ -243,3 +243,78 @@ export type BrowserSession = {
 export type BrowserUpdateEvent = {
   browser: BrowserSession;
 };
+
+export type TaskViewModel = {
+  taskId: string;
+  taskTag: string;
+  title: string;
+  mode: "quick" | "task";
+  status: "active" | "paused" | "completed" | "blocked" | "abandoned";
+  sync: "local" | "pending" | "synced" | "failed";
+  owner: { githubLogin: string; githubUserId?: number; avatarUrl?: string };
+  agent?: string;
+  machine?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  completedAt?: string;
+  commit?: string;
+  files?: string[];
+  summary?: string;
+  verification?: string;
+  work?: string;
+  notes?: string;
+  sourcePath: string;
+  frontmatter: Record<string, string>;
+  bodyMarkdown: string;
+  rawMarkdown: string;
+  sourceKind: "local-md" | "team-md";
+  readOnly: boolean;
+};
+
+export type TeamworkStatus = {
+  installed: boolean;
+  harnessInstalled: boolean;
+  syncEnabled: boolean;
+  lastSyncAt: string | null;
+  pendingCount: number;
+  lastError: string | null;
+  repo?: string;
+  branch?: string;
+  githubLogin?: string;
+  permission?: string;
+};
+
+export type GitHubIdentity = {
+  login: string;
+  id: number;
+  avatarUrl: string;
+};
+
+export type TeamworkInstallInput = {
+  repoPath: string;
+  githubLogin?: string;
+  githubUserId?: number;
+  machineId?: string;
+  agent?: string;
+};
+
+export type TeamworkUninstallInput = {
+  repoPath: string;
+  cleanTeamContext?: boolean;
+};
+
+export type TeamworkUninstallResult = {
+  removedPaths: string[];
+  skippedPaths: string[];
+  excludeRemovedLines: string[];
+  contextBranchDeleted: boolean;
+};
+
+export type TeamworkGetTasksInput = {
+  repoPath: string;
+};
+
+export type TeamworkTasksChangedEvent = {
+  repoPath: string;
+  tasks: TaskViewModel[];
+};
