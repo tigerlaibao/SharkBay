@@ -4,7 +4,7 @@ SharkBay is a local-first project workbench for macOS. It is built for developer
 
 ## Current Product Surface
 
-- **Projects**: manually add project directories or configure parent scan roots.
+- **Projects**: manually add project directories and remove them from the workspace.
 - **Project list**: show repository icon, name, path or agent status, dirty state, running services, and terminal activity.
 - **Terminal workspace**: keep per-project terminal tabs alive while switching projects and Settings.
 - **Development services**: expose detected `dev` and `dev:*` commands as service pills.
@@ -12,16 +12,11 @@ SharkBay is a local-first project workbench for macOS. It is built for developer
 - **TEAM tab**: show Teamwork status, install Teamwork, list task records, and inspect raw Markdown task details.
 - **Git tab**: show repository facts, dirty files, and recent reflog history.
 - **Files tab**: lazily browse project files and open editable files in a terminal editor.
-- **Settings**: manage configured projects, scan roots, scan status, and appearance theme.
+- **Settings**: manage configured projects, project status, and appearance theme.
 
 ## Project Discovery
 
-SharkBay supports two project sources:
-
-- Configured projects: exact directories selected by the user.
-- Configured scan roots: parent directories walked for Git repositories.
-
-Scan roots are searched up to a default depth of six. Common cache/build directories and hidden directories are skipped. Manually configured projects are merged with scanned repositories and sorted by project name.
+SharkBay supports one project source: exact directories selected by the user. Configured projects are resolved, enriched with local metadata, and sorted by project name. Removing a project from the left project-card context menu or Settings removes only the SharkBay workspace entry, after confirmation.
 
 ## Teamwork
 
@@ -33,7 +28,7 @@ Teamwork does not replace Git commits or code review. It gives humans and agents
 
 - SharkBay is a desktop app, not a web service.
 - It is desktop-first and currently has an `1180px` minimum window width.
-- It only operates on user-configured projects or roots.
+- It only operates on user-configured projects.
 - It does not run agents invisibly; agent CLIs launch in visible terminal tabs.
 - It does not sync repository data unless a feature explicitly requires it, such as Teamwork.
 - It does not provide a full IDE editor. File actions open terminal-based editor/diff commands.

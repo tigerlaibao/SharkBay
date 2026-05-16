@@ -1,9 +1,7 @@
 import { BrowserWindow, dialog, ipcMain } from "electron";
 import {
-  addConfiguredRoot,
   addConfiguredProject,
-  getConfiguredRoots,
-  removeConfiguredRoot,
+  loadRuntimeConfig,
   removeConfiguredProject,
   setAppearanceTheme
 } from "../src/main/config.js";
@@ -28,13 +26,10 @@ import type {
   BrowserSession,
   BrowserUpdateEvent,
   ProjectConfigInput,
-  ProjectScanInput,
   ProjectDetail,
   ProjectFilesInput,
   ProjectFilesResult,
   RemoveProjectInput,
-  RemoveRootInput,
-  RootConfigInput,
   GitHubIdentity,
   ScanProjectsResult,
   TaskViewModel,
@@ -167,16 +162,15 @@ export function closeAllTerminalSessions(): void {
 }
 
 async function getProjectDetail(runtime: IpcRuntime, input: { repoPath?: string }): Promise<ProjectDetail> {
-  const config = await getConfiguredRoots(runtime);
-  const configuredRoots = config.configuredRoots;
+  const config = await loadRuntimeConfig(runtime);
   const configuredProjects = config.configuredProjects;
-  const safeRepo = await resolveRepoPath(input.repoPath ?? "", configuredRoots, configuredProjects);
+  const safeRepo = await resolveRepoPath(input.repoPath ?? "", configuredProjects);
   const repoPath = safeRepo.repoPath;
   const [gitMeta, gitHistory, gitDirtyFiles, iconSources] = await Promise.all([
     readGitMetadata(repoPath),
     readGitHistory(repoPath),
     readGitDirtyFiles(repoPath),
-    resolveProjectIconSources(repoPath, configuredRoots),
+    resolveProjectIconSources(repoPath, [safeRepo.containingRoot]),
   ]);
   return {
     id: repoPath,
@@ -235,9 +229,7 @@ export function registerIpcHandlers(
     });
   });
 
-  handle<void, AppConfig>(channels.listRoots, () => getConfiguredRoots(runtime));
-  handle<RootConfigInput, AppConfig>(channels.addRoot, (payload) => addConfiguredRoot(runtime, payload));
-  handle<RemoveRootInput, AppConfig>(channels.removeRoot, (payload) => removeConfiguredRoot(runtime, payload));
+  handle<void, AppConfig>(channels.listConfig, () => loadRuntimeConfig(runtime));
   handle<ProjectConfigInput, AppConfig>(channels.addProject, (payload) => addConfiguredProject(runtime, payload));
   handle<RemoveProjectInput, AppConfig>(channels.removeProject, (payload) => removeConfiguredProject(runtime, payload));
   ipcMain.removeHandler(channels.pickProjectFolder);
@@ -257,15 +249,14 @@ export function registerIpcHandlers(
       return config;
     })
   );
-  handle<ProjectScanInput | undefined, ScanProjectsResult>(channels.scanProjects, (payload) =>
-    scanProjects(runtime, payload)
+  handle<void, ScanProjectsResult>(channels.scanProjects, () =>
+    scanProjects(runtime)
   );
   handle<{ repoPath?: string }, ProjectDetail>(channels.getProjectDetail, (payload) =>
     getProjectDetail(runtime, payload)
   );
   handle<ProjectFilesInput, ProjectFilesResult>(channels.listProjectFiles, async (payload) => {
-    const config = await getConfiguredRoots(runtime);
-    return listProjectFiles(runtime, { ...payload, configuredRoots: config.configuredRoots, configuredProjects: config.configuredProjects });
+    return listProjectFiles(runtime, payload);
   });
   handle<void, AgentCli[]>(channels.listAgentClis, () => listAvailableAgentClis());
   ipcMain.removeHandler(channels.createBrowser);
@@ -309,8 +300,8 @@ export function registerIpcHandlers(
 
   // Teamwork handlers
   handle<TeamworkGetTasksInput, TaskViewModel[]>(channels.teamworkGetTasks, async (payload) => {
-    const config = await getConfiguredRoots(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredRoots, config.configuredProjects);
+    const config = await loadRuntimeConfig(runtime);
+    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
     const repoPath = safe.repoPath;
     const tasks = await scanTasks(repoPath);
     // Start watcher if not already running
@@ -327,8 +318,8 @@ export function registerIpcHandlers(
   });
 
   handle<{ repoPath: string }, TeamworkStatus>(channels.teamworkGetStatus, async (payload) => {
-    const config = await getConfiguredRoots(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredRoots, config.configuredProjects);
+    const config = await loadRuntimeConfig(runtime);
+    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
     return getTeamworkStatus(safe.repoPath);
   });
 
@@ -337,20 +328,20 @@ export function registerIpcHandlers(
   });
 
   handle<TeamworkInstallInput, TeamworkStatus>(channels.teamworkInstall, async (payload) => {
-    const config = await getConfiguredRoots(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredRoots, config.configuredProjects);
+    const config = await loadRuntimeConfig(runtime);
+    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
     return installTeamwork(safe.repoPath);
   });
 
   handle<{ repoPath: string }, TeamworkStatus>(channels.teamworkEnable, async (payload) => {
-    const config = await getConfiguredRoots(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredRoots, config.configuredProjects);
+    const config = await loadRuntimeConfig(runtime);
+    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
     return installTeamwork(safe.repoPath);
   });
 
   handle<TeamworkUninstallInput, TeamworkUninstallResult>(channels.teamworkUninstall, async (payload) => {
-    const config = await getConfiguredRoots(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredRoots, config.configuredProjects);
+    const config = await loadRuntimeConfig(runtime);
+    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
     const repoPath = safe.repoPath;
     const sync = teamworkSyncInstances.get(repoPath);
     sync?.stop();
@@ -374,8 +365,8 @@ export function registerIpcHandlers(
   });
 
   handle<{ repoPath: string }, void>(channels.teamworkSyncNow, async (payload) => {
-    const config = await getConfiguredRoots(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredRoots, config.configuredProjects);
+    const config = await loadRuntimeConfig(runtime);
+    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
     const repoPath = safe.repoPath;
     let sync = teamworkSyncInstances.get(repoPath);
     if (!sync) {

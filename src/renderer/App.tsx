@@ -17,7 +17,6 @@ import type {
   ProjectDetail,
   ProjectFileTreeItem,
   ProjectSummary,
-  RootRecord,
   ScanResult,
   SharkBayBridge,
   TaskViewModel,
@@ -41,7 +40,7 @@ import type { WorkflowProjectTerminalActivityState } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailTab = "tasks" | "git" | "files";
-type SettingsSection = "projects" | "project-roots" | "project-status";
+type SettingsSection = "projects" | "project-status";
 
 type Toast = {
   tone: "info" | "error" | "success";
@@ -113,7 +112,6 @@ const detailTabs: Array<{ id: DetailTab; label: string }> = [
 ];
 const settingsSections: Array<{ id: SettingsSection; label: string }> = [
   { id: "projects", label: "Projects" },
-  { id: "project-roots", label: "Scan roots" },
   { id: "project-status", label: "Status" },
 ];
 
@@ -190,7 +188,7 @@ function asMessage(error: unknown): string {
 function suppressToast(_toast: Toast): void {}
 
 function isAppConfig(value: unknown): value is AppConfig {
-  return Boolean(value && typeof value === "object" && "configuredRoots" in value);
+  return Boolean(value && typeof value === "object" && "configuredProjects" in value);
 }
 
 function normalizeAppearanceTheme(value: unknown): AppearanceTheme {
@@ -198,49 +196,24 @@ function normalizeAppearanceTheme(value: unknown): AppearanceTheme {
   return value === "night" ? "night" : "day";
 }
 
-function normalizeRoots(raw: AppConfig | RootRecord[] | string[] | undefined): RootRecord[] {
-  if (!raw) return [];
-  if (isAppConfig(raw)) return raw.configuredRoots.map((root) => ({ path: root }));
-  return raw.map((root) => {
-    if (typeof root === "string") return { path: root };
-    return { ...root, path: root.path || root.inputPath || "", unavailable: root.unavailable ?? root.available === false };
-  });
-}
-
 function normalizeScan(raw: ScanResult | ProjectCandidate[]): ScanResult {
   if (Array.isArray(raw)) return { candidates: raw };
   return { ...raw, candidates: raw.candidates ?? [] };
 }
 
-async function listRoots(): Promise<RootRecord[]> {
+async function listConfig(): Promise<AppConfig> {
   const bridge = getBridge();
-  const handler = bridge.config?.listRoots;
-  if (!handler) throw new Error("Root listing is not exposed by the preload API.");
-  return normalizeRoots(await handler());
+  const handler = bridge.config?.listConfig;
+  if (!handler) throw new Error("Project configuration is not exposed by the preload API.");
+  const config = await handler();
+  if (!isAppConfig(config)) throw new Error("Project configuration is unavailable.");
+  return config;
 }
 
 async function updateAppearanceTheme(theme: AppearanceTheme): Promise<AppConfig> {
   const handler = getBridge().config?.setAppearanceTheme;
   if (!handler) throw new Error("Appearance theme settings are not exposed by the preload API.");
   return handler({ theme });
-}
-
-async function addRoot(path: string): Promise<void> {
-  const handler = getBridge().config?.addRoot;
-  if (!handler) throw new Error("Root add is not exposed by the preload API.");
-  await handler({ path, rootPath: path });
-}
-
-async function removeRoot(path: string): Promise<void> {
-  const handler = getBridge().config?.removeRoot;
-  if (!handler) throw new Error("Root remove is not exposed by the preload API.");
-  await handler({ path, rootPath: path });
-}
-
-async function addProject(path: string): Promise<void> {
-  const handler = getBridge().config?.addProject;
-  if (!handler) throw new Error("Project add is not exposed by the preload API.");
-  await handler({ path });
 }
 
 async function removeProject(path: string): Promise<void> {
@@ -300,9 +273,11 @@ function githubOwnerFromRemote(remoteOrigin: string | null): string | null {
 function projectContextMenuPosition(clientX: number, clientY: number): { x: number; y: number } {
   if (typeof window === "undefined") return { x: clientX, y: clientY };
   const margin = 8;
+  const menuWidth = 194;
+  const menuHeight = 92;
   return {
-    x: clamp(clientX, margin, window.innerWidth - 194 - margin),
-    y: clamp(clientY, margin, window.innerHeight - 46 - margin),
+    x: clamp(clientX, margin, window.innerWidth - menuWidth - margin),
+    y: clamp(clientY, margin, window.innerHeight - menuHeight - margin),
   };
 }
 
@@ -438,9 +413,12 @@ function appearanceDescription(theme: AppearanceTheme): string {
   return "Day icon and colors";
 }
 
+function projectNameFromPath(projectPath: string): string {
+  return projectPath.split(/[\\/]+/).filter(Boolean).pop() || projectPath;
+}
+
 export function App() {
   const [view, setView] = useState<View>("dashboard");
-  const [roots, setRoots] = useState<RootRecord[]>([]);
   const [configuredProjects, setConfiguredProjects] = useState<string[]>([]);
   const [candidates, setCandidates] = useState<ProjectCandidate[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -450,15 +428,13 @@ export function App() {
   const [scanErrors, setScanErrors] = useState<string[]>([]);
   const [lastScanAt, setLastScanAt] = useState<string | null>(null);
   const [appearanceTheme, setAppearanceTheme] = useState<AppearanceTheme>("day");
+  const [projectRemoveDialog, setProjectRemoveDialog] = useState<{ path: string; name: string } | null>(null);
+  const [projectRemoveBusy, setProjectRemoveBusy] = useState(false);
   const refreshInFlight = useRef(false);
 
   const bridgeAvailable = typeof window !== "undefined" && Boolean(window.sharkBay);
 
   const selectedCandidate = useMemo(() => resolveSelectedCandidate(candidates, selectedId), [candidates, selectedId]);
-
-  async function refreshRoots() {
-    setRoots(await listRoots());
-  }
 
   async function refreshProjects(options: RefreshOptions = {}): Promise<{ candidates: ProjectCandidate[] }> {
     const setBusy = options.setBusy ?? true;
@@ -466,26 +442,13 @@ export function App() {
     setScanErrors([]);
 
     try {
-      const bridge = getBridge();
-      const configHandler = bridge.config?.listRoots;
-      if (!configHandler) throw new Error("Root listing is not exposed by the preload API.");
-      const [rootConfig, scan] = await Promise.all([configHandler(), scanProjects()]);
-      const rootList = normalizeRoots(rootConfig);
-      if (isAppConfig(rootConfig)) {
-        setAppearanceTheme(normalizeAppearanceTheme(rootConfig.appearanceTheme));
-        setConfiguredProjects(rootConfig.configuredProjects ?? []);
-      }
+      const [config, scan] = await Promise.all([listConfig(), scanProjects()]);
+      setAppearanceTheme(normalizeAppearanceTheme(config.appearanceTheme));
+      setConfiguredProjects(config.configuredProjects ?? []);
       const nextCandidates = scan.candidates ?? [];
-      const normalizedRootErrors = normalizeRoots(scan.roots);
-      const rootErrors = [
-        ...(scan.errors ?? []),
-        ...normalizedRootErrors.filter((r) => r.unavailable).map((root) => `${root.path}: ${root.error ?? "unavailable"}`),
-      ];
-      const nextRoots = scan.roots ? normalizeRoots(scan.roots) : rootList;
 
-      setRoots(nextRoots);
       setCandidates(nextCandidates);
-      setScanErrors(rootErrors);
+      setScanErrors(scan.errors ?? []);
       setLastScanAt(new Date().toISOString());
       setSelectedId((current) => {
         if (current && nextCandidates.some((c) => c.id === current)) return current;
@@ -519,6 +482,25 @@ export function App() {
       if (selectedCandidate) await refreshDetail(selectedCandidate, options);
     } finally {
       refreshInFlight.current = false;
+    }
+  }
+
+  function requestRemoveProject(project: { path: string; name?: string }) {
+    setProjectRemoveDialog({ path: project.path, name: project.name ?? projectNameFromPath(project.path) });
+  }
+
+  async function confirmRemoveProject() {
+    if (!projectRemoveDialog || projectRemoveBusy) return;
+    setProjectRemoveBusy(true);
+    try {
+      await removeProject(projectRemoveDialog.path);
+      setToast({ tone: "success", message: "Project removed." });
+      setProjectRemoveDialog(null);
+      await refreshProjects({ showToast: true });
+    } catch (error) {
+      setToast({ tone: "error", message: asMessage(error) });
+    } finally {
+      setProjectRemoveBusy(false);
     }
   }
 
@@ -565,33 +547,37 @@ export function App() {
               onRefresh={refreshWorkspace}
               onOpenSettings={() => setView("settings")}
               onPickProject={async () => { const paths = await pickAndAddProjects(); if (paths.length) await refreshProjects({ showToast: true }); }}
+              onRequestRemoveProject={requestRemoveProject}
             />
           </div>
           {view === "settings" ? (
             <div className="view-surface settings-surface">
               <SettingsView
                 appearanceTheme={appearanceTheme}
-                roots={roots}
                 configuredProjects={configuredProjects}
                 bridgeAvailable={bridgeAvailable}
                 lastScanAt={lastScanAt}
-                loading={loading}
                 candidates={candidates}
                 scanErrors={scanErrors}
                 setToast={setToast}
                 onBack={() => setView("dashboard")}
-                onScan={async () => { await refreshProjects({ showToast: true }); }}
-                onAdd={async (path) => { await addRoot(path); await refreshRoots(); await refreshProjects({ showToast: true }); }}
-                onRemove={async (path) => { await removeRoot(path); await refreshRoots(); await refreshProjects({ showToast: true }); }}
-                onAddProject={async (path) => { await addProject(path); await refreshProjects({ showToast: true }); }}
-                onRemoveProject={async (path) => { await removeProject(path); await refreshProjects({ showToast: true }); }}
                 onPickProject={async () => { const paths = await pickAndAddProjects(); if (paths.length) await refreshProjects({ showToast: true }); }}
+                onRequestRemoveProject={(path) => requestRemoveProject({ path })}
                 onThemeChange={async (theme) => {
                   const config = await updateAppearanceTheme(theme);
                   setAppearanceTheme(normalizeAppearanceTheme(config.appearanceTheme));
                 }}
               />
             </div>
+          ) : null}
+          {projectRemoveDialog ? (
+            <ProjectRemoveDialog
+              busy={projectRemoveBusy}
+              name={projectRemoveDialog.name}
+              path={projectRemoveDialog.path}
+              onCancel={() => { if (!projectRemoveBusy) setProjectRemoveDialog(null); }}
+              onConfirm={() => void confirmRemoveProject()}
+            />
           ) : null}
         </div>
       </main>
@@ -613,6 +599,7 @@ function DashboardView({
   onRefresh,
   onOpenSettings,
   onPickProject,
+  onRequestRemoveProject,
 }: {
   appearanceTheme: AppearanceTheme;
   bridgeAvailable: boolean;
@@ -627,6 +614,7 @@ function DashboardView({
   onRefresh: () => Promise<void>;
   onOpenSettings: () => void;
   onPickProject: () => Promise<void>;
+  onRequestRemoveProject: (project: ProjectCandidate) => void;
 }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const terminalPaneRef = useRef<TerminalPaneHandle | null>(null);
@@ -641,7 +629,7 @@ function DashboardView({
   const [detailColumnWidth, setDetailColumnWidth] = useState(() =>
     storedColumnWidth(detailColumnStorageKey, defaultDetailColumnWidth, minDetailColumnWidth),
   );
-  const [projectMenu, setProjectMenu] = useState<{ candidate: ProjectCandidate; x: number; y: number } | null>(null);
+  const [projectMenu, setProjectMenu] = useState<{ candidate: ProjectCandidate; x: number; y: number; canTurnOffTeamwork: boolean } | null>(null);
   const [teamworkRevision, setTeamworkRevision] = useState(0);
   const [uninstallDialog, setUninstallDialog] = useState<{
     candidate: ProjectCandidate;
@@ -768,11 +756,15 @@ function DashboardView({
   async function openProjectContextMenu(candidate: ProjectCandidate, event: ReactMouseEvent<HTMLButtonElement>) {
     event.preventDefault();
     const position = projectContextMenuPosition(event.clientX, event.clientY);
-    setProjectMenu(null);
+    setProjectMenu({ candidate, ...position, canTurnOffTeamwork: false });
     try {
       const status = await getTeamworkStatus(candidate);
-      if (!status.harnessInstalled) return;
-      setProjectMenu({ candidate, ...position });
+      if (status.harnessInstalled) {
+        setProjectMenu((current) => current?.candidate.id === candidate.id
+          ? { ...current, canTurnOffTeamwork: true }
+          : current
+        );
+      }
     } catch (error) {
       setToast({ tone: "error", message: asMessage(error) });
     }
@@ -885,7 +877,7 @@ function DashboardView({
             teamworkRevision={teamworkRevision}
           />
         ) : (
-          <EmptyState title="No project selected" body="Open Settings to add a project or configure a scan root." />
+          <EmptyState title="No project selected" body="Add a project folder to get started." />
         )}
       </section>
       {projectMenu ? (
@@ -897,13 +889,23 @@ function DashboardView({
         >
           <button
             autoFocus
-            className="project-context-menu-item is-danger"
+            className="project-context-menu-item"
             role="menuitem"
             type="button"
-            onClick={() => void openTurnOffTeamworkDialog(projectMenu.candidate)}
+            onClick={() => { setProjectMenu(null); onRequestRemoveProject(projectMenu.candidate); }}
           >
-            Turn Off Teamwork
+            Remove Project
           </button>
+          {projectMenu.canTurnOffTeamwork ? (
+            <button
+              className="project-context-menu-item is-danger"
+              role="menuitem"
+              type="button"
+              onClick={() => void openTurnOffTeamworkDialog(projectMenu.candidate)}
+            >
+              Turn Off Teamwork
+            </button>
+          ) : null}
         </div>
       ) : null}
       {uninstallDialog ? (
@@ -1519,6 +1521,46 @@ function ProjectList({ agentStatusByProjectPath, candidates, runningServiceProje
   );
 }
 
+function ProjectRemoveDialog({
+  busy,
+  name,
+  path,
+  onCancel,
+  onConfirm,
+}: {
+  busy: boolean;
+  name: string;
+  path: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="teamwork-uninstall-backdrop" role="presentation" onMouseDown={onCancel}>
+      <section
+        aria-modal="true"
+        aria-labelledby="project-remove-title"
+        className="subpanel confirm-panel teamwork-uninstall-dialog"
+        role="dialog"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div>
+          <h4 id="project-remove-title">Remove Project</h4>
+          <p className="summary-text">
+            Remove {name} from SharkBay? This only removes the project from the workspace. It does not delete files from disk.
+          </p>
+          <p className="teamwork-owner-note">{path}</p>
+        </div>
+        <div className="button-row">
+          <button className="button secondary compact" disabled={busy} type="button" onClick={onCancel}>Cancel</button>
+          <button className="button compact danger-button" disabled={busy} type="button" onClick={onConfirm}>
+            {busy ? "Removing..." : "Remove Project"}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function TeamworkUninstallDialog({
   busy,
   candidate,
@@ -2075,24 +2117,23 @@ function updateProjectFileChildren(items: ProjectFileTreeItem[], targetPath: str
   });
 }
 
-function SettingsView({ appearanceTheme, roots, configuredProjects, bridgeAvailable, lastScanAt, loading, candidates, scanErrors, setToast, onBack, onScan, onAdd, onRemove, onAddProject, onRemoveProject, onPickProject, onThemeChange }: {
-  appearanceTheme: AppearanceTheme; roots: RootRecord[]; configuredProjects: string[]; bridgeAvailable: boolean; lastScanAt: string | null; loading: boolean; candidates: ProjectCandidate[]; scanErrors: string[]; setToast: (toast: Toast) => void;
-  onBack: () => void; onScan: () => Promise<void>; onAdd: (path: string) => Promise<void>; onRemove: (path: string) => Promise<void>; onAddProject: (path: string) => Promise<void>; onRemoveProject: (path: string) => Promise<void>; onPickProject: () => Promise<void>; onThemeChange: (theme: AppearanceTheme) => Promise<void>;
+function SettingsView({ appearanceTheme, configuredProjects, bridgeAvailable, lastScanAt, candidates, scanErrors, setToast, onBack, onPickProject, onRequestRemoveProject, onThemeChange }: {
+  appearanceTheme: AppearanceTheme; configuredProjects: string[]; bridgeAvailable: boolean; lastScanAt: string | null; candidates: ProjectCandidate[]; scanErrors: string[]; setToast: (toast: Toast) => void;
+  onBack: () => void; onPickProject: () => Promise<void>; onRequestRemoveProject: (path: string) => void; onThemeChange: (theme: AppearanceTheme) => Promise<void>;
 }) {
-  const unavailableRootCount = roots.filter((root) => root.unavailable || root.available === false).length;
   const [activeSection, setActiveSection] = useState<SettingsSection>("projects");
 
   return (
     <div className="settings-layout">
       <div className="detail-header settings-header">
         <button aria-label="Back to projects" className="icon-button" title="Back to projects" type="button" onClick={onBack}><ArrowLeftIcon /></button>
-        <div><h3>Settings</h3><div className="path-line">Manage projects and scan roots</div></div>
+        <div><h3>Settings</h3><div className="path-line">Manage projects</div></div>
       </div>
       <div className="settings-shell">
         <aside className="settings-nav" aria-label="Settings sections">
           {settingsSections.map((section) => {
-            const count = section.id === "projects" ? configuredProjects.length : section.id === "project-roots" ? roots.length : unavailableRootCount + scanErrors.length;
-            const meta = section.id === "projects" ? `${configuredProjects.length} project${configuredProjects.length === 1 ? "" : "s"}` : section.id === "project-roots" ? `${roots.length} root${roots.length === 1 ? "" : "s"}` : count ? `${count} issue${count === 1 ? "" : "s"}` : "Clear";
+            const count = section.id === "projects" ? configuredProjects.length : scanErrors.length;
+            const meta = section.id === "projects" ? `${configuredProjects.length} project${configuredProjects.length === 1 ? "" : "s"}` : count ? `${count} issue${count === 1 ? "" : "s"}` : "Clear";
             return (
               <button aria-current={section.id === activeSection ? "page" : undefined} className={cx("settings-nav-item", section.id === activeSection && "is-selected")} key={section.id} type="button" onClick={() => setActiveSection(section.id)}>
                 <span>{section.label}</span><small>{meta}</small>
@@ -2104,15 +2145,11 @@ function SettingsView({ appearanceTheme, roots, configuredProjects, bridgeAvaila
           <div className="settings-section-panel" hidden={activeSection !== "projects"}>
             <div className="settings-section-heading"><h4>Projects</h4><span>{configuredProjects.length} project{configuredProjects.length === 1 ? "" : "s"}</span></div>
             <AppearanceSettingsPanel appearanceTheme={appearanceTheme} setToast={setToast} onThemeChange={onThemeChange} />
-            <ProjectWorkflowPanel bridgeAvailable={bridgeAvailable} configuredProjects={configuredProjects} onPickProject={onPickProject} onRemoveProject={onRemoveProject} setToast={setToast} />
-          </div>
-          <div className="settings-section-panel" hidden={activeSection !== "project-roots"}>
-            <div className="settings-section-heading"><h4>Scan roots</h4><span>{candidates.length} project{candidates.length === 1 ? "" : "s"}</span></div>
-            <RootWorkflowPanel bridgeAvailable={bridgeAvailable} lastScanAt={lastScanAt} loading={loading} candidates={candidates} roots={roots} scanErrors={scanErrors} unavailableRootCount={unavailableRootCount} onAdd={onAdd} onRemove={onRemove} onScan={onScan} setToast={setToast} />
+            <ProjectWorkflowPanel bridgeAvailable={bridgeAvailable} configuredProjects={configuredProjects} onPickProject={onPickProject} onRequestRemoveProject={onRequestRemoveProject} setToast={setToast} />
           </div>
           <div className="settings-section-panel" hidden={activeSection !== "project-status"}>
-            <div className="settings-section-heading"><h4>Status</h4><span>{lastScanAt ? `Last scan ${formatScanTime(lastScanAt)}` : "Not scanned"}</span></div>
-            <SettingsStatusPanel candidates={candidates} roots={roots} scanErrors={scanErrors} unavailableRootCount={unavailableRootCount} />
+            <div className="settings-section-heading"><h4>Status</h4><span>{lastScanAt ? `Last refresh ${formatScanTime(lastScanAt)}` : "Not refreshed"}</span></div>
+            <SettingsStatusPanel candidates={candidates} scanErrors={scanErrors} />
           </div>
         </section>
       </div>
@@ -2144,76 +2181,16 @@ function AppearanceSettingsPanel({ appearanceTheme, setToast, onThemeChange }: {
   );
 }
 
-function RootWorkflowPanel({ bridgeAvailable, lastScanAt, loading, candidates, roots, scanErrors, unavailableRootCount, onAdd, onRemove, onScan, setToast }: {
-  bridgeAvailable: boolean; lastScanAt: string | null; loading: boolean; candidates: ProjectCandidate[]; roots: RootRecord[]; scanErrors: string[]; unavailableRootCount: number;
-  onAdd: (path: string) => Promise<void>; onRemove: (path: string) => Promise<void>; onScan: () => Promise<void>; setToast: (toast: Toast) => void;
-}) {
-  const [path, setPath] = useState("");
-  const [busyPath, setBusyPath] = useState<string | null>(null);
-  const firstRun = roots.length === 0;
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    const nextPath = path.trim();
-    if (!nextPath) { setToast({ tone: "error", message: "Enter a configured root path before adding it." }); return; }
-    setBusyPath(nextPath);
-    try { await onAdd(nextPath); setPath(""); setToast({ tone: "success", message: "Root added and scanned." }); } catch (error) { setToast({ tone: "error", message: asMessage(error) }); } finally { setBusyPath(null); }
-  }
-
-  async function remove(pathToRemove: string) {
-    setBusyPath(pathToRemove);
-    try { await onRemove(pathToRemove); setToast({ tone: "success", message: "Root removed." }); } catch (error) { setToast({ tone: "error", message: asMessage(error) }); } finally { setBusyPath(null); }
-  }
-
-  return (
-    <section className={cx("workflow-panel", firstRun && "is-first-run")}>
-      <div className="workflow-copy">
-        <div className="eyebrow">{firstRun ? "First run" : "Configured roots"}</div>
-        <h3>{firstRun ? "Choose a parent folder to scan" : "Scan roots"}</h3>
-        <p>Add one or more parent folders. The Projects view scans only these locations.</p>
-      </div>
-      <form className="root-form dashboard-root-form" onSubmit={(event) => void submit(event)}>
-        <label><span>Folder path</span><input className="input" placeholder="/path/to/projects" value={path} onChange={(event) => setPath(event.target.value)} /></label>
-        <button className="button" disabled={!bridgeAvailable || !path.trim() || Boolean(busyPath)} type="submit">{firstRun ? "Add root" : "Add another root"}</button>
-      </form>
-      <div className="scan-strip" aria-live="polite">
-        {lastScanAt ? <span>Last scan: {formatScanTime(lastScanAt)}</span> : null}
-        <span>{candidates.length} project{candidates.length === 1 ? "" : "s"}</span>
-        {unavailableRootCount ? <span>{unavailableRootCount} unavailable root{unavailableRootCount === 1 ? "" : "s"}</span> : null}
-        {scanErrors.length ? <span>{scanErrors.length} scan issue{scanErrors.length === 1 ? "" : "s"}</span> : null}
-        <button className="button secondary compact" disabled={!bridgeAvailable || loading || roots.length === 0} type="button" onClick={() => void onScan()}>{loading ? "Scanning" : "Scan all roots"}</button>
-      </div>
-      {roots.length ? (
-        <div className="root-list" aria-label="Configured scan roots">
-          {roots.map((root) => (
-            <div className={cx("root-row", (root.unavailable || root.available === false) && "is-unavailable")} key={root.path}>
-              <span className="truncate" title={root.path}>{root.path}</span>
-              {root.unavailable || root.available === false ? <span className="root-state">Unavailable</span> : null}
-              <button className="button secondary compact" disabled={busyPath === root.path} type="button" onClick={() => void remove(root.path)}>Remove</button>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-function ProjectWorkflowPanel({ bridgeAvailable, configuredProjects, onPickProject, onRemoveProject, setToast }: {
+function ProjectWorkflowPanel({ bridgeAvailable, configuredProjects, onPickProject, onRequestRemoveProject, setToast }: {
   bridgeAvailable: boolean; configuredProjects: string[];
-  onPickProject: () => Promise<void>; onRemoveProject: (path: string) => Promise<void>; setToast: (toast: Toast) => void;
+  onPickProject: () => Promise<void>; onRequestRemoveProject: (path: string) => void; setToast: (toast: Toast) => void;
 }) {
-  const [busyPath, setBusyPath] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const firstRun = configuredProjects.length === 0;
 
   async function pick() {
     setPicking(true);
     try { await onPickProject(); } catch (error) { setToast({ tone: "error", message: asMessage(error) }); } finally { setPicking(false); }
-  }
-
-  async function remove(pathToRemove: string) {
-    setBusyPath(pathToRemove);
-    try { await onRemoveProject(pathToRemove); setToast({ tone: "success", message: "Project removed." }); } catch (error) { setToast({ tone: "error", message: asMessage(error) }); } finally { setBusyPath(null); }
   }
 
   return (
@@ -2231,7 +2208,7 @@ function ProjectWorkflowPanel({ bridgeAvailable, configuredProjects, onPickProje
           {configuredProjects.map((projectPath) => (
             <div className="root-row" key={projectPath}>
               <span className="truncate" title={projectPath}>{projectPath}</span>
-              <button className="button secondary compact" disabled={busyPath === projectPath} type="button" onClick={() => void remove(projectPath)}>Remove</button>
+              <button className="button secondary compact" type="button" onClick={() => onRequestRemoveProject(projectPath)}>Remove</button>
             </div>
           ))}
         </div>
@@ -2240,22 +2217,17 @@ function ProjectWorkflowPanel({ bridgeAvailable, configuredProjects, onPickProje
   );
 }
 
-function SettingsStatusPanel({ candidates, roots, scanErrors, unavailableRootCount }: { candidates: ProjectCandidate[]; roots: RootRecord[]; scanErrors: string[]; unavailableRootCount: number }) {
-  const unavailableRoots = roots.filter((root) => root.unavailable || root.available === false);
+function SettingsStatusPanel({ candidates, scanErrors }: { candidates: ProjectCandidate[]; scanErrors: string[] }) {
   return (
     <section className="workflow-panel settings-status-panel">
       <div className="settings-facts-grid">
-        <Fact label="Roots" value={String(roots.length)} />
         <Fact label="Projects" value={String(candidates.length)} />
-        <Fact label="Unavailable" value={String(unavailableRootCount)} tone={unavailableRootCount ? "warn" : undefined} />
+        <Fact label="Issues" value={String(scanErrors.length)} tone={scanErrors.length ? "warn" : undefined} />
       </div>
-      {unavailableRoots.length ? (
-        <section className="subpanel settings-list-panel"><h4>Unavailable roots</h4><div className="settings-list">{unavailableRoots.map((root) => (<div className="settings-list-row" key={root.path}><span className="truncate">{root.path}</span><small className="truncate">{root.error ?? "Unavailable"}</small></div>))}</div></section>
-      ) : null}
       {scanErrors.length ? (
-        <section className="subpanel settings-list-panel"><h4>Scan issues</h4><div className="settings-list">{scanErrors.map((error) => (<div className="settings-list-row" key={error}><span className="truncate">{error}</span></div>))}</div></section>
+        <section className="subpanel settings-list-panel"><h4>Project issues</h4><div className="settings-list">{scanErrors.map((error) => (<div className="settings-list-row" key={error}><span className="truncate">{error}</span></div>))}</div></section>
       ) : null}
-      {!unavailableRoots.length && !scanErrors.length ? (<div className="empty-state compact-title-row"><strong>No issues</strong><span>Settings status is clear.</span></div>) : null}
+      {!scanErrors.length ? (<div className="empty-state compact-title-row"><strong>No issues</strong><span>Settings status is clear.</span></div>) : null}
     </section>
   );
 }

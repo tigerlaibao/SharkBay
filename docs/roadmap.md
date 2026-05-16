@@ -6,7 +6,7 @@ This roadmap reflects the current implementation in this repository, not only th
 
 SharkBay already has:
 
-- Project-centered desktop UI with configured project folders and configured scan roots.
+- Project-centered desktop UI with manually configured project folders.
 - Git repository discovery, branch/remote/dirty-file metadata, recent Git activity, and lazy file browsing.
 - Project-scoped terminal tabs with xterm and `node-pty`.
 - Development service detection for `package.json` `dev` / `dev:*` scripts and selected Python CLI web commands.
@@ -36,6 +36,6 @@ SharkBay already has:
 ## Non-Goals For Now
 
 - Running agents as hidden background services.
-- Scanning arbitrary filesystem locations without user configuration.
+- Discovering projects from arbitrary filesystem locations without explicit project selection.
 - Cloud-hosted project state outside explicit GitHub-backed Teamwork sync.
 - Mobile or small-screen layout support.

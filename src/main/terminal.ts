@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import * as pty from "node-pty";
-import { getConfiguredRoots } from "./config.js";
+import { loadRuntimeConfig } from "./config.js";
 import { resolveRepoPath } from "./path-safety.js";
 import type {
   IpcRuntimeLike,
@@ -295,8 +295,8 @@ export async function resolveTerminalCwd(runtime: IpcRuntimeLike, cwd: string): 
   if (!cwd?.trim()) {
     throw new Error("Terminal cwd is required");
   }
-  const config = await getConfiguredRoots(runtime);
-  const safeRepo = await resolveRepoPath(cwd, config.configuredRoots, config.configuredProjects);
+  const config = await loadRuntimeConfig(runtime);
+  const safeRepo = await resolveRepoPath(cwd, config.configuredProjects);
   return safeRepo.repoPath;
 }
 

@@ -38,18 +38,18 @@ const commonIconPaths = [
 
 const displayableExtensions = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".ico"]);
 
-export async function resolveProjectIconSources(repoPath: string, configuredRoots: string[], urls: UrlFields = { localUrl: null, testUrl: null, deploymentUrl: null }): Promise<ProjectIconSource[]> {
-  const localSources = await resolveLocalIconSources(repoPath, configuredRoots);
+export async function resolveProjectIconSources(repoPath: string, configuredProjects: string[], urls: UrlFields = { localUrl: null, testUrl: null, deploymentUrl: null }): Promise<ProjectIconSource[]> {
+  const localSources = await resolveLocalIconSources(repoPath, configuredProjects);
   const faviconSources = faviconSourcesFromUrls(urls);
   return dedupeSources([...localSources, ...faviconSources]);
 }
 
-async function resolveLocalIconSources(repoPath: string, configuredRoots: string[]): Promise<ProjectIconSource[]> {
-  const paths = [...await packageIconPaths(repoPath, configuredRoots), ...commonIconPaths];
+async function resolveLocalIconSources(repoPath: string, configuredProjects: string[]): Promise<ProjectIconSource[]> {
+  const paths = [...await packageIconPaths(repoPath, configuredProjects), ...commonIconPaths];
   const sources: ProjectIconSource[] = [];
 
   for (const relativePath of dedupeStrings(paths)) {
-    const source = await localIconSource(repoPath, configuredRoots, relativePath);
+    const source = await localIconSource(repoPath, configuredProjects, relativePath);
     if (source) {
       sources.push(source);
       break;
@@ -59,10 +59,10 @@ async function resolveLocalIconSources(repoPath: string, configuredRoots: string
   return sources;
 }
 
-async function packageIconPaths(repoPath: string, configuredRoots: string[]): Promise<string[]> {
+async function packageIconPaths(repoPath: string, configuredProjects: string[]): Promise<string[]> {
   let packageJsonPath: string;
   try {
-    packageJsonPath = await resolveReadableRepoFile(repoPath, configuredRoots, "package.json");
+    packageJsonPath = await resolveReadableRepoFile(repoPath, configuredProjects, "package.json");
   } catch {
     return [];
   }
@@ -78,13 +78,13 @@ async function packageIconPaths(repoPath: string, configuredRoots: string[]): Pr
   return candidates.flatMap((candidate) => normalizeIconRelativePath(candidate));
 }
 
-async function localIconSource(repoPath: string, configuredRoots: string[], relativePath: string): Promise<ProjectIconSource | null> {
+async function localIconSource(repoPath: string, configuredProjects: string[], relativePath: string): Promise<ProjectIconSource | null> {
   const safePath = normalizeIconRelativePath(relativePath)[0];
   if (!safePath) return null;
 
   let filePath: string;
   try {
-    filePath = await resolveReadableRepoFile(repoPath, configuredRoots, safePath);
+    filePath = await resolveReadableRepoFile(repoPath, configuredProjects, safePath);
   } catch {
     return null;
   }

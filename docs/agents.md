@@ -45,7 +45,7 @@ Before making persistent project changes, read:
 - Preserve user changes and unrelated dirty files.
 - Keep changes scoped to the requested behavior.
 - Prefer existing modules, IPC patterns, types, and tests over new abstractions.
-- Treat renderer-provided filesystem paths as untrusted; main-process handlers must re-resolve them against persisted configured projects or roots.
+- Treat renderer-provided filesystem paths as untrusted; main-process handlers must re-resolve them against persisted configured projects.
 - Do not weaken path safety, IPC exposure, Teamwork ownership checks, or generated-file overwrite guards.
 - When updating docs, keep README high-level and put implementation detail in `docs/`.
 

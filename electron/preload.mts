@@ -14,13 +14,10 @@ import type {
   BrowserSession,
   BrowserUpdateEvent,
   ProjectConfigInput,
-  ProjectScanInput,
   ProjectDetail,
   ProjectFilesInput,
   ProjectFilesResult,
   RemoveProjectInput,
-  RemoveRootInput,
-  RootConfigInput,
   ScanProjectsResult,
   TaskViewModel,
   TeamworkGetTasksInput,
@@ -67,16 +64,14 @@ const sharkBayApi = {
     }
   },
   config: {
-    listRoots: () => invoke<AppConfig>(channels.listRoots),
-    addRoot: (input: RootConfigInput) => invoke<AppConfig>(channels.addRoot, input),
-    removeRoot: (input: RemoveRootInput) => invoke<AppConfig>(channels.removeRoot, input),
+    listConfig: () => invoke<AppConfig>(channels.listConfig),
     addProject: (input: ProjectConfigInput) => invoke<AppConfig>(channels.addProject, input),
     removeProject: (input: RemoveProjectInput) => invoke<AppConfig>(channels.removeProject, input),
     pickProjectFolder: () => invoke<{ cancelled: boolean; paths: string[] }>(channels.pickProjectFolder),
     setAppearanceTheme: (input: AppearanceThemeInput) => invoke<AppConfig>(channels.setAppearanceTheme, input)
   },
   projects: {
-    scan: (input?: ProjectScanInput) => invoke<ScanProjectsResult>(channels.scanProjects, input),
+    scan: () => invoke<ScanProjectsResult>(channels.scanProjects),
     getDetail: (input: { repoPath: string }) => invoke<ProjectDetail>(channels.getProjectDetail, input),
     listFiles: (input: ProjectFilesInput) => invoke<ProjectFilesResult>(channels.listProjectFiles, input)
   },

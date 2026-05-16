@@ -4,7 +4,7 @@ SharkBay is a local-first macOS workbench for software projects. It helps you ke
 
 ## What It Does
 
-- Adds individual project folders and scans user-configured parent folders for Git repositories.
+- Adds and removes individual project folders selected by the user.
 - Shows project icons, branch names, dirty worktree state, dirty files, recent Git activity, and a lazy file tree.
 - Opens per-project terminal workspaces backed by xterm and `node-pty`.
 - Detects common development services from `package.json` `dev` / `dev:*` scripts and supported Python CLI web commands.
@@ -12,7 +12,7 @@ SharkBay is a local-first macOS workbench for software projects. It helps you ke
 - Discovers installed agent CLIs such as Codex, Claude Code, Gemini, Kiro, DeepSeek, Qwen, and OpenCode, then launches them in visible project terminals.
 - Watches recent Codex and Claude transcript files for short project status snippets.
 - Supports SharkBay Teamwork: a project-local `.sharkbay` harness, Markdown task files, read-only team context mirror, and optional sync through a GitHub remote branch.
-- Provides Settings for configured projects, scan roots, scan status, and day/night/morning appearance themes.
+- Provides Settings for configured projects, project status, and day/night/morning appearance themes.
 
 ## Documentation
 
@@ -28,11 +28,11 @@ SharkBay is a local-first macOS workbench for software projects. It helps you ke
 
 ## Project Model
 
-SharkBay treats a project as a local directory selected by the user or a Git repository discovered below a configured scan root.
+SharkBay treats a project as a local directory selected by the user. Removing a project only removes it from the SharkBay workspace; it does not delete files from disk.
 
 Project metadata is discovered from ordinary repository files and local tools:
 
-- `.git` identifies repositories during root scans.
+- `.git` identifies repository metadata when present.
 - Git commands provide branch, remote, reflog, dirty-worktree, and changed-file data.
 - `package.json` and selected `pyproject.toml` patterns contribute development service commands.
 - Common icon locations and Electron Builder icon fields provide project avatars.
@@ -116,9 +116,9 @@ Outputs are written to `release/`. Local builds use ad-hoc signing unless signin
 
 ## Safety Notes
 
-SharkBay keeps project operations scoped to user-configured projects and scan roots:
+SharkBay keeps project operations scoped to user-configured projects:
 
-- Renderer-provided paths are resolved in the main process against persisted configured roots/projects before filesystem, Git, terminal, file-tree, or Teamwork operations run.
+- Renderer-provided paths are resolved in the main process against persisted configured projects before filesystem, Git, terminal, file-tree, or Teamwork operations run.
 - Project files are exposed through scoped file-tree listing, not arbitrary path reads.
 - Terminal sessions are spawned only after the main process resolves the requested cwd inside an allowed project boundary.
 - Embedded browser tabs accept only `http:` and `https:` URLs; unsafe schemes fall back to `about:blank`.

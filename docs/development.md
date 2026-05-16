@@ -80,7 +80,7 @@ Release-specific details live in [Release and packaging](release.md).
 
 During development, SharkBay writes runtime data outside the repository:
 
-- Electron userData `config.json` for configured projects/roots/theme.
+- Electron userData `config.json` for configured projects and theme.
 - BrowserView partition data for embedded browser tabs.
 - Codex/Claude transcript reads from the user's home directory.
 

@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { getConfiguredRoots } from "./config.js";
+import { loadRuntimeConfig } from "./config.js";
 import { isPathInside, resolveRepoPath } from "./path-safety.js";
 import type { IpcRuntimeLike, ProjectFileTreeItem, ProjectFilesInput, ProjectFilesResult } from "../shared/types.js";
 
@@ -52,16 +52,14 @@ const editableFilenames = new Set([
 
 export async function listProjectFiles(runtime: IpcRuntimeLike, input: ProjectFilesInput): Promise<ProjectFilesResult> {
   try {
-    const config = input.configuredRoots ? null : await getConfiguredRoots(runtime);
-    const configuredRoots = input.configuredRoots ?? config?.configuredRoots ?? [];
-    const configuredProjects = input.configuredProjects ?? config?.configuredProjects ?? [];
-    const safeRepo = await resolveRepoPath(input.repoPath, configuredRoots, configuredProjects);
+    const config = await loadRuntimeConfig(runtime);
+    const safeRepo = await resolveRepoPath(input.repoPath, config.configuredProjects);
     const directoryPath = await resolveRequestedDirectory(safeRepo.repoPath, safeRepo.containingRoot, input.directoryPath);
     const files = await listDirectory(safeRepo.repoPath, directoryPath, safeRepo.containingRoot);
     return { ok: true, repoPath: safeRepo.repoPath, files };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const reason = message.includes("outside configured roots") || message.includes("No configured roots")
+    const reason = message.includes("outside configured projects") || message.includes("No configured projects") || message.includes("outside the allowed project boundary")
       ? "unsafe-path"
       : "io-error";
     return { ok: false, reason, message };
@@ -81,7 +79,7 @@ async function resolveRequestedDirectory(repoPath: string, containingRoot: strin
     throw new Error("Requested path is not a directory");
   }
   if (!isPathInside(repoPath, realPath) || !isPathInside(containingRoot, realPath)) {
-    throw new Error("Requested directory is outside configured roots");
+    throw new Error("Requested directory is outside the allowed project boundary");
   }
   return realPath;
 }

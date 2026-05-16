@@ -16,7 +16,7 @@ The main window runs with context isolation enabled and node integration disable
 
 Canonical channel names live in `src/shared/ipc-channels.ts`. The exposed groups are:
 
-- `config:*` - configured projects, scan roots, folder picker, and appearance theme.
+- `config:*` - configured project add/remove/list operations, folder picker, and appearance theme.
 - `projects:*` - scan, project detail, and file tree.
 - `terminal:*` - PTY lifecycle, input, resize, data, updates, and exits.
 - `browser:*` - embedded BrowserView lifecycle, navigation, resize, and updates.
@@ -31,8 +31,8 @@ Renderer-facing data types are mirrored in `src/renderer/types.ts`; stricter sha
 | --- | --- |
 | `src/main/config.ts` | Load/save normalized app config. |
 | `src/main/json-file.ts` | Atomic JSON reads/writes with revisions. |
-| `src/main/path-safety.ts` | Resolve configured roots/projects and enforce path containment. |
-| `src/main/scanner.ts` | Discover Git repositories and merge manually configured projects. |
+| `src/main/path-safety.ts` | Resolve configured projects and enforce path containment. |
+| `src/main/scanner.ts` | Resolve manually configured projects into project candidates. |
 | `src/main/git.ts` | Read Git metadata, reflog history, and dirty files. |
 | `src/main/project-files.ts` | Return safe lazy file-tree entries and editable-file flags. |
 | `src/main/project-icons.ts` | Resolve local project icon candidates and favicon fallbacks. |
@@ -46,11 +46,11 @@ Renderer-facing data types are mirrored in `src/renderer/types.ts`; stricter sha
 
 The renderer currently uses React hooks rather than a separate state library.
 
-- `App` owns global state: view, configured roots/projects, scan candidates, selected project, detail data, loading/errors, scan time, and theme.
+- `App` owns global state: view, configured projects, project candidates, selected project, detail data, loading/errors, refresh time, and theme.
 - `DashboardView` builds the three-column workbench: project list, terminal/browser workspace, and detail pane.
 - `TerminalPane` owns per-project terminal/browser tab state.
 - `ProjectDetailPane` owns `TEAM`, `Git`, and `Files` tabs.
-- `SettingsView` owns project, scan-root, status, and appearance settings.
+- `SettingsView` owns project, status, and appearance settings.
 - `src/renderer/workflow.ts` contains pure workflow helpers with focused unit tests.
 - `src/styles/app.css` is the single global stylesheet and implements all current themes.
 
@@ -66,11 +66,11 @@ The renderer currently uses React hooks rather than a separate state library.
 
 ## Path And Execution Safety
 
-Path safety is enforced in the main process. Renderer-supplied paths are re-resolved against persisted configured projects or roots before filesystem, Git, file-tree, terminal, or Teamwork operations run.
+Path safety is enforced in the main process. Renderer-supplied paths are re-resolved against persisted configured projects before filesystem, Git, file-tree, terminal, or Teamwork operations run.
 
 Key boundaries:
 
-- `resolveRepoPath` requires directories to be inside a configured project or configured root.
+- Product entry points call `resolveRepoPath` with persisted configured projects, so directories must be inside a manually configured project.
 - file tree listing rejects unsafe directory paths and only marks contained, known text-like files as editable.
 - terminal cwd is resolved through the same allowed-project boundary.
 - BrowserView navigation accepts only `http:` and `https:` URLs; invalid or unsafe schemes become `about:blank`.

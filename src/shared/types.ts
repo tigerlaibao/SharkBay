@@ -2,7 +2,6 @@ export type AppearanceTheme = "day" | "night" | "morning";
 
 export type AppConfig = {
   schemaVersion: 1;
-  configuredRoots: string[];
   configuredProjects: string[];
   appearanceTheme: AppearanceTheme;
   updatedAt: string;
@@ -11,13 +10,6 @@ export type AppConfig = {
 export type IpcRuntimeLike = {
   userDataPath: string;
 };
-
-export type RootConfigInput = {
-  path?: string;
-  rootPath?: string;
-};
-
-export type RemoveRootInput = RootConfigInput;
 
 export type ProjectConfigInput = {
   path: string;
@@ -29,18 +21,6 @@ export type RemoveProjectInput = {
 
 export type AppearanceThemeInput = {
   theme: AppearanceTheme;
-};
-
-export type ProjectScanInput = {
-  configuredRoots?: string[];
-  maxDepth?: number;
-};
-
-export type RootScanResult = {
-  inputPath: string;
-  path: string | null;
-  available: boolean;
-  error: string | null;
 };
 
 export type ProjectIconSource = {
@@ -67,8 +47,6 @@ export type ProjectFileTreeItem = {
 
 export type ProjectFilesInput = {
   repoPath: string;
-  configuredRoots?: string[];
-  configuredProjects?: string[];
   directoryPath?: string;
 };
 
@@ -126,7 +104,6 @@ export type ProjectDetail = ProjectSummary & {
 };
 
 export type ScanProjectsResult = {
-  roots: RootScanResult[];
   candidates: ProjectCandidate[];
 };
 

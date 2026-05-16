@@ -1,16 +1,7 @@
 export type AppearanceTheme = "day" | "night" | "morning";
 
-export type RootRecord = {
-  path: string;
-  inputPath?: string;
-  available?: boolean;
-  unavailable?: boolean;
-  error?: string | null;
-};
-
 export type AppConfig = {
   schemaVersion?: number;
-  configuredRoots: string[];
   configuredProjects?: string[];
   appearanceTheme?: AppearanceTheme;
   updatedAt?: string;
@@ -42,7 +33,6 @@ export type ProjectCandidate = {
 
 export type ProjectFilesInput = {
   repoPath: string;
-  configuredRoots?: string[];
   directoryPath?: string;
 };
 
@@ -89,7 +79,6 @@ export type ProjectDetail = ProjectSummary & {
 
 export type ScanResult = {
   candidates: ProjectCandidate[];
-  roots?: RootRecord[];
   errors?: string[];
 };
 
@@ -283,9 +272,7 @@ export type SharkBayBridge = {
     onOpenSettings?: (callback: () => void) => () => void;
   };
   config?: {
-    listRoots?: () => Promise<AppConfig | RootRecord[] | string[]>;
-    addRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
-    removeRoot?: (input: { path: string; rootPath?: string } | string) => Promise<AppConfig | RootRecord[] | void>;
+    listConfig?: () => Promise<AppConfig>;
     addProject?: (input: { path: string }) => Promise<AppConfig | void>;
     removeProject?: (input: { path: string }) => Promise<AppConfig | void>;
     pickProjectFolder?: () => Promise<{ cancelled: boolean; paths: string[] }>;

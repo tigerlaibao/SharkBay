@@ -15,7 +15,7 @@ Vitest runs in the `node` environment and includes `tests/**/*.test.ts`.
 - IPC channel contract
 - app menu behavior
 - build config for packaged renderer assets
-- project scanning and path safety
+- manual project resolution and path safety
 - Git status/history parsing
 - project file tree safety and editable-file detection
 - development service discovery

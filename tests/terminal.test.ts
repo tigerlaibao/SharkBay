@@ -22,13 +22,13 @@ describe("terminal cwd validation", () => {
     });
   });
 
-  it("allows project directories inside configured roots", async () => {
+  it("allows manually configured project directories", async () => {
     const userDataPath = await makeTempRoot("terminal-config");
     const root = await makeTempRoot("terminal-root");
     const repo = await createGitRepoFixture(root, "TerminalRepo");
     await writeJson(getRuntimeConfigPath({ userDataPath }), {
       schemaVersion: 1,
-      configuredRoots: [root],
+      configuredProjects: [repo],
       updatedAt: "2026-05-06",
     });
 
@@ -115,19 +115,20 @@ describe("terminal cwd validation", () => {
     });
   });
 
-  it("rejects directories outside configured roots", async () => {
+  it("rejects directories outside configured projects", async () => {
     const userDataPath = await makeTempRoot("terminal-config");
     const root = await makeTempRoot("terminal-root");
+    const repo = await createGitRepoFixture(root, "AllowedRepo");
     const outsideRoot = await makeTempRoot("terminal-outside");
     const outsideRepo = path.join(outsideRoot, "OutsideRepo");
     await fs.mkdir(outsideRepo);
     await writeJson(getRuntimeConfigPath({ userDataPath }), {
       schemaVersion: 1,
-      configuredRoots: [root],
+      configuredProjects: [repo],
       updatedAt: "2026-05-06",
     });
 
-    await expect(resolveTerminalCwd({ userDataPath }, outsideRepo)).rejects.toThrow(/outside configured roots/);
+    await expect(resolveTerminalCwd({ userDataPath }, outsideRepo)).rejects.toThrow(/outside configured projects/);
   });
 
   it("creates and closes a terminal session in a safe cwd", async () => {
@@ -136,7 +137,7 @@ describe("terminal cwd validation", () => {
     const repo = await createGitRepoFixture(root, "TerminalRepo");
     await writeJson(getRuntimeConfigPath({ userDataPath }), {
       schemaVersion: 1,
-      configuredRoots: [root],
+      configuredProjects: [repo],
       updatedAt: "2026-05-06",
     });
 
@@ -161,7 +162,7 @@ describe("terminal cwd validation", () => {
     const repo = await createGitRepoFixture(root, "TerminalRepo");
     await writeJson(getRuntimeConfigPath({ userDataPath }), {
       schemaVersion: 1,
-      configuredRoots: [root],
+      configuredProjects: [repo],
       updatedAt: "2026-05-07",
     });
 
@@ -186,7 +187,7 @@ describe("terminal cwd validation", () => {
     const repo = await createGitRepoFixture(root, "TerminalRepo");
     await writeJson(getRuntimeConfigPath({ userDataPath }), {
       schemaVersion: 1,
-      configuredRoots: [root],
+      configuredProjects: [repo],
       updatedAt: "2026-05-06",
     });
 
@@ -216,7 +217,7 @@ describe("terminal cwd validation", () => {
     const repo = await createGitRepoFixture(root, "TerminalServiceRepo");
     await writeJson(getRuntimeConfigPath({ userDataPath }), {
       schemaVersion: 1,
-      configuredRoots: [root],
+      configuredProjects: [repo],
       updatedAt: "2026-05-08",
     });
 
