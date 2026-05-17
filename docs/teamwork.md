@@ -70,9 +70,9 @@ The `TEAM` tab shows:
 
 - Teamwork status and errors.
 - Install action when Teamwork is available but not installed.
-- Pending sync count when present.
 - Task list with owner avatar, title, tag, owner, and status pill.
 - Raw Markdown task detail for selected records.
+- Automatic task list and selected task detail refresh while a project is open.
 
 The project context menu can turn Teamwork off. If the authenticated GitHub user owns the repository, SharkBay can also delete the shared context branch during uninstall.
 

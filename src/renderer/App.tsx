@@ -1709,7 +1709,7 @@ function ProjectDetailPane({ detail, candidate, setToast, onRefresh, onOpenFileI
 
 function taskPill(task: TaskViewModel): { label: string; cls: string } {
   if (task.status === "completed" && task.sync === "synced") return { label: "Done", cls: "phase-done" };
-  if (task.status === "completed" && task.sync === "pending") return { label: "Pending", cls: "phase-waiting" };
+  if (task.status === "completed" && task.sync === "pending") return { label: "Done", cls: "phase-done" };
   if (task.status === "completed" && task.sync === "failed") return { label: "Sync failed", cls: "phase-blocked" };
   if (task.status === "active") return { label: "Active", cls: "phase-done" };
   if (task.status === "paused") return { label: "Paused", cls: "phase-blocked" };
@@ -1721,47 +1721,85 @@ function taskPill(task: TaskViewModel): { label: string; cls: string } {
 function TasksDetailTab({ candidate, setToast, teamworkRevision, onOpenBrowserTab }: { candidate: ProjectCandidate; setToast: (toast: Toast) => void; teamworkRevision: number; onOpenBrowserTab: (url: string) => Promise<void> }) {
   const [tasks, setTasks] = useState<TaskViewModel[]>([]);
   const [status, setStatus] = useState<TeamworkStatus | null>(null);
-  const [selected, setSelected] = useState<TaskViewModel | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<"install" | null>(null);
-  const [teamworkError, setTeamworkError] = useState<string | null>(null);
+  const [taskLoadError, setTaskLoadError] = useState<string | null>(null);
+  const [statusLoadError, setStatusLoadError] = useState<string | null>(null);
+  const teamworkError = taskLoadError || statusLoadError;
+  const selected = useMemo(
+    () => selectedTaskId ? tasks.find((task) => task.taskId === selectedTaskId) ?? null : null,
+    [selectedTaskId, tasks],
+  );
 
   useEffect(() => {
     let cancelled = false;
-    setSelected(null);
-    setTeamworkError(null);
+    setSelectedTaskId(null);
+    setTaskLoadError(null);
+    setStatusLoadError(null);
     const teamwork = window.sharkBay?.teamwork;
-    if (!teamwork?.getTasks || !teamwork?.getStatus) {
+    const getTasks = teamwork?.getTasks;
+    const getStatus = teamwork?.getStatus;
+    if (!getTasks || !getStatus) {
       const message = "Teamwork APIs are not exposed by the preload bridge.";
-      setTeamworkError(message);
+      setTaskLoadError(message);
       setToast({ tone: "error", message });
       return;
     }
-    void teamwork.getTasks({ repoPath: candidate.path })
-      .then((updated) => { if (!cancelled) setTasks(updated); })
-      .catch((error) => {
+    const getTasksHandler: NonNullable<NonNullable<SharkBayBridge["teamwork"]>["getTasks"]> = getTasks;
+    const getStatusHandler: NonNullable<NonNullable<SharkBayBridge["teamwork"]>["getStatus"]> = getStatus;
+
+    function applyTasks(updated: TaskViewModel[]) {
+      setTasks(updated);
+      setSelectedTaskId((current) => current && updated.some((task) => task.taskId === current) ? current : null);
+    }
+
+    async function refreshTasks(showToast: boolean) {
+      try {
+        const updated = await getTasksHandler({ repoPath: candidate.path });
         if (cancelled) return;
+        applyTasks(updated);
+        setTaskLoadError(null);
+      } catch (error) {
+        if (cancelled) return;
+        const message = asMessage(error);
         setTasks([]);
-        const message = asMessage(error);
-        setTeamworkError(message);
-        setToast({ tone: "error", message });
-      });
-    void teamwork.getStatus({ repoPath: candidate.path })
-      .then((updated) => { if (!cancelled) setStatus(updated); })
-      .catch((error) => {
+        setTaskLoadError(message);
+        if (showToast) setToast({ tone: "error", message });
+      }
+    }
+
+    async function refreshStatus(showToast: boolean) {
+      try {
+        const updated = await getStatusHandler({ repoPath: candidate.path });
+        if (cancelled) return;
+        setStatus(updated);
+        setStatusLoadError(null);
+      } catch (error) {
         if (cancelled) return;
         const message = asMessage(error);
-        setTeamworkError(message);
-        setToast({ tone: "error", message });
-      });
+        setStatusLoadError(message);
+        if (showToast) setToast({ tone: "error", message });
+      }
+    }
+
+    void refreshTasks(true);
+    void refreshStatus(true);
+    const refreshTimer = window.setInterval(() => {
+      void refreshTasks(false);
+      void refreshStatus(false);
+    }, 2000);
     const unsub = window.sharkBay?.teamwork?.onTasksChanged?.((event) => {
-      if (event.repoPath === candidate.path) setTasks(event.tasks);
+      if (event.repoPath === candidate.path) {
+        applyTasks(event.tasks);
+        setTaskLoadError(null);
+      }
     });
-    return () => { cancelled = true; unsub?.(); };
+    return () => { cancelled = true; window.clearInterval(refreshTimer); unsub?.(); };
   }, [candidate.path, setToast, teamworkRevision]);
 
   async function installTeamworkHarness(): Promise<void> {
     setBusyAction("install");
-    setTeamworkError(null);
+    setStatusLoadError(null);
     try {
       const install = window.sharkBay?.teamwork?.install;
       if (!install) throw new Error("Teamwork install API is not available.");
@@ -1770,7 +1808,7 @@ function TasksDetailTab({ candidate, setToast, teamworkRevision, onOpenBrowserTa
       setToast({ tone: "success", message: "Teamwork installed." });
     } catch (error) {
       const message = asMessage(error);
-      setTeamworkError(message);
+      setStatusLoadError(message);
       setToast({ tone: "error", message });
     } finally {
       setBusyAction(null);
@@ -1795,7 +1833,7 @@ function TasksDetailTab({ candidate, setToast, teamworkRevision, onOpenBrowserTa
     return (
       <div className="mock-task-detail">
         <div className="task-detail-header">
-          <button className="icon-button" type="button" onClick={() => setSelected(null)} aria-label="Back to task list">
+          <button className="icon-button" type="button" onClick={() => setSelectedTaskId(null)} aria-label="Back to task list">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
           <span className="task-avatar task-detail-avatar">
@@ -1819,8 +1857,7 @@ function TasksDetailTab({ candidate, setToast, teamworkRevision, onOpenBrowserTa
     status?.githubLogin ||
     status?.branch ||
     teamworkError ||
-    status?.lastError ||
-    (status?.pendingCount != null && status.pendingCount > 0),
+    status?.lastError,
   );
 
   return (
@@ -1832,7 +1869,6 @@ function TasksDetailTab({ candidate, setToast, teamworkRevision, onOpenBrowserTa
             {status?.githubLogin && <div className="repository-fact"><span className="fact-label">User</span><span className="fact-value">{status.githubLogin}</span></div>}
             {status?.branch && <div className="repository-fact"><span className="fact-label">Branch</span><span className="fact-value">{status.branch}</span></div>}
             {(teamworkError || status?.lastError) && <div className="repository-fact is-warn"><span>Error</span><strong>{teamworkError || status?.lastError}</strong></div>}
-            {status?.pendingCount != null && status.pendingCount > 0 && <div className="repository-fact"><span className="fact-label">Pending</span><span className={cx("worktree-pill", "teamwork-attention")}>{status.pendingCount}</span></div>}
           </div>
         </div>
       ) : null}
@@ -1866,7 +1902,7 @@ function TasksDetailTab({ candidate, setToast, teamworkRevision, onOpenBrowserTa
         {tasks.map((task) => {
           const pill = taskPill(task);
           return (
-            <button className="queue-item" key={task.taskId} type="button" onClick={() => setSelected(task)}>
+            <button className="queue-item" key={task.taskId} type="button" onClick={() => setSelectedTaskId(task.taskId)}>
               <span className="task-avatar">
                 {task.owner.avatarUrl ? <img alt="" src={task.owner.avatarUrl} /> : task.owner.githubLogin.slice(0, 2).toUpperCase()}
               </span>
