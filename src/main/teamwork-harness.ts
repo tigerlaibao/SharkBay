@@ -315,14 +315,15 @@ function generateAdapterMd(repo: string): string {
 
 This worktree uses SharkBay Teamwork.
 
-⚠️ Before editing any project file, create a task record in \`.sharkbay/tasks/\` first.
+⚠️ Follow this workflow for every task that edits project files:
 
-For full task file format, naming, frontmatter, and workflow rules, read:
+1. **Before editing** → create a task file in \`.sharkbay/tasks/\` (status: active)
+2. **During work** → update the task's Files and Work sections as you go
+3. **After commit** → write the commit hash into the task frontmatter
+4. **On completion** → set status: completed, fill Verification and Summary
 
+For task file format, naming, frontmatter, and full rules, read:
 \`.sharkbay/harness/protocol.md\`
-
-If the protocol file exists, follow it for task file naming, frontmatter,
-status updates, verification notes, and sync readiness.
 
 If the protocol file is missing or unreadable, ask the user whether to continue
 without SharkBay task tracking.

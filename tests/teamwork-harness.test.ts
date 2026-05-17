@@ -25,7 +25,7 @@ describe("teamwork harness install", () => {
 
     await expect(isHarnessInstalled(repo)).resolves.toBe(true);
     await expect(fs.readFile(path.join(repo, "AGENTS.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
-    await expect(fs.readFile(path.join(repo, "AGENTS.md"), "utf8")).resolves.toContain("Before editing any project file, create a task record");
+    await expect(fs.readFile(path.join(repo, "AGENTS.md"), "utf8")).resolves.toContain("Follow this workflow for every task that edits project files");
     await expect(fs.readFile(path.join(repo, "CLAUDE.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
     await expect(fs.readFile(path.join(repo, "GEMINI.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
     await expect(fs.readFile(path.join(repo, "QWEN.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
