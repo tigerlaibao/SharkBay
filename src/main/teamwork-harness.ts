@@ -315,7 +315,9 @@ function generateAdapterMd(repo: string): string {
 
 This worktree uses SharkBay Teamwork.
 
-Before doing anything in this worktree, you must read:
+⚠️ Before editing any project file, create a task record in \`.sharkbay/tasks/\` first.
+
+For full task file format, naming, frontmatter, and workflow rules, read:
 
 \`.sharkbay/harness/protocol.md\`
 

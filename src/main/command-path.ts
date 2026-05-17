@@ -10,6 +10,7 @@ const fallbackCommandDirectories = [
   ".local/bin",
   ".bun/bin",
   ".nvm/current/bin",
+  ".opencode/bin",
   "/opt/homebrew/bin",
   "/opt/homebrew/sbin",
   "/usr/local/bin",
