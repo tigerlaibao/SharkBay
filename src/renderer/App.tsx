@@ -2205,6 +2205,9 @@ function SettingsView({ appearanceTheme, setToast, onBack, onThemeChange }: {
 
   return (
     <>
+      <button aria-label="Close settings" className="settings-close-button" title="Close settings" type="button" onClick={onBack}>
+        <XIcon />
+      </button>
       <div className="settings-tab-bar">
         <button className={cx("settings-tab", activeTab === "appearance" && "is-active")} type="button" onClick={() => setActiveTab("appearance")}>Appearance</button>
         <button className={cx("settings-tab", activeTab === "about" && "is-active")} type="button" onClick={() => setActiveTab("about")}>About</button>
@@ -2287,6 +2290,10 @@ function RefreshIcon() {
 
 function GlobeIcon() {
   return <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16"><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 0 20" /><path d="M12 2a15.3 15.3 0 0 0 0 20" /></svg>;
+}
+
+function XIcon() {
+  return <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>;
 }
 
 function AgentCliIcon({ agent }: { agent: AgentCli }) {
