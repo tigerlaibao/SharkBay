@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   firstHttpUrl,
+  observeServiceUrl,
   projectTerminalActivityStates,
   resolveSelectedCandidate,
   shouldKeepCurrentServiceUrl,
@@ -73,5 +74,24 @@ describe("renderer workflow contracts", () => {
     expect(firstHttpUrl(nextOutput)).toBe("http://localhost:3000");
     expect(shouldKeepCurrentServiceUrl("http://localhost:3000", "https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory")).toBe(true);
     expect(shouldKeepCurrentServiceUrl("https://nextjs.org/docs", "http://127.0.0.1:3000")).toBe(false);
+  });
+
+  it("observes service URLs across streamed terminal chunks", () => {
+    let observation = observeServiceUrl("", "  ➜  Local:   http://localhost");
+    expect(observation.url).toBeNull();
+
+    observation = observeServiceUrl(observation.output, ":7777/\r\n  ➜  Network: use --host to expose");
+    expect(observation.url).toBe("http://localhost:7777/");
+  });
+
+  it("keeps URLs intact when ANSI styling splits host and port", () => {
+    const viteOutput = "  \u001b[32m➜\u001b[39m  Local:   \u001b[36mhttp://localhost:\u001b[1m7777\u001b[22m/\u001b[39m";
+    expect(firstHttpUrl(viteOutput)).toBe("http://localhost:7777/");
+
+    let observation = observeServiceUrl("", "  ➜  Local:   \u001b[36mhttp://localhost:\u001b[1m");
+    expect(observation.url).toBeNull();
+
+    observation = observeServiceUrl(observation.output, "7777\u001b[22m/\u001b[39m");
+    expect(observation.url).toBe("http://localhost:7777/");
   });
 });

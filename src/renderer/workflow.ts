@@ -63,9 +63,24 @@ export function terminalActivityForCandidate(
 }
 
 export function firstHttpUrl(data: string): string | null {
-  const text = data.replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, " ");
-  const urls = [...text.matchAll(/https?:\/\/[^\s'"<>）)]+/gu)].map((match) => match[0]).filter(Boolean);
-  return urls.find((url) => isLocalBrowserUrl(url)) ?? urls[0] ?? null;
+  const text = stripTerminalControlSequences(data);
+  const urls = [...text.matchAll(/https?:\/\/[^\s'"<>）)]+/gu)]
+    .map((match) => ({ url: match[0], end: (match.index ?? 0) + match[0].length }))
+    .filter((match) => isCompleteHttpUrlMatch(text, match) && isHttpUrl(match.url));
+  return urls.find((match) => isLocalBrowserUrl(match.url))?.url ?? urls[0]?.url ?? null;
+}
+
+export type ServiceUrlObservation = {
+  output: string;
+  url: string | null;
+};
+
+const serviceUrlObservationLimit = 4096;
+
+export function observeServiceUrl(previousOutput: string | null | undefined, data: string): ServiceUrlObservation {
+  const combined = `${previousOutput ?? ""}${data}`;
+  const output = combined.length > serviceUrlObservationLimit ? combined.slice(-serviceUrlObservationLimit) : combined;
+  return { output, url: firstHttpUrl(output) };
 }
 
 export function shouldKeepCurrentServiceUrl(currentUrl: string | null, nextUrl: string): boolean {
@@ -76,6 +91,28 @@ export function isLocalBrowserUrl(value: string): boolean {
   try {
     const hostname = new URL(value).hostname.toLowerCase();
     return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "0.0.0.0";
+  } catch {
+    return false;
+  }
+}
+
+function stripTerminalControlSequences(data: string): string {
+  return data
+    .replace(/\u001b\][\s\S]*?(?:\u0007|\u001b\\)/g, "")
+    .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, "");
+}
+
+function isCompleteHttpUrlMatch(text: string, match: { url: string; end: number }): boolean {
+  if (match.url.endsWith(":")) return false;
+  if (match.end < text.length) return true;
+  if (match.url.endsWith("/")) return true;
+  return !/^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]):?$/iu.test(match.url);
+}
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
   } catch {
     return false;
   }

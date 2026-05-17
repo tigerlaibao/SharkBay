@@ -28,7 +28,7 @@ import type {
   TerminalUpdateEvent,
 } from "./types";
 import {
-  firstHttpUrl,
+  observeServiceUrl,
   projectTerminalActivityStates,
   resolveSelectedCandidate,
   shouldKeepCurrentServiceUrl,
@@ -928,13 +928,18 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   const activeProjectIdRef = useRef<string | null>(null);
   const creatingProjects = useRef(new Set<string>());
   const quietTimers = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
+  const serviceOutputBuffers = useRef(new Map<string, string>());
   const selectedSpace = candidate?.id ? spaces[candidate.id] ?? null : null;
   const canCreate = bridgeAvailable && Boolean(candidate?.path);
   const services = candidate?.services ?? [];
 
   useEffect(() => { spacesRef.current = spaces; }, [spaces]);
   useEffect(() => { activeProjectIdRef.current = activeProjectId; }, [activeProjectId]);
-  useEffect(() => () => { for (const timer of quietTimers.current.values()) window.clearTimeout(timer); quietTimers.current.clear(); }, []);
+  useEffect(() => () => {
+    for (const timer of quietTimers.current.values()) window.clearTimeout(timer);
+    quietTimers.current.clear();
+    serviceOutputBuffers.current.clear();
+  }, []);
 
   useEffect(() => {
     const runningProjectIds = new Set(
@@ -1111,6 +1116,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
 
   function markTerminalExit(event: TerminalExitEvent) {
     clearTerminalQuietTimer(event.sessionId);
+    serviceOutputBuffers.current.delete(event.sessionId);
     const message = `\r\n[process exited${event.exitCode === null ? "" : ` with code ${event.exitCode}`}${event.signal ? `, signal ${event.signal}` : ""}]\r\n`;
     const match = findTerminalTabWithSpace(spacesRef.current, event.sessionId);
     match?.tab.terminal.write(message);
@@ -1134,7 +1140,9 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   }
 
   function recordServiceUrl(sessionId: string, data: string) {
-    const url = firstHttpUrl(data);
+    const observation = observeServiceUrl(serviceOutputBuffers.current.get(sessionId), data);
+    serviceOutputBuffers.current.set(sessionId, observation.output);
+    const url = observation.url;
     if (!url) return;
     const match = findTerminalTabWithSpace(spacesRef.current, sessionId);
     if (!match?.tab.session.service) return;
@@ -1160,6 +1168,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   function removeTab(tabId: string, match: ReturnType<typeof findTabWithSpace>) {
     if (match?.tab.kind === "terminal") {
       clearTerminalQuietTimer(tabId);
+      serviceOutputBuffers.current.delete(tabId);
       match.tab.disposables.forEach((d) => d.dispose());
       match.tab.terminal.dispose();
     }
