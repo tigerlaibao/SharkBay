@@ -1702,6 +1702,7 @@ function ProjectDetailPane({ detail, candidate, setToast, onRefresh, onOpenFileI
         {detailTabs.map((tab) => (
           <button aria-controls={`project-detail-tabpanel-${tab.id}`} aria-selected={activeDetailTab === tab.id} className={cx("detail-tab-card", activeDetailTab === tab.id && "is-active")} id={`project-detail-tab-${tab.id}`} key={tab.id} role="tab" tabIndex={activeDetailTab === tab.id ? 0 : -1} type="button" onKeyDown={(event) => handleDetailTabKeyDown(event, tab.id)} onClick={() => setActiveDetailTab(tab.id)}>
             {tab.label}
+            {tab.id === "git" && (detail?.gitDirtyFiles?.length ?? 0) > 0 && <span className="tab-badge">{detail!.gitDirtyFiles!.length}</span>}
           </button>
         ))}
       </div>
