@@ -5,6 +5,7 @@ import { marked } from "marked";
 
 const SITE_DIR = ".sharkbay/site";
 const HASH_FILE = ".sharkbay/site/.content-hash";
+const SITE_TEMPLATE_VERSION = "knowledge-site-ui-v2";
 
 export type KnowledgeSiteResult = {
   generated: boolean;
@@ -182,7 +183,8 @@ function renderTasksPage(tasks: TaskSource[]): string {
     html += `<h2>${statusLabel(status)}</h2><ul class="task-list">`;
     for (const t of group) {
       html += `<li class="task-item task-${status}">`;
-      html += `<strong>${esc(t.title)}</strong> <span class="task-meta">${esc(t.owner)} · ${esc(t.taskId.split("-")[0]!)}</span>`;
+      html += `<div class="task-card-header"><strong>${esc(t.title)}</strong><span class="task-status">${esc(statusLabel(status))}</span></div>`;
+      html += `<span class="task-meta">${esc(t.owner)} · ${esc(t.taskId.split("-")[0]!)}</span>`;
       if (t.summary) html += `<p>${esc(t.summary)}</p>`;
       html += `</li>`;
     }
@@ -193,7 +195,7 @@ function renderTasksPage(tasks: TaskSource[]): string {
     if (order.includes(status)) continue;
     html += `<h2>${esc(status)}</h2><ul class="task-list">`;
     for (const t of group) {
-      html += `<li class="task-item"><strong>${esc(t.title)}</strong> <span class="task-meta">${esc(t.owner)}</span></li>`;
+      html += `<li class="task-item"><div class="task-card-header"><strong>${esc(t.title)}</strong><span class="task-status">${esc(status)}</span></div><span class="task-meta">${esc(t.owner)}</span></li>`;
     }
     html += `</ul>`;
   }
@@ -208,15 +210,16 @@ function statusLabel(s: string): string {
 // --- HTML template ---
 
 function buildNav(sources: Sources): string {
-  let nav = `<a href="{base}index.html">Home</a>`;
+  let nav = `<div class="nav-section"><div class="nav-label">Knowledge</div><a class="nav-link" href="{base}index.html">Home</a></div>`;
   if (sources.docs.length > 0) {
-    nav += ` <a href="{base}docs/${basename(sources.docs[0]!.relativePath, ".md")}.html">Docs</a>`;
+    nav += `<div class="nav-section"><div class="nav-label">Docs</div>`;
     for (const doc of sources.docs) {
       const slug = basename(doc.relativePath, extname(doc.relativePath));
-      nav += ` <a href="{base}docs/${slug}.html">${esc(doc.title)}</a>`;
+      nav += `<a class="nav-link" href="{base}docs/${slug}.html">${esc(doc.title)}</a>`;
     }
+    nav += `</div>`;
   }
-  nav += ` <a href="{base}tasks/index.html">Tasks</a>`;
+  nav += `<div class="nav-section"><div class="nav-label">Team</div><a class="nav-link" href="{base}tasks/index.html">Tasks</a></div>`;
   return nav;
 }
 
@@ -231,45 +234,484 @@ function wrapPage(title: string, body: string, nav: string, base: string): strin
 <style>${CSS}</style>
 </head>
 <body>
-<nav class="site-nav">${resolvedNav}</nav>
-<main class="content">${body}</main>
+<div class="site-shell">
+  <aside class="site-sidebar">
+    <a class="brand" href="${base}index.html" aria-label="Knowledge Site home">
+      <span class="brand-mark">KB</span>
+      <span class="brand-copy">
+        <span class="brand-title">Knowledge Site</span>
+        <span class="brand-subtitle">SharkBay</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Knowledge Site navigation">${resolvedNav}</nav>
+    <div class="sidebar-footer">
+      <span>Local docs</span>
+      <strong>Team context ready</strong>
+    </div>
+  </aside>
+  <main class="content-shell">
+    <article class="content">${body}</article>
+  </main>
+</div>
 </body>
 </html>`;
 }
 
 const CSS = `
+:root {
+  --canvas: #f7f7f4;
+  --canvas-soft: #fafaf7;
+  --surface: #ffffff;
+  --surface-strong: #e6e5e0;
+  --ink: #26251e;
+  --body: #5a5852;
+  --muted: #807d72;
+  --muted-soft: #a09c92;
+  --hairline: #e6e5e0;
+  --hairline-strong: #cfcdc4;
+  --primary: #f54e00;
+  --primary-active: #d04200;
+  --success: #1f8a65;
+  --error: #cf2d56;
+  --thinking: #dfa88f;
+  --grep: #9fc9a2;
+  --read: #9fbbe0;
+  --edit: #c0a8dd;
+  --done: #c08532;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #1a1a1a; background: #fafafa; padding: 0; }
-.site-nav { background: #1a2332; color: #fff; padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 8px; }
-.site-nav a { color: #8ecfff; text-decoration: none; font-size: 13px; }
-.site-nav a:hover { text-decoration: underline; }
-.content { max-width: 800px; margin: 32px auto; padding: 0 24px; }
-h1, h2, h3, h4 { margin-top: 1.4em; margin-bottom: 0.4em; }
-h1 { font-size: 1.6em; }
-h2 { font-size: 1.3em; border-bottom: 1px solid #e0e0e0; padding-bottom: 4px; }
-p, ul, ol, pre { margin-bottom: 0.8em; }
-pre { background: #f0f0f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; }
-code { background: #f0f0f0; padding: 2px 5px; border-radius: 3px; font-size: 0.9em; }
-pre code { background: none; padding: 0; }
-a { color: #0066cc; }
-ul, ol { padding-left: 1.5em; }
-.task-list { list-style: none; padding: 0; }
-.task-item { padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 8px; }
-.task-item p { margin: 4px 0 0; color: #555; font-size: 0.9em; }
-.task-meta { color: #777; font-size: 0.85em; margin-left: 8px; }
-.task-active { border-left: 3px solid #22c55e; }
-.task-completed { border-left: 3px solid #6b7280; }
-.task-paused { border-left: 3px solid #f59e0b; }
-.task-blocked { border-left: 3px solid #ef4444; }
-table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
-th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-th { background: #f5f5f5; }
+html { background: var(--canvas); }
+body {
+  min-width: 320px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+  color: var(--body);
+  background:
+    linear-gradient(90deg, rgba(230, 229, 224, 0.46) 1px, transparent 1px) 0 0 / 48px 48px,
+    var(--canvas);
+  padding: 0;
+}
+
+.site-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.site-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 18px;
+  border-right: 1px solid var(--hairline);
+  background: rgba(247, 247, 244, 0.96);
+}
+
+.brand {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  border-bottom: 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--canvas);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.brand-title {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.brand-subtitle {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.site-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.nav-section {
+  display: grid;
+  gap: 6px;
+}
+
+.nav-label {
+  color: var(--muted-soft);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.nav-link {
+  display: block;
+  overflow: hidden;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  border-color: var(--hairline);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.nav-link:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.sidebar-footer {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.sidebar-footer strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.content-shell {
+  min-width: 0;
+  padding: 48px clamp(24px, 5vw, 72px);
+}
+
+.content {
+  width: min(100%, 920px);
+  padding: clamp(30px, 5vw, 64px);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.content > :first-child { margin-top: 0; }
+.content > :last-child { margin-bottom: 0; }
+
+h1, h2, h3, h4 {
+  color: var(--ink);
+  line-height: 1.18;
+}
+
+h1 {
+  max-width: 12ch;
+  margin: 0 0 28px;
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 400;
+}
+
+h2 {
+  margin: 56px 0 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: clamp(25px, 3vw, 34px);
+  font-weight: 400;
+}
+
+h3 {
+  margin: 34px 0 12px;
+  font-size: 21px;
+  font-weight: 600;
+}
+
+h4 {
+  margin: 26px 0 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+p, ul, ol, pre, table, blockquote {
+  margin-bottom: 18px;
+}
+
+p {
+  max-width: 74ch;
+  color: var(--body);
+}
+
+a {
+  color: var(--primary-active);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(245, 78, 0, 0.28);
+}
+
+a:hover {
+  color: var(--primary);
+  border-bottom-color: currentColor;
+}
+
+ul, ol {
+  padding-left: 1.25rem;
+}
+
+li + li {
+  margin-top: 6px;
+}
+
+blockquote {
+  padding: 14px 16px;
+  border-left: 3px solid var(--primary);
+  border-radius: 0 8px 8px 0;
+  background: var(--canvas-soft);
+}
+
+hr {
+  height: 1px;
+  margin: 36px 0;
+  border: 0;
+  background: var(--hairline);
+}
+
+pre {
+  overflow-x: auto;
+  padding: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--canvas-soft);
+  color: var(--ink);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+code {
+  padding: 2px 5px;
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  background: var(--canvas-soft);
+  color: var(--ink);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.9em;
+}
+
+pre code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  border-spacing: 0;
+}
+
+th, td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: var(--canvas-soft);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.task-list {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.task-item {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--hairline);
+  border-left: 4px solid var(--muted-soft);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.task-card-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.task-card-header strong {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.task-status {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.task-item p {
+  margin: 10px 0 0;
+  color: var(--body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.task-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.task-active { border-left-color: var(--success); }
+.task-completed { border-left-color: var(--muted); }
+.task-paused { border-left-color: var(--done); }
+.task-blocked { border-left-color: var(--error); }
+.task-abandoned { border-left-color: var(--muted-soft); }
+
+@media (max-width: 900px) {
+  .site-shell {
+    display: block;
+  }
+
+  .site-sidebar {
+    position: static;
+    height: auto;
+    gap: 16px;
+    padding: 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .site-nav {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(160px, 1fr);
+    gap: 14px;
+    overflow-x: auto;
+    padding: 0 0 2px;
+  }
+
+  .nav-section {
+    align-content: start;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  .content-shell {
+    padding: 24px 16px 40px;
+  }
+
+  .content {
+    padding: 28px 20px;
+  }
+
+  h1 {
+    max-width: none;
+    font-size: 36px;
+  }
+
+  h2 {
+    margin-top: 42px;
+    font-size: 25px;
+  }
+}
+
+@media (max-width: 520px) {
+  .brand {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .content-shell {
+    padding: 18px 10px 32px;
+  }
+
+  .content {
+    padding: 24px 16px;
+  }
+
+  .task-card-header {
+    display: grid;
+  }
+}
 `;
 
 // --- Utilities ---
 
 function computeSourcesHash(sources: Sources): string {
   const h = createHash("sha256");
+  h.update(SITE_TEMPLATE_VERSION);
   if (sources.readme) h.update(sources.readme.content);
   for (const doc of sources.docs) h.update(doc.content);
   for (const task of sources.tasks) h.update(task.raw);
