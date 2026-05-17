@@ -6,12 +6,13 @@ import { randomBytes } from "node:crypto";
 import { resolveCommandPath } from "./command-path.js";
 
 const execFileAsync = promisify(execFile);
-const ROOT_ADAPTER_FILES = ["AGENTS.md"] as const;
-const LEGACY_ROOT_ADAPTER_FILES = ["CLAUDE.md", "GEMINI.md"] as const;
+const ROOT_ADAPTER_FILES = ["AGENTS.md", "CLAUDE.md", "GEMINI.md", "QWEN.md"] as const;
+const KIRO_STEERING_FILE = ".kiro/steering/sharkbay-protocol.md";
+const LEGACY_ROOT_ADAPTER_FILES = [] as const;
 const LEGACY_INSTRUCTION_FILES = ["codex.md", "claude.md", "gemini.md"] as const;
 const GENERATED_MARKER = "<!-- sharkbay-generated: true -->";
-const EXCLUDE_ENTRIES = ["/.sharkbay/", ...ROOT_ADAPTER_FILES.map((name) => `/${name}`)];
-const LEGACY_EXCLUDE_ENTRIES = LEGACY_ROOT_ADAPTER_FILES.map((name) => `/${name}`);
+const EXCLUDE_ENTRIES = ["/.sharkbay/", ...ROOT_ADAPTER_FILES.map((name) => `/${name}`), `/${KIRO_STEERING_FILE}`];
+const LEGACY_EXCLUDE_ENTRIES = [] as string[];
 const EXCLUDE_REMOVAL_ENTRIES = new Set([...EXCLUDE_ENTRIES, ...LEGACY_EXCLUDE_ENTRIES]);
 const EXCLUDE_BACKUP_FILE = "git-info-exclude.backup";
 const EXCLUDE_MISSING_MARKER = "git-info-exclude.missing";
@@ -69,6 +70,12 @@ export async function installHarness(
   for (const name of ROOT_ADAPTER_FILES) {
     await writeFile(join(repoPath, name), adapterContent, "utf-8");
   }
+
+  // Kiro steering file (nested path).
+  const kiroSteeringPath = join(repoPath, KIRO_STEERING_FILE);
+  await mkdir(join(repoPath, ".kiro", "steering"), { recursive: true });
+  await writeFile(kiroSteeringPath, adapterContent, "utf-8");
+
   await cleanupLegacyAdapters(repoPath);
   await cleanupLegacyInstructionFiles(harnessDir);
 
@@ -94,7 +101,7 @@ async function assertGitWorktree(repoPath: string): Promise<void> {
 async function assertRootAdaptersCanBeManaged(repoPath: string): Promise<void> {
   const conflicts: string[] = [];
 
-  for (const name of ROOT_ADAPTER_FILES) {
+  for (const name of [...ROOT_ADAPTER_FILES, KIRO_STEERING_FILE]) {
     try {
       const existing = await readFile(join(repoPath, name), "utf-8");
       if (!existing.includes(GENERATED_MARKER)) {
@@ -145,6 +152,11 @@ export async function uninstallHarness(repoPath: string): Promise<TeamworkUninst
     if (removed === "removed") removedPaths.push(name);
     else if (removed === "skipped") skippedPaths.push(name);
   }
+
+  // Remove Kiro steering file.
+  const kiroResult = await removeGeneratedAdapter(repoPath, KIRO_STEERING_FILE);
+  if (kiroResult === "removed") removedPaths.push(KIRO_STEERING_FILE);
+  else if (kiroResult === "skipped") skippedPaths.push(KIRO_STEERING_FILE);
 
   const excludeRemovedLines = await restoreLocalExclude(repoPath);
   const sharkbayDir = join(repoPath, ".sharkbay");

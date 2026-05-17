@@ -25,14 +25,18 @@ describe("teamwork harness install", () => {
 
     await expect(isHarnessInstalled(repo)).resolves.toBe(true);
     await expect(fs.readFile(path.join(repo, "AGENTS.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
-    await expect(fs.stat(path.join(repo, "CLAUDE.md")).catch(() => null)).resolves.toBeNull();
-    await expect(fs.stat(path.join(repo, "GEMINI.md")).catch(() => null)).resolves.toBeNull();
+    await expect(fs.readFile(path.join(repo, "CLAUDE.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
+    await expect(fs.readFile(path.join(repo, "GEMINI.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
+    await expect(fs.readFile(path.join(repo, "QWEN.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
+    await expect(fs.readFile(path.join(repo, ".kiro", "steering", "sharkbay-protocol.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
     await expect(fs.stat(path.join(repo, ".sharkbay", "harness", "instructions")).catch(() => null)).resolves.toBeNull();
     await expect(fs.readFile(path.join(repo, ".sharkbay", "harness", "protocol.md"), "utf8")).resolves.toContain("Repo: SharkUI/AIBF");
     const exclude = await fs.readFile(path.join(repo, ".git", "info", "exclude"), "utf8");
     expect(exclude).toContain("/AGENTS.md");
-    expect(exclude).not.toContain("/CLAUDE.md");
-    expect(exclude).not.toContain("/GEMINI.md");
+    expect(exclude).toContain("/CLAUDE.md");
+    expect(exclude).toContain("/GEMINI.md");
+    expect(exclude).toContain("/QWEN.md");
+    expect(exclude).toContain("/.kiro/steering/sharkbay-protocol.md");
   });
 
   it("refuses to overwrite an existing user root instruction file", async () => {
@@ -69,7 +73,7 @@ describe("teamwork harness install", () => {
     expect(content).not.toContain("old adapter");
   });
 
-  it("removes legacy SharkBay-generated agent-specific adapters", async () => {
+  it("overwrites SharkBay-generated agent adapters with updated content", async () => {
     const root = await makeTempRoot("teamwork-harness-legacy");
     const repo = await createRealGitRepoFixture(root);
     await writeText(path.join(repo, "CLAUDE.md"), "<!-- sharkbay-generated: true -->\nold claude adapter\n");
@@ -80,24 +84,27 @@ describe("teamwork harness install", () => {
 
     await installHarness(repo, harnessOptions);
 
-    await expect(fs.stat(path.join(repo, "CLAUDE.md")).catch(() => null)).resolves.toBeNull();
-    await expect(fs.stat(path.join(repo, "GEMINI.md")).catch(() => null)).resolves.toBeNull();
+    const claude = await fs.readFile(path.join(repo, "CLAUDE.md"), "utf8");
+    expect(claude).toContain("This worktree uses SharkBay Teamwork.");
+    expect(claude).not.toContain("old claude adapter");
+    const gemini = await fs.readFile(path.join(repo, "GEMINI.md"), "utf8");
+    expect(gemini).toContain("This worktree uses SharkBay Teamwork.");
+    expect(gemini).not.toContain("old gemini adapter");
     await expect(fs.stat(path.join(repo, ".sharkbay", "harness", "instructions")).catch(() => null)).resolves.toBeNull();
     const exclude = await fs.readFile(path.join(repo, ".git", "info", "exclude"), "utf8");
     expect(exclude).toContain("/AGENTS.md");
-    expect(exclude).not.toContain("/CLAUDE.md");
-    expect(exclude).not.toContain("/GEMINI.md");
+    expect(exclude).toContain("/CLAUDE.md");
+    expect(exclude).toContain("/GEMINI.md");
+    expect(exclude).toContain("/QWEN.md");
   });
 
-  it("leaves user-owned legacy adapter filenames alone", async () => {
+  it("refuses to overwrite user-owned adapter files", async () => {
     const root = await makeTempRoot("teamwork-harness-user-legacy");
     const repo = await createRealGitRepoFixture(root);
     await writeText(path.join(repo, "CLAUDE.md"), "# User Claude rules\n");
 
-    await installHarness(repo, harnessOptions);
-
+    await expect(installHarness(repo, harnessOptions)).rejects.toThrow(/CLAUDE\.md/);
     await expect(fs.readFile(path.join(repo, "CLAUDE.md"), "utf8")).resolves.toBe("# User Claude rules\n");
-    await expect(fs.readFile(path.join(repo, "AGENTS.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
   });
 
   it("uninstalls local teamwork files and removes only SharkBay exclude entries", async () => {
@@ -110,10 +117,18 @@ describe("teamwork harness install", () => {
 
     expect(result.removedPaths).toContain(".sharkbay");
     expect(result.removedPaths).toContain("AGENTS.md");
-    expect(result.excludeRemovedLines).toEqual(["/.sharkbay/", "/AGENTS.md"]);
+    expect(result.removedPaths).toContain("CLAUDE.md");
+    expect(result.removedPaths).toContain("GEMINI.md");
+    expect(result.removedPaths).toContain("QWEN.md");
+    expect(result.removedPaths).toContain(".kiro/steering/sharkbay-protocol.md");
+    expect(result.excludeRemovedLines).toEqual(["/.sharkbay/", "/AGENTS.md", "/CLAUDE.md", "/GEMINI.md", "/QWEN.md", "/.kiro/steering/sharkbay-protocol.md"]);
     await expect(isHarnessInstalled(repo)).resolves.toBe(false);
     await expect(fs.stat(path.join(repo, ".sharkbay")).catch(() => null)).resolves.toBeNull();
     await expect(fs.stat(path.join(repo, "AGENTS.md")).catch(() => null)).resolves.toBeNull();
+    await expect(fs.stat(path.join(repo, "CLAUDE.md")).catch(() => null)).resolves.toBeNull();
+    await expect(fs.stat(path.join(repo, "GEMINI.md")).catch(() => null)).resolves.toBeNull();
+    await expect(fs.stat(path.join(repo, "QWEN.md")).catch(() => null)).resolves.toBeNull();
+    await expect(fs.stat(path.join(repo, ".kiro", "steering", "sharkbay-protocol.md")).catch(() => null)).resolves.toBeNull();
     await expect(fs.readFile(path.join(repo, ".git", "info", "exclude"), "utf8")).resolves.toBe("node_modules/\ndist/\n");
   });
 
@@ -144,9 +159,9 @@ describe("teamwork harness install", () => {
   });
 
   it("cleans local exclude content without touching unrelated lines", () => {
-    const cleaned = cleanLocalExcludeContent(["# local", "/.sharkbay/", "/AGENTS.md", "/CLAUDE.md", ".env", ""].join("\n"));
+    const cleaned = cleanLocalExcludeContent(["# local", "/.sharkbay/", "/AGENTS.md", "/CLAUDE.md", "/GEMINI.md", "/QWEN.md", "/.kiro/steering/sharkbay-protocol.md", ".env", ""].join("\n"));
 
-    expect(cleaned.removedLines).toEqual(["/.sharkbay/", "/AGENTS.md", "/CLAUDE.md"]);
+    expect(cleaned.removedLines).toEqual(["/.sharkbay/", "/AGENTS.md", "/CLAUDE.md", "/GEMINI.md", "/QWEN.md", "/.kiro/steering/sharkbay-protocol.md"]);
     expect(cleaned.content).toBe("# local\n.env\n");
   });
 });
