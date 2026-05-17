@@ -1014,7 +1014,18 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
 
   async function openBrowserProjectTab() {
     if (!candidate?.path) return;
-    const initialUrl = selectedSpace?.tabs.some((tab) => isRunningServiceTab(tab)) ? selectedSpace.serviceUrl ?? "about:blank" : "about:blank";
+    let initialUrl = "about:blank";
+    if (selectedSpace?.tabs.some((tab) => isRunningServiceTab(tab))) {
+      initialUrl = selectedSpace.serviceUrl ?? "about:blank";
+    } else {
+      try {
+        const getPath = window.sharkBay?.knowledgeSite?.getPath;
+        if (getPath) {
+          const sitePath = await getPath({ repoPath: candidate.path });
+          if (sitePath) initialUrl = `file://${sitePath}`;
+        }
+      } catch { /* fall back to about:blank */ }
+    }
     await openBrowserTab(candidate.id, candidate.path, candidate.name, initialUrl);
   }
 
