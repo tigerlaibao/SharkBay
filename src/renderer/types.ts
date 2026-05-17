@@ -88,6 +88,7 @@ export type TerminalCreateInput = {
   cwd: string;
   title?: string;
   initialCommand?: string;
+  initialCommandTitle?: string;
   service?: { id: string; label: string; command: string };
   cols?: number;
   rows?: number;

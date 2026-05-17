@@ -32,6 +32,7 @@ type TerminalRecord = TerminalSession & {
   currentCwd: string;
   foregroundProcess: string | null;
   activeCommandLine: string | null;
+  activeCommandTitle: string | null;
   pendingInputLine: string;
   commandSubmittedAt: number | null;
   foregroundCommandObserved: boolean;
@@ -51,6 +52,7 @@ export type TerminalTitleInput = {
   shell: string;
   foregroundProcess?: string | null;
   activeCommandLine?: string | null;
+  activeCommandTitle?: string | null;
   serviceLabel?: string | null;
 };
 
@@ -84,6 +86,9 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
     const shell = preferredShell();
     const id = `term-${Date.now().toString(36)}-${++this.sequence}`;
     const command = terminalCommand(shell);
+    const initialCommand = normalizeTerminalCommandLine(input.initialCommand);
+    const initialCommandTitle = initialCommand ? normalizeTerminalCommandLine(input.initialCommandTitle) : null;
+    const commandSubmittedAt = initialCommand ? this.now() : null;
     const ptyProcess = pty.spawn(command.file, command.args, {
       cwd,
       cols: input.cols ?? 80,
@@ -105,7 +110,8 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
         currentCwd: cwd,
         shell,
         foregroundProcess,
-        activeCommandLine: null,
+        activeCommandLine: initialCommand,
+        activeCommandTitle: initialCommandTitle,
         serviceLabel: input.service?.label,
       }),
       shell,
@@ -117,9 +123,10 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
       projectRoot: cwd,
       currentCwd: cwd,
       foregroundProcess,
-      activeCommandLine: null,
+      activeCommandLine: initialCommand,
+      activeCommandTitle: initialCommandTitle,
       pendingInputLine: "",
-      commandSubmittedAt: null,
+      commandSubmittedAt,
       foregroundCommandObserved: false,
       inspectTimer: null,
       inspecting: false,
@@ -135,11 +142,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
       this.emit("exit", { sessionId: id, exitCode, signal: signal === undefined ? null : String(signal) });
     });
     this.startTitleInspection(session);
-    const initialCommand = normalizeTerminalCommandLine(input.initialCommand);
     if (initialCommand) {
-      session.activeCommandLine = initialCommand;
-      session.commandSubmittedAt = this.now();
-      session.foregroundCommandObserved = false;
       ptyProcess.write(`${input.service ? serviceCommandLine(initialCommand) : initialCommand}\r`);
     }
 
@@ -231,6 +234,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
       return;
     }
     session.activeCommandLine = next.submittedCommand;
+    session.activeCommandTitle = null;
     session.commandSubmittedAt = this.now();
     session.foregroundCommandObserved = false;
   }
@@ -263,6 +267,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
         session.foregroundCommandObserved = true;
       } else if (session.foregroundCommandObserved) {
         session.activeCommandLine = null;
+        session.activeCommandTitle = null;
         session.commandSubmittedAt = null;
         session.foregroundCommandObserved = false;
       } else if (
@@ -270,6 +275,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
         this.now() - session.commandSubmittedAt > staleSubmittedCommandMs
       ) {
         session.activeCommandLine = null;
+        session.activeCommandTitle = null;
         session.commandSubmittedAt = null;
       }
 
@@ -279,6 +285,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
         shell: session.shell,
         foregroundProcess: session.foregroundProcess,
         activeCommandLine: session.activeCommandLine,
+        activeCommandTitle: session.activeCommandTitle,
         serviceLabel: session.service?.label,
       });
       if (nextTitle !== session.title) {
@@ -316,6 +323,11 @@ export function terminalDisplayTitle(input: TerminalTitleInput): string {
   const serviceLabel = input.serviceLabel?.trim();
   if (serviceLabel) {
     return serviceLabel;
+  }
+
+  const activeCommandTitle = normalizeTerminalCommandLine(input.activeCommandTitle);
+  if (activeCommandTitle && normalizeTerminalCommandLine(input.activeCommandLine)) {
+    return activeCommandTitle;
   }
 
   const foregroundProcess = normalizeForegroundProcess(input.foregroundProcess);

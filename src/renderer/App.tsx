@@ -287,7 +287,7 @@ async function listProjectFiles(project: ProjectCandidate | ProjectDetail, direc
 async function createTerminal(
   cwd: string,
   title?: string,
-  options: Pick<TerminalCreateInput, "initialCommand" | "service"> = {},
+  options: Pick<TerminalCreateInput, "initialCommand" | "initialCommandTitle" | "service"> = {},
 ): Promise<TerminalSession> {
   const handler = getBridge().terminal?.create;
   if (!handler) throw new Error("Terminal sessions are not exposed by the preload API.");
@@ -997,7 +997,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
 
   async function openAgentProjectTab(agent: AgentCli) {
     if (!candidate?.path) return;
-    await openProjectTab(candidate.id, candidate.path, candidate.name, false, { initialCommand: shellQuote(agent.executablePath || agent.command) });
+    await openProjectTab(candidate.id, candidate.path, candidate.name, false, { initialCommand: shellQuote(agent.executablePath || agent.command), initialCommandTitle: agent.label });
   }
 
   async function openBrowserProjectTab() {
@@ -1029,7 +1029,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     },
   }));
 
-  async function openProjectTab(projectId: string, cwd: string, projectName: string, quiet = false, options: Pick<TerminalCreateInput, "initialCommand" | "service"> = {}) {
+  async function openProjectTab(projectId: string, cwd: string, projectName: string, quiet = false, options: Pick<TerminalCreateInput, "initialCommand" | "initialCommandTitle" | "service"> = {}) {
     try {
       const session = await createTerminal(cwd, projectName, options);
       const terminal = createXTerm(session.id, appearanceTheme, setToast, recordTerminalInputActivity);
