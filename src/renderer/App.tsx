@@ -1913,6 +1913,7 @@ function TasksDetailTab({ candidate, setToast, teamworkRevision, onOpenBrowserTa
       <div className="queue-list task-list-direct">
         {tasks.map((task) => {
           const pill = taskPill(task);
+          const createdTime = task.createdAt ? formatRelativeTime(task.createdAt) : null;
           return (
             <button className="queue-item" key={task.taskId} type="button" onClick={() => setSelectedTaskId(task.taskId)}>
               <span className="task-avatar">
@@ -1920,7 +1921,7 @@ function TasksDetailTab({ candidate, setToast, teamworkRevision, onOpenBrowserTa
               </span>
               <span className="task-row-main">
                 <span className="task-title">{task.title}</span>
-                <small>{task.taskTag} · {task.owner.githubLogin}</small>
+                <small>{task.taskTag} · {task.owner.githubLogin}{createdTime ? ` · ${createdTime}` : ""}</small>
               </span>
               <span className={cx("phase-pill", pill.cls)}>{pill.label}</span>
             </button>

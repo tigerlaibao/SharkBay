@@ -70,7 +70,7 @@ The `TEAM` tab shows:
 
 - Teamwork status and errors.
 - Install action when Teamwork is available but not installed.
-- Task list with owner avatar, title, tag, owner, and status pill.
+- Task list with owner avatar, title, tag, owner, git-history-style created time, and status pill.
 - Raw Markdown task detail for selected records.
 - Automatic task list and selected task detail refresh while a project is open.
 
