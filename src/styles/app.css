@@ -1183,6 +1183,11 @@ body.is-resizing-columns * {
   min-height: 0;
   min-width: 0;
   overflow: auto;
+  scrollbar-width: none;
+}
+
+.detail-tab-panel::-webkit-scrollbar {
+  display: none;
 }
 
 .detail-tab-panel[hidden] {
