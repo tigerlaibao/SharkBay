@@ -335,7 +335,6 @@ Project:
 - GitHub login: ${opts.githubLogin}
 - GitHub user id: ${opts.githubUserId}
 - Machine id: ${opts.machineId}
-- Agent: ${opts.agent}
 - Local tasks: .sharkbay/tasks/
 - Team context mirror: .sharkbay/team-context/
 - Team context branch: sharkbay-team-context
@@ -418,10 +417,16 @@ status: active
 actor: ${opts.githubLogin}
 githubUserId: ${opts.githubUserId}
 machine: ${opts.machineId}
-agent: ${opts.agent}
+agent: # e.g. Codex GPT-5.5
 createdAt: 2026-05-15T10:30:00Z
 updatedAt: 2026-05-15T10:30:00Z
 ---
+
+Use the actual task executor identity in \`agent\`, for example:
+- Codex GPT-5.5
+- Kiro Claude 4.6
+- Claude Code Sonnet 4.5
+- Gemini CLI 2.5 Pro
 
 When the task is ready for team sync, add:
 

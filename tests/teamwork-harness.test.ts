@@ -31,7 +31,11 @@ describe("teamwork harness install", () => {
     await expect(fs.readFile(path.join(repo, "QWEN.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
     await expect(fs.readFile(path.join(repo, ".kiro", "steering", "sharkbay-protocol.md"), "utf8")).resolves.toContain("sharkbay-generated: true");
     await expect(fs.stat(path.join(repo, ".sharkbay", "harness", "instructions")).catch(() => null)).resolves.toBeNull();
-    await expect(fs.readFile(path.join(repo, ".sharkbay", "harness", "protocol.md"), "utf8")).resolves.toContain("Repo: SharkUI/AIBF");
+    const protocol = await fs.readFile(path.join(repo, ".sharkbay", "harness", "protocol.md"), "utf8");
+    expect(protocol).toContain("Repo: SharkUI/AIBF");
+    expect(protocol).not.toContain("- Agent:");
+    expect(protocol).toContain("agent: # e.g. Codex GPT-5.5");
+    expect(protocol).toContain("Use the actual task executor identity in `agent`");
     const exclude = await fs.readFile(path.join(repo, ".git", "info", "exclude"), "utf8");
     expect(exclude).toContain("/AGENTS.md");
     expect(exclude).toContain("/CLAUDE.md");
