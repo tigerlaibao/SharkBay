@@ -349,7 +349,7 @@ async function browserAction(action: "goBack" | "goForward" | "reload", browserI
 
 function editorCommandFor(relativePath: string): string {
   const quotedPath = shellQuote(relativePath);
-  return `if command -v vim >/dev/null 2>&1; then vim -- ${quotedPath}; else nano -- ${quotedPath}; fi`;
+  return `nano -- ${quotedPath}`;
 }
 
 function gitDiffCommandFor(relativePath: string): string {
