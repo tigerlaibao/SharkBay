@@ -5,7 +5,7 @@ import { marked } from "marked";
 
 const SITE_DIR = ".sharkbay/site";
 const HASH_FILE = ".sharkbay/site/.content-hash";
-const SITE_TEMPLATE_VERSION = "knowledge-site-ui-v2";
+const SITE_TEMPLATE_VERSION = "knowledge-site-ui-v3";
 
 export type KnowledgeSiteResult = {
   generated: boolean;
@@ -32,25 +32,62 @@ export async function generateKnowledgeSite(repoPath: string): Promise<Knowledge
   await mkdir(sitePath, { recursive: true });
   await mkdir(join(sitePath, "docs"), { recursive: true });
   await mkdir(join(sitePath, "tasks"), { recursive: true });
+  for (const sub of sources.docSubdirs) {
+    await mkdir(join(sitePath, "docs", sub), { recursive: true });
+  }
 
   const nav = buildNav(sources);
   const readmeHtml = sources.readme ? renderMarkdown(sources.readme.content) : "<p>No README.md found.</p>";
   await writeFile(indexPath, wrapPage("Home", readmeHtml, nav, ""));
 
   for (const doc of sources.docs) {
-    const slug = basename(doc.relativePath, extname(doc.relativePath));
-    const html = renderMarkdown(doc.content);
-    await writeFile(join(sitePath, "docs", `${slug}.html`), wrapPage(doc.title, html, nav, "../"));
+    const relFromDocs = doc.relativePath.replace(/^docs\//, "");
+    const parts = relFromDocs.split("/");
+    const inSubdir = parts.length > 1;
+    const basePrefix = inSubdir ? "../../" : "../";
+
+    if (doc.kind === "html") {
+      const outName = relFromDocs;
+      await writeFile(join(sitePath, "docs", outName), doc.content);
+    } else {
+      const slug = basename(doc.relativePath, extname(doc.relativePath));
+      const outName = inSubdir ? join(parts.slice(0, -1).join("/"), `${slug}.html`) : `${slug}.html`;
+      const html = renderMarkdown(doc.content);
+      await writeFile(join(sitePath, "docs", outName), wrapPage(doc.title, html, nav, basePrefix));
+    }
   }
 
   if (sources.docs.length > 0) {
-    let docsIndexHtml = `<h1>Docs</h1><ul>`;
-    for (const doc of sources.docs) {
-      const slug = basename(doc.relativePath, extname(doc.relativePath));
-      docsIndexHtml += `<li><a href="${slug}.html">${esc(doc.title)}</a></li>`;
+    const topDocs = sources.docs.filter(d => !d.relativePath.replace(/^docs\//, "").includes("/"));
+    let docsIndexHtml = `<h1>Docs</h1>`;
+    if (topDocs.length > 0) {
+      docsIndexHtml += `<ul>`;
+      for (const doc of topDocs) {
+        const slug = doc.kind === "html" ? basename(doc.relativePath) : basename(doc.relativePath, extname(doc.relativePath)) + ".html";
+        docsIndexHtml += `<li><a href="${slug}">${esc(doc.title)}</a></li>`;
+      }
+      docsIndexHtml += `</ul>`;
     }
-    docsIndexHtml += `</ul>`;
+    if (sources.docSubdirs.length > 0) {
+      docsIndexHtml += `<h2>Subdirectories</h2><ul>`;
+      for (const sub of sources.docSubdirs) {
+        docsIndexHtml += `<li><a href="${sub}/index.html">${esc(sub)}</a></li>`;
+      }
+      docsIndexHtml += `</ul>`;
+    }
     await writeFile(join(sitePath, "docs", "index.html"), wrapPage("Docs", docsIndexHtml, nav, "../"));
+
+    // Generate subdirectory index pages
+    for (const sub of sources.docSubdirs) {
+      const subDocs = sources.docs.filter(d => d.relativePath.replace(/^docs\//, "").startsWith(sub + "/"));
+      let subHtml = `<h1>${esc(sub)}</h1><ul>`;
+      for (const doc of subDocs) {
+        const fname = doc.kind === "html" ? basename(doc.relativePath) : basename(doc.relativePath, extname(doc.relativePath)) + ".html";
+        subHtml += `<li><a href="${fname}">${esc(doc.title)}</a></li>`;
+      }
+      subHtml += `</ul>`;
+      await writeFile(join(sitePath, "docs", sub, "index.html"), wrapPage(sub, subHtml, nav, "../../"));
+    }
   }
 
   const tasksHtml = renderTasksPage(sources.tasks);
@@ -70,22 +107,26 @@ export function getKnowledgeSitePath(repoPath: string): string {
 
 // --- Source discovery ---
 
-type SourceFile = { relativePath: string; title: string; content: string };
+type SourceFile = { relativePath: string; title: string; content: string; kind: "md" | "txt" | "html" };
 type TaskSource = { taskId: string; title: string; status: string; owner: string; createdAt: string; summary: string; raw: string };
-type Sources = { readme: SourceFile | null; docs: SourceFile[]; tasks: TaskSource[] };
+type Sources = { readme: SourceFile | null; docs: SourceFile[]; docSubdirs: string[]; tasks: TaskSource[] };
 
 async function discoverSources(repoPath: string): Promise<Sources> {
   const readme = await readSourceFile(repoPath, "README.md");
   const docs = await discoverDocs(repoPath);
   const tasks = await discoverTasks(repoPath);
-  return { readme, docs, tasks };
+  const docSubdirs = [...new Set(docs.map(d => {
+    const parts = d.relativePath.replace(/^docs\//, "").split("/");
+    return parts.length > 1 ? parts[0]! : null;
+  }).filter((s): s is string => s !== null))].sort();
+  return { readme, docs, docSubdirs, tasks };
 }
 
 async function readSourceFile(repoPath: string, relativePath: string): Promise<SourceFile | null> {
   try {
     const content = await readFile(join(repoPath, relativePath), "utf-8");
     const title = extractTitle(content) ?? basename(relativePath, extname(relativePath));
-    return { relativePath, title, content };
+    return { relativePath, title, content, kind: "md" };
   } catch {
     return null;
   }
@@ -94,11 +135,13 @@ async function readSourceFile(repoPath: string, relativePath: string): Promise<S
 async function discoverDocs(repoPath: string): Promise<SourceFile[]> {
   const docsDir = join(repoPath, "docs");
   const results: SourceFile[] = [];
-  await walkMd(docsDir, repoPath, results);
+  await walkDocs(docsDir, repoPath, results);
   return results.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
 }
 
-async function walkMd(dir: string, repoPath: string, results: SourceFile[]): Promise<void> {
+const SUPPORTED_EXTS = new Set([".md", ".txt", ".htm", ".html"]);
+
+async function walkDocs(dir: string, repoPath: string, results: SourceFile[]): Promise<void> {
   let entries: string[];
   try {
     entries = await readdir(dir);
@@ -110,12 +153,15 @@ async function walkMd(dir: string, repoPath: string, results: SourceFile[]): Pro
     const s = await stat(full).catch(() => null);
     if (!s) continue;
     if (s.isDirectory()) {
-      await walkMd(full, repoPath, results);
-    } else if (name.endsWith(".md")) {
+      await walkDocs(full, repoPath, results);
+    } else {
+      const ext = extname(name).toLowerCase();
+      if (!SUPPORTED_EXTS.has(ext)) continue;
       const content = await readFile(full, "utf-8");
       const rel = relative(repoPath, full);
-      const title = extractTitle(content) ?? basename(name, ".md");
-      results.push({ relativePath: rel, title, content });
+      const kind: SourceFile["kind"] = ext === ".htm" || ext === ".html" ? "html" : ext === ".txt" ? "txt" : "md";
+      const title = kind === "html" ? extractHtmlTitle(content) ?? basename(name, ext) : extractTitle(content) ?? basename(name, ext);
+      results.push({ relativePath: rel, title, content, kind });
     }
   }
 }
@@ -190,26 +236,35 @@ function renderTasksPage(tasks: TaskSource[]): string {
   for (const status of order) {
     const group = groups[status];
     if (!group?.length) continue;
-    html += `<h2>${statusLabel(status)}</h2><ul class="task-list">`;
+    html += `<h2>${statusLabel(status)}</h2><div class="task-list">`;
     for (const t of group) {
-      html += `<li class="task-item task-${status}">`;
-      html += `<div class="task-card-header"><strong>${esc(t.title)}</strong><span class="task-status">${esc(statusLabel(status))}</span></div>`;
-      html += `<span class="task-meta">${esc(t.owner)} · ${esc(t.taskId.split("-")[0]!)}</span>`;
-      if (t.summary) html += `<p>${esc(t.summary)}</p>`;
-      html += `</li>`;
+      const detail = renderMarkdown(t.raw);
+      html += `<details class="task-row task-${status}"><summary class="task-summary">`;
+      html += `<span class="task-title">${esc(t.title)}</span>`;
+      html += `<span class="task-meta">${esc(t.owner)} · ${esc(t.taskId.split("-")[0]!)}${t.createdAt ? " · " + esc(formatDate(t.createdAt)) : ""}</span>`;
+      html += `</summary><div class="task-detail">${detail}</div></details>`;
     }
-    html += `</ul>`;
+    html += `</div>`;
   }
-  // Any remaining statuses
   for (const [status, group] of Object.entries(groups)) {
     if (order.includes(status)) continue;
-    html += `<h2>${esc(status)}</h2><ul class="task-list">`;
+    html += `<h2>${esc(status)}</h2><div class="task-list">`;
     for (const t of group) {
-      html += `<li class="task-item"><div class="task-card-header"><strong>${esc(t.title)}</strong><span class="task-status">${esc(status)}</span></div><span class="task-meta">${esc(t.owner)}</span></li>`;
+      const detail = renderMarkdown(t.raw);
+      html += `<details class="task-row"><summary class="task-summary">`;
+      html += `<span class="task-title">${esc(t.title)}</span>`;
+      html += `<span class="task-meta">${esc(t.owner)}${t.createdAt ? " · " + esc(formatDate(t.createdAt)) : ""}</span>`;
+      html += `</summary><div class="task-detail">${detail}</div></details>`;
     }
-    html += `</ul>`;
+    html += `</div>`;
   }
   return html;
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toISOString().slice(0, 10);
 }
 
 function statusLabel(s: string): string {
@@ -222,7 +277,11 @@ function statusLabel(s: string): string {
 function buildNav(sources: Sources): string {
   let nav = `<div class="nav-section"><div class="nav-label">Knowledge</div><a class="nav-link" href="{base}index.html">Home</a></div>`;
   if (sources.docs.length > 0) {
-    nav += `<div class="nav-section"><div class="nav-label">Docs</div><a class="nav-link" href="{base}docs/index.html">All Docs</a></div>`;
+    nav += `<div class="nav-section"><div class="nav-label">Docs</div><a class="nav-link" href="{base}docs/index.html">Docs</a>`;
+    for (const sub of sources.docSubdirs) {
+      nav += `<a class="nav-link" href="{base}docs/${sub}/index.html">${esc(sub)}</a>`;
+    }
+    nav += `</div>`;
   }
   nav += `<div class="nav-section"><div class="nav-label">Team</div><a class="nav-link" href="{base}tasks/index.html">Tasks</a></div>`;
   return nav;
@@ -579,64 +638,92 @@ img {
 
 .task-list {
   display: grid;
-  gap: 12px;
+  gap: 0;
   padding: 0;
   list-style: none;
 }
 
-.task-item {
-  margin: 0;
-  padding: 16px;
-  border: 1px solid var(--hairline);
-  border-left: 4px solid var(--muted-soft);
-  border-radius: 8px;
-  background: var(--surface);
+.task-row {
+  border-bottom: 1px solid var(--hairline);
 }
 
-.task-card-header {
+.task-row:first-child {
+  border-top: 1px solid var(--hairline);
+}
+
+.task-summary {
   display: flex;
+  align-items: baseline;
   gap: 12px;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 5px;
+  padding: 12px 4px;
+  cursor: pointer;
+  list-style: none;
 }
 
-.task-card-header strong {
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.35;
-}
+.task-summary::-webkit-details-marker { display: none; }
 
-.task-status {
+.task-summary::before {
+  content: "▸";
   flex: 0 0 auto;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--surface-strong);
-  color: var(--ink);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.4;
-  text-transform: uppercase;
+  color: var(--muted-soft);
+  font-size: 12px;
+  transition: transform 0.15s;
 }
 
-.task-item p {
-  margin: 10px 0 0;
-  color: var(--body);
+details[open] > .task-summary::before {
+  transform: rotate(90deg);
+}
+
+.task-title {
+  color: var(--ink);
   font-size: 14px;
-  line-height: 1.5;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .task-meta {
+  margin-left: auto;
+  flex: 0 0 auto;
   color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.task-detail {
+  padding: 16px 20px 24px;
+  margin: 0 0 8px 16px;
+  border-left: 2px solid var(--hairline-strong);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.task-detail h1, .task-detail h2, .task-detail h3 {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  border: 0;
+  padding: 0;
+}
+
+.task-detail h2 { font-size: 14px; }
+
+.task-detail ul, .task-detail ol {
+  margin-bottom: 12px;
+}
+
+.task-detail p {
+  margin-bottom: 10px;
+}
+
+.task-detail pre {
+  margin-bottom: 12px;
   font-size: 12px;
 }
 
-.task-active { border-left-color: var(--success); }
-.task-completed { border-left-color: var(--muted); }
-.task-paused { border-left-color: var(--done); }
-.task-blocked { border-left-color: var(--error); }
-.task-abandoned { border-left-color: var(--muted-soft); }
+.task-active > .task-summary .task-title { color: var(--success); }
+.task-blocked > .task-summary .task-title { color: var(--error); }
+.task-paused > .task-summary .task-title { color: var(--done); }
 
 @media (max-width: 900px) {
   .site-shell {
@@ -733,6 +820,11 @@ async function readPreviousHash(sitePath: string): Promise<string | null> {
 
 function extractTitle(md: string): string | null {
   const match = md.match(/^#\s+(.+)/m);
+  return match?.[1]?.trim() ?? null;
+}
+
+function extractHtmlTitle(html: string): string | null {
+  const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
   return match?.[1]?.trim() ?? null;
 }
 
