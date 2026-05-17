@@ -315,7 +315,7 @@ function generateAdapterMd(repo: string): string {
 
 This worktree uses SharkBay Teamwork.
 
-Before making persistent project changes, read:
+Before doing anything in this worktree, you must read:
 
 \`.sharkbay/harness/protocol.md\`
 

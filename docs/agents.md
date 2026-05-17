@@ -4,7 +4,7 @@ This file gives automation agents and contributors the repository-specific conte
 
 ## Required Reading
 
-Before making persistent project changes, read:
+Before doing anything in this worktree, you must read:
 
 - `AGENTS.md` for SharkBay Teamwork task-record requirements in this worktree.
 - `.sharkbay/harness/protocol.md` when present.

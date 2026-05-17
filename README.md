@@ -11,7 +11,7 @@ SharkBay is a local-first macOS workbench for software projects. It helps you ke
 - Opens embedded browser tabs for local or web URLs from the same project workspace.
 - Discovers installed agent CLIs such as Codex, Claude Code, Gemini, Kiro, DeepSeek, Qwen, and OpenCode, then launches them in visible project terminals.
 - Watches recent Codex and Claude transcript files for short project status snippets.
-- Supports SharkBay Teamwork: a project-local `.sharkbay` harness, Markdown task files, read-only team context mirror, and optional sync through a GitHub remote branch.
+- Supports SharkBay Teamwork: a project-local `.sharkbay` harness, Markdown task files, read-only team context mirror, knowledge site generation, and optional sync through a GitHub remote branch.
 - Provides Settings for configured projects, project status, and day/night/morning appearance themes.
 
 ## Documentation
