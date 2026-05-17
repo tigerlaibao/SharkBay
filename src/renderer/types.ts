@@ -316,4 +316,8 @@ export type SharkBayBridge = {
     syncNow?: (input: { repoPath: string }) => Promise<void>;
     onTasksChanged?: (callback: (event: TeamworkTasksChangedEvent) => void) => () => void;
   };
+  knowledgeSite?: {
+    generate?: (input: { repoPath: string }) => Promise<{ generated: boolean; sitePath: string; reason?: string }>;
+    getPath?: (input: { repoPath: string }) => Promise<string>;
+  };
 };

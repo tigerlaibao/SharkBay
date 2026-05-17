@@ -295,3 +295,9 @@ export type TeamworkTasksChangedEvent = {
   repoPath: string;
   tasks: TaskViewModel[];
 };
+
+export type KnowledgeSiteResult = {
+  generated: boolean;
+  sitePath: string;
+  reason?: string;
+};

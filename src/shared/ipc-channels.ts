@@ -32,4 +32,6 @@ export const ipcChannels = {
   teamworkResolveIdentity: "teamwork:resolveIdentity",
   teamworkSyncNow: "teamwork:syncNow",
   teamworkTasksChanged: "teamwork:tasksChanged",
+  knowledgeSiteGenerate: "knowledgeSite:generate",
+  knowledgeSiteGetPath: "knowledgeSite:getPath",
 } as const;

@@ -90,6 +90,7 @@ type TerminalSpace = {
 type TerminalPaneHandle = {
   openFileInEditor: (projectPath: string, projectName: string, relativePath: string) => Promise<void>;
   openGitDiff: (projectPath: string, projectName: string, relativePath: string) => Promise<void>;
+  openBrowserTab: (projectPath: string, projectName: string, url: string) => Promise<void>;
 };
 
 type AgentStatusByProjectPath = Record<string, string>;
@@ -874,6 +875,9 @@ function DashboardView({
             onOpenGitDiff={(relativePath) =>
               terminalPaneRef.current?.openGitDiff(selectedCandidate.path, selectedCandidate.name, relativePath) ?? Promise.resolve()
             }
+            onOpenBrowserTab={(url) =>
+              terminalPaneRef.current?.openBrowserTab(selectedCandidate.path, selectedCandidate.name, url) ?? Promise.resolve()
+            }
             teamworkRevision={teamworkRevision}
           />
         ) : (
@@ -1020,6 +1024,9 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     },
     openGitDiff: async (projectPath, projectName, relativePath) => {
       await openProjectTab(projectPath, projectPath, projectName, false, { initialCommand: gitDiffCommandFor(relativePath) });
+    },
+    openBrowserTab: async (projectPath, projectName, url) => {
+      await openBrowserTab(projectPath, projectPath, projectName, url);
     },
   }));
 
@@ -1654,13 +1661,14 @@ function BrowserTabIcon({ browser }: { browser: BrowserSession }) {
   );
 }
 
-function ProjectDetailPane({ detail, candidate, setToast, onRefresh, onOpenFileInEditor, onOpenGitDiff, teamworkRevision }: {
+function ProjectDetailPane({ detail, candidate, setToast, onRefresh, onOpenFileInEditor, onOpenGitDiff, onOpenBrowserTab, teamworkRevision }: {
   detail: ProjectDetail | null;
   candidate: ProjectCandidate;
   setToast: (toast: Toast) => void;
   onRefresh: () => Promise<void>;
   onOpenFileInEditor: (relativePath: string) => Promise<void>;
   onOpenGitDiff: (relativePath: string) => Promise<void>;
+  onOpenBrowserTab: (url: string) => Promise<void>;
   teamworkRevision: number;
 }) {
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>("tasks");
@@ -1687,7 +1695,7 @@ function ProjectDetailPane({ detail, candidate, setToast, onRefresh, onOpenFileI
         ))}
       </div>
       <div aria-labelledby="project-detail-tab-tasks" className="detail-tab-panel" hidden={activeDetailTab !== "tasks"} id="project-detail-tabpanel-tasks" role="tabpanel">
-        <TasksDetailTab candidate={candidate} setToast={setToast} teamworkRevision={teamworkRevision} />
+        <TasksDetailTab candidate={candidate} setToast={setToast} teamworkRevision={teamworkRevision} onOpenBrowserTab={onOpenBrowserTab} />
       </div>
       <div aria-labelledby="project-detail-tab-git" className="detail-tab-panel" hidden={activeDetailTab !== "git"} id="project-detail-tabpanel-git" role="tabpanel">
         <GitDetailTab detail={detail} candidate={candidate} setToast={setToast} onOpenFileInEditor={onOpenFileInEditor} onOpenGitDiff={onOpenGitDiff} />
@@ -1710,7 +1718,7 @@ function taskPill(task: TaskViewModel): { label: string; cls: string } {
   return { label: task.status, cls: "phase-waiting" };
 }
 
-function TasksDetailTab({ candidate, setToast, teamworkRevision }: { candidate: ProjectCandidate; setToast: (toast: Toast) => void; teamworkRevision: number }) {
+function TasksDetailTab({ candidate, setToast, teamworkRevision, onOpenBrowserTab }: { candidate: ProjectCandidate; setToast: (toast: Toast) => void; teamworkRevision: number; onOpenBrowserTab: (url: string) => Promise<void> }) {
   const [tasks, setTasks] = useState<TaskViewModel[]>([]);
   const [status, setStatus] = useState<TeamworkStatus | null>(null);
   const [selected, setSelected] = useState<TaskViewModel | null>(null);
@@ -1769,6 +1777,19 @@ function TasksDetailTab({ candidate, setToast, teamworkRevision }: { candidate: 
     }
   }
 
+  async function openKnowledgeSite(): Promise<void> {
+    try {
+      const generate = window.sharkBay?.knowledgeSite?.generate;
+      const getPath = window.sharkBay?.knowledgeSite?.getPath;
+      if (!generate || !getPath) throw new Error("Knowledge Site API is not available.");
+      await generate({ repoPath: candidate.path });
+      const sitePath = await getPath({ repoPath: candidate.path });
+      await onOpenBrowserTab(`file://${sitePath}`);
+    } catch (error) {
+      setToast({ tone: "error", message: asMessage(error) });
+    }
+  }
+
   if (selected) {
     const pill = taskPill(selected);
     return (
@@ -1824,6 +1845,19 @@ function TasksDetailTab({ candidate, setToast, teamworkRevision }: { candidate: 
           <div className="button-row">
             <button className="button compact" disabled={busyAction !== null} type="button" onClick={() => void installTeamworkHarness()}>
               {busyAction === "install" ? "Installing..." : "Install Teamwork"}
+            </button>
+          </div>
+        </section>
+      )}
+      {status?.installed && (
+        <section className="subpanel confirm-panel teamwork-action-card">
+          <div>
+            <h4>Knowledge Site</h4>
+            <p className="summary-text">Browse project docs and team task history as a local site.</p>
+          </div>
+          <div className="button-row">
+            <button className="button compact" type="button" onClick={() => void openKnowledgeSite()}>
+              Open Site
             </button>
           </div>
         </section>

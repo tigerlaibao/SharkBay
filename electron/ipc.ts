@@ -25,6 +25,7 @@ import type {
   BrowserResizeInput,
   BrowserSession,
   BrowserUpdateEvent,
+  KnowledgeSiteResult,
   ProjectConfigInput,
   ProjectDetail,
   ProjectFilesInput,
@@ -51,6 +52,7 @@ import { AgentSessionWatcher, listAvailableAgentClis } from "../src/main/agent-c
 import { BrowserManager } from "../src/main/browser-tabs.js";
 import { resolveProjectIconSources } from "../src/main/project-icons.js";
 import { resolveRepoPath } from "../src/main/path-safety.js";
+import { generateKnowledgeSite, getKnowledgeSitePath } from "../src/main/knowledge-site.js";
 import path from "node:path";
 
 export type IpcRuntime = {
@@ -375,5 +377,18 @@ export function registerIpcHandlers(
       teamworkSyncInstances.set(repoPath, sync);
     }
     await sync.syncOnce();
+  });
+
+  // Knowledge Site handlers
+  handle<{ repoPath: string }, KnowledgeSiteResult>(channels.knowledgeSiteGenerate, async (payload) => {
+    const config = await loadRuntimeConfig(runtime);
+    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
+    return generateKnowledgeSite(safe.repoPath);
+  });
+
+  handle<{ repoPath: string }, string>(channels.knowledgeSiteGetPath, async (payload) => {
+    const config = await loadRuntimeConfig(runtime);
+    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
+    return getKnowledgeSitePath(safe.repoPath);
   });
 }

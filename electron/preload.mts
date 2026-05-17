@@ -13,6 +13,7 @@ import type {
   BrowserResizeInput,
   BrowserSession,
   BrowserUpdateEvent,
+  KnowledgeSiteResult,
   ProjectConfigInput,
   ProjectDetail,
   ProjectFilesInput,
@@ -131,6 +132,10 @@ const sharkBayApi = {
       ipcRenderer.on(channels.teamworkTasksChanged, listener);
       return () => ipcRenderer.removeListener(channels.teamworkTasksChanged, listener);
     }
+  },
+  knowledgeSite: {
+    generate: (input: { repoPath: string }) => invoke<KnowledgeSiteResult>(channels.knowledgeSiteGenerate, input),
+    getPath: (input: { repoPath: string }) => invoke<string>(channels.knowledgeSiteGetPath, input),
   }
 };
 

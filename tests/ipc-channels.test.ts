@@ -37,6 +37,8 @@ describe("IPC channels", () => {
       teamworkResolveIdentity: "teamwork:resolveIdentity",
       teamworkSyncNow: "teamwork:syncNow",
       teamworkTasksChanged: "teamwork:tasksChanged",
+      knowledgeSiteGenerate: "knowledgeSite:generate",
+      knowledgeSiteGetPath: "knowledgeSite:getPath",
     });
   });
 });

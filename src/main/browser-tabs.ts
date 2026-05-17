@@ -203,7 +203,8 @@ export function normalizeBrowserUrl(value: string | null | undefined): string {
 
   try {
     const parsed = new URL(trimmed);
-    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : blankUrl;
+    if (parsed.protocol === "http:" || parsed.protocol === "https:" || parsed.protocol === "file:") return parsed.toString();
+    return blankUrl;
   } catch {
     try {
       return new URL(`https://${trimmed}`).toString();
