@@ -43,6 +43,16 @@ export async function generateKnowledgeSite(repoPath: string): Promise<Knowledge
     await writeFile(join(sitePath, "docs", `${slug}.html`), wrapPage(doc.title, html, nav, "../"));
   }
 
+  if (sources.docs.length > 0) {
+    let docsIndexHtml = `<h1>Docs</h1><ul>`;
+    for (const doc of sources.docs) {
+      const slug = basename(doc.relativePath, extname(doc.relativePath));
+      docsIndexHtml += `<li><a href="${slug}.html">${esc(doc.title)}</a></li>`;
+    }
+    docsIndexHtml += `</ul>`;
+    await writeFile(join(sitePath, "docs", "index.html"), wrapPage("Docs", docsIndexHtml, nav, "../"));
+  }
+
   const tasksHtml = renderTasksPage(sources.tasks);
   await writeFile(join(sitePath, "tasks", "index.html"), wrapPage("Team Tasks", tasksHtml, nav, "../"));
 
@@ -212,12 +222,7 @@ function statusLabel(s: string): string {
 function buildNav(sources: Sources): string {
   let nav = `<div class="nav-section"><div class="nav-label">Knowledge</div><a class="nav-link" href="{base}index.html">Home</a></div>`;
   if (sources.docs.length > 0) {
-    nav += `<div class="nav-section"><div class="nav-label">Docs</div>`;
-    for (const doc of sources.docs) {
-      const slug = basename(doc.relativePath, extname(doc.relativePath));
-      nav += `<a class="nav-link" href="{base}docs/${slug}.html">${esc(doc.title)}</a>`;
-    }
-    nav += `</div>`;
+    nav += `<div class="nav-section"><div class="nav-label">Docs</div><a class="nav-link" href="{base}docs/index.html">All Docs</a></div>`;
   }
   nav += `<div class="nav-section"><div class="nav-label">Team</div><a class="nav-link" href="{base}tasks/index.html">Tasks</a></div>`;
   return nav;
