@@ -40,7 +40,6 @@ import type { WorkflowProjectTerminalActivityState } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailTab = "tasks" | "git" | "files";
-type SettingsSection = "projects" | "project-status";
 
 type Toast = {
   tone: "info" | "error" | "success";
@@ -111,10 +110,7 @@ const detailTabs: Array<{ id: DetailTab; label: string }> = [
   { id: "git", label: "Git" },
   { id: "files", label: "Files" },
 ];
-const settingsSections: Array<{ id: SettingsSection; label: string }> = [
-  { id: "projects", label: "Projects" },
-  { id: "project-status", label: "Status" },
-];
+
 
 const appearanceThemes: Array<{ id: AppearanceTheme; label: string }> = [
   { id: "morning", label: "Morning" },
@@ -375,10 +371,7 @@ function storedColumnWidth(key: string, fallback: number, min: number): number {
   return Number.isFinite(saved) && saved >= min ? saved : fallback;
 }
 
-function formatScanTime(value: string | null): string {
-  if (!value) return "never";
-  return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(value));
-}
+
 
 function formatHistoryTime(value: string): string {
   const parsed = new Date(value);
@@ -408,11 +401,6 @@ function formatRelativeTime(value: string): string {
   return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(Math.round(diffSeconds / secondsPerUnit), unit);
 }
 
-function appearanceDescription(theme: AppearanceTheme): string {
-  if (theme === "morning") return "Morning icon and original dark terminal";
-  if (theme === "night") return "Night icon and dark colors";
-  return "Day icon and colors";
-}
 
 function projectNameFromPath(projectPath: string): string {
   return projectPath.split(/[\\/]+/).filter(Boolean).pop() || projectPath;
@@ -533,13 +521,13 @@ export function App() {
     <div className="app-shell" data-theme={appearanceTheme}>
       <main className="workspace">
         <div className="workspace-body">
-          <div aria-hidden={view !== "dashboard"} className={cx("view-surface", view !== "dashboard" && "is-hidden")}>
+          <div className="view-surface">
             <DashboardView
               appearanceTheme={appearanceTheme}
               bridgeAvailable={bridgeAvailable}
               detail={detail}
               filteredCandidates={candidates}
-              isVisible={view === "dashboard"}
+              isVisible={true}
               loading={loading}
               scanErrors={scanErrors}
               selectedCandidate={selectedCandidate}
@@ -552,23 +540,18 @@ export function App() {
             />
           </div>
           {view === "settings" ? (
-            <div className="view-surface settings-surface">
-              <SettingsView
-                appearanceTheme={appearanceTheme}
-                configuredProjects={configuredProjects}
-                bridgeAvailable={bridgeAvailable}
-                lastScanAt={lastScanAt}
-                candidates={candidates}
-                scanErrors={scanErrors}
-                setToast={setToast}
-                onBack={() => setView("dashboard")}
-                onPickProject={async () => { const paths = await pickAndAddProjects(); if (paths.length) await refreshProjects({ showToast: true }); }}
-                onRequestRemoveProject={(path) => requestRemoveProject({ path })}
-                onThemeChange={async (theme) => {
-                  const config = await updateAppearanceTheme(theme);
-                  setAppearanceTheme(normalizeAppearanceTheme(config.appearanceTheme));
-                }}
-              />
+            <div className="settings-backdrop" role="presentation" onMouseDown={() => setView("dashboard")}>
+              <div className="settings-dialog" role="dialog" aria-modal="true" aria-label="Settings" onMouseDown={(e) => e.stopPropagation()}>
+                <SettingsView
+                  appearanceTheme={appearanceTheme}
+                  setToast={setToast}
+                  onBack={() => setView("dashboard")}
+                  onThemeChange={async (theme) => {
+                    const config = await updateAppearanceTheme(theme);
+                    setAppearanceTheme(normalizeAppearanceTheme(config.appearanceTheme));
+                  }}
+                />
+              </div>
             </div>
           ) : null}
           {projectRemoveDialog ? (
@@ -2200,124 +2183,91 @@ function updateProjectFileChildren(items: ProjectFileTreeItem[], targetPath: str
   });
 }
 
-function SettingsView({ appearanceTheme, configuredProjects, bridgeAvailable, lastScanAt, candidates, scanErrors, setToast, onBack, onPickProject, onRequestRemoveProject, onThemeChange }: {
-  appearanceTheme: AppearanceTheme; configuredProjects: string[]; bridgeAvailable: boolean; lastScanAt: string | null; candidates: ProjectCandidate[]; scanErrors: string[]; setToast: (toast: Toast) => void;
-  onBack: () => void; onPickProject: () => Promise<void>; onRequestRemoveProject: (path: string) => void; onThemeChange: (theme: AppearanceTheme) => Promise<void>;
+type SettingsTab = "appearance" | "about";
+
+function SettingsView({ appearanceTheme, setToast, onBack, onThemeChange }: {
+  appearanceTheme: AppearanceTheme; setToast: (toast: Toast) => void;
+  onBack: () => void; onThemeChange: (theme: AppearanceTheme) => Promise<void>;
 }) {
-  const [activeSection, setActiveSection] = useState<SettingsSection>("projects");
-
-  return (
-    <div className="settings-layout">
-      <div className="detail-header settings-header">
-        <button aria-label="Back to projects" className="icon-button" title="Back to projects" type="button" onClick={onBack}><ArrowLeftIcon /></button>
-        <div><h3>Settings</h3><div className="path-line">Manage projects</div></div>
-      </div>
-      <div className="settings-shell">
-        <aside className="settings-nav" aria-label="Settings sections">
-          {settingsSections.map((section) => {
-            const count = section.id === "projects" ? configuredProjects.length : scanErrors.length;
-            const meta = section.id === "projects" ? `${configuredProjects.length} project${configuredProjects.length === 1 ? "" : "s"}` : count ? `${count} issue${count === 1 ? "" : "s"}` : "Clear";
-            return (
-              <button aria-current={section.id === activeSection ? "page" : undefined} className={cx("settings-nav-item", section.id === activeSection && "is-selected")} key={section.id} type="button" onClick={() => setActiveSection(section.id)}>
-                <span>{section.label}</span><small>{meta}</small>
-              </button>
-            );
-          })}
-        </aside>
-        <section className="settings-content" aria-label="Settings content">
-          <div className="settings-section-panel" hidden={activeSection !== "projects"}>
-            <div className="settings-section-heading"><h4>Projects</h4><span>{configuredProjects.length} project{configuredProjects.length === 1 ? "" : "s"}</span></div>
-            <AppearanceSettingsPanel appearanceTheme={appearanceTheme} setToast={setToast} onThemeChange={onThemeChange} />
-            <ProjectWorkflowPanel bridgeAvailable={bridgeAvailable} configuredProjects={configuredProjects} onPickProject={onPickProject} onRequestRemoveProject={onRequestRemoveProject} setToast={setToast} />
-          </div>
-          <div className="settings-section-panel" hidden={activeSection !== "project-status"}>
-            <div className="settings-section-heading"><h4>Status</h4><span>{lastScanAt ? `Last refresh ${formatScanTime(lastScanAt)}` : "Not refreshed"}</span></div>
-            <SettingsStatusPanel candidates={candidates} scanErrors={scanErrors} />
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function AppearanceSettingsPanel({ appearanceTheme, setToast, onThemeChange }: { appearanceTheme: AppearanceTheme; setToast: (toast: Toast) => void; onThemeChange: (theme: AppearanceTheme) => Promise<void> }) {
   const [savingTheme, setSavingTheme] = useState<AppearanceTheme | null>(null);
+  const [activeTab, setActiveTab] = useState<SettingsTab>("appearance");
   async function chooseTheme(theme: AppearanceTheme) {
     if (theme === appearanceTheme || savingTheme) return;
     setSavingTheme(theme);
     try { await onThemeChange(theme); } catch (error) { setToast({ tone: "error", message: asMessage(error) }); } finally { setSavingTheme(null); }
   }
-  return (
-    <section className="subpanel appearance-panel">
-      <div className="compact-title-row"><h4>Appearance</h4><span className="path-line">{appearanceDescription(appearanceTheme)}</span></div>
-      <div className="segmented-control" role="radiogroup" aria-label="Appearance theme">
-        {appearanceThemes.map((theme) => {
-          const selected = theme.id === appearanceTheme;
-          return (
-            <button aria-checked={selected} className={cx("segmented-option", selected && "is-selected")} disabled={Boolean(savingTheme)} key={theme.id} role="radio" type="button" onClick={() => void chooseTheme(theme.id)}>
-              <span className={cx("theme-swatch", `theme-swatch-${theme.id}`)} aria-hidden="true" /><span>{savingTheme === theme.id ? "Saving" : theme.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
 
-function ProjectWorkflowPanel({ bridgeAvailable, configuredProjects, onPickProject, onRequestRemoveProject, setToast }: {
-  bridgeAvailable: boolean; configuredProjects: string[];
-  onPickProject: () => Promise<void>; onRequestRemoveProject: (path: string) => void; setToast: (toast: Toast) => void;
-}) {
-  const [picking, setPicking] = useState(false);
-  const firstRun = configuredProjects.length === 0;
-
-  async function pick() {
-    setPicking(true);
-    try { await onPickProject(); } catch (error) { setToast({ tone: "error", message: asMessage(error) }); } finally { setPicking(false); }
-  }
+  useEffect(() => {
+    const onKeyDown = (e: globalThis.KeyboardEvent) => { if (e.key === "Escape") onBack(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onBack]);
 
   return (
-    <section className={cx("workflow-panel", firstRun && "is-first-run")}>
-      <div className="workflow-copy">
-        <div className="eyebrow">{firstRun ? "Add projects" : "Configured projects"}</div>
-        <h3>{firstRun ? "Add a project" : "Manage projects"}</h3>
-        <p>Select project directories to add them to your workspace.</p>
+    <>
+      <div className="settings-tab-bar">
+        <button className={cx("settings-tab", activeTab === "appearance" && "is-active")} type="button" onClick={() => setActiveTab("appearance")}>Appearance</button>
+        <button className={cx("settings-tab", activeTab === "about" && "is-active")} type="button" onClick={() => setActiveTab("about")}>About</button>
       </div>
-      <div style={{ padding: "0 16px 16px" }}>
-        <button className="button" disabled={!bridgeAvailable || picking} type="button" onClick={() => void pick()}>{picking ? "Selecting…" : "Add Project Folder…"}</button>
-      </div>
-      {configuredProjects.length ? (
-        <div className="root-list" aria-label="Configured projects">
-          {configuredProjects.map((projectPath) => (
-            <div className="root-row" key={projectPath}>
-              <span className="truncate" title={projectPath}>{projectPath}</span>
-              <button className="button secondary compact" type="button" onClick={() => onRequestRemoveProject(projectPath)}>Remove</button>
-            </div>
-          ))}
+      {activeTab === "appearance" ? (
+        <div className="settings-theme-grid" role="radiogroup" aria-label="Appearance theme">
+          {appearanceThemes.map((theme) => {
+            const selected = theme.id === appearanceTheme;
+            return (
+              <button aria-checked={selected} className={cx("settings-theme-card", selected && "is-selected")} disabled={Boolean(savingTheme)} key={theme.id} role="radio" type="button" onClick={() => void chooseTheme(theme.id)}>
+                <ThemePreviewSvg theme={theme.id} />
+                <span className="settings-theme-label">{theme.label}</span>
+              </button>
+            );
+          })}
         </div>
-      ) : null}
-    </section>
+      ) : (
+        <div className="settings-about">
+          <p><a href="https://github.com/SharkUI/SharkBay" target="_blank" rel="noopener noreferrer">github.com/SharkUI/SharkBay</a></p>
+          <p><a href="mailto:admin@sharkbay.xyz">admin@sharkbay.xyz</a></p>
+        </div>
+      )}
+    </>
   );
 }
 
-function SettingsStatusPanel({ candidates, scanErrors }: { candidates: ProjectCandidate[]; scanErrors: string[] }) {
+function ThemePreviewSvg({ theme }: { theme: AppearanceTheme }) {
+  const colors = {
+    day: { bg: "#f4f1eb", panel: "#fffdfa", terminal: "#f7f1e4", border: "#dedad1", text: "#263235", textMuted: "#a09a90" },
+    night: { bg: "#101719", panel: "#1a2628", terminal: "#101719", border: "#32474b", text: "#d9e5df", textMuted: "#4a5c5f" },
+    morning: { bg: "#f4f1eb", panel: "#fffdfa", terminal: "#172022", border: "#dedad1", text: "#263235", textMuted: "#4a5c5f" },
+  }[theme];
   return (
-    <section className="workflow-panel settings-status-panel">
-      <div className="settings-facts-grid">
-        <Fact label="Projects" value={String(candidates.length)} />
-        <Fact label="Issues" value={String(scanErrors.length)} tone={scanErrors.length ? "warn" : undefined} />
-      </div>
-      {scanErrors.length ? (
-        <section className="subpanel settings-list-panel"><h4>Project issues</h4><div className="settings-list">{scanErrors.map((error) => (<div className="settings-list-row" key={error}><span className="truncate">{error}</span></div>))}</div></section>
-      ) : null}
-      {!scanErrors.length ? (<div className="empty-state compact-title-row"><strong>No issues</strong><span>Settings status is clear.</span></div>) : null}
-    </section>
+    <svg className="settings-theme-preview" viewBox="0 0 120 80" aria-hidden="true">
+      <rect width="120" height="80" rx="4" fill={colors.bg} />
+      {/* Left panel - project cards */}
+      <rect x="4" y="8" width="28" height="68" rx="3" fill={colors.panel} stroke={colors.border} strokeWidth="0.5" />
+      <rect x="7" y="12" width="22" height="8" rx="1.5" fill={colors.border} />
+      <rect x="7" y="23" width="22" height="8" rx="1.5" fill={colors.border} />
+      <rect x="7" y="34" width="22" height="8" rx="1.5" fill={colors.border} />
+      {/* Center - terminal */}
+      <rect x="35" y="8" width="50" height="68" rx="3" fill={colors.terminal} stroke={colors.border} strokeWidth="0.5" />
+      <rect x="39" y="14" width="18" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="39" y="19" width="24" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="39" y="24" width="14" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="39" y="29" width="20" height="2" rx="1" fill={colors.textMuted} />
+      {/* Right panel - detail/files */}
+      <rect x="88" y="8" width="28" height="68" rx="3" fill={colors.panel} stroke={colors.border} strokeWidth="0.5" />
+      <rect x="91" y="12" width="22" height="3" rx="1" fill={colors.border} />
+      <rect x="91" y="18" width="16" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="91" y="23" width="19" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="91" y="28" width="12" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="91" y="33" width="17" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="91" y="38" width="14" height="2" rx="1" fill={colors.textMuted} />
+    </svg>
   );
 }
 
-function Fact({ label, value, tone }: { label: string; value: string; tone?: "warn" }) {
-  return <div className={cx("fact", tone === "warn" && "is-warn")}><span>{label}</span><strong>{value}</strong></div>;
-}
+
+
+
+
+
 
 function ArrowLeftIcon() {
   return <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16"><path d="m15 18-6-6 6-6" /></svg>;
