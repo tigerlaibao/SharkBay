@@ -1,18 +1,11 @@
 import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { randomBytes } from "node:crypto";
 import { resolveCommandPath } from "./command-path.js";
 
 const execFileAsync = promisify(execFile);
-const AGENT_ENTRY_FILES = {
-  codex: "AGENTS.md",
-  claude: "CLAUDE.md",
-  gemini: "GEMINI.md",
-  kiro: ".kiro/steering/sharkbay-protocol.md",
-  qwen: "QWEN.md",
-} as const;
 const ROOT_ADAPTER_FILES = ["AGENTS.md", "CLAUDE.md", "GEMINI.md", "QWEN.md"] as const;
 const KIRO_STEERING_FILE = ".kiro/steering/sharkbay-protocol.md";
 const TEAMWORK_ENTRY_START = "<!-- sharkbay-teamwork:start -->";
@@ -22,6 +15,16 @@ const LEGACY_EXCLUDE_ENTRIES = [] as string[];
 const EXCLUDE_REMOVAL_ENTRIES = new Set([...EXCLUDE_ENTRIES, ...LEGACY_EXCLUDE_ENTRIES]);
 const EXCLUDE_BACKUP_FILE = "git-info-exclude.backup";
 const EXCLUDE_MISSING_MARKER = "git-info-exclude.missing";
+export const TEAMWORK_BOOTSTRAP_PROMPT = [
+  "I'm working in SharkBay Teamwork mode for this project.",
+  "Please read `.sharkbay/harness/protocol.md` first and follow it for the rest of this session.",
+  "This bootstrap message itself does not require a task record.",
+  "If a later request involves editing project files, generating persisted project artifacts, running a multi-step implementation or verification workflow, or preparing a commit, create or update the required task under `.sharkbay/tasks/` before making project changes.",
+  "Keep Files and Work updated while working; finish by filling Summary and Verification; record the commit hash if a commit is produced.",
+  "Treat `.sharkbay/team-context/` as read-only.",
+  "If the protocol file is missing or unreadable, ask me whether to continue without SharkBay task tracking.",
+  "After reading the protocol, wait for my next instruction.",
+].join(" ");
 
 export type GitHubIdentity = {
   login: string;
@@ -254,31 +257,24 @@ export async function ensureLocalExclude(repoPath: string): Promise<void> {
   }
 }
 
-export type TeamworkEntryRepairResult = {
-  changed: boolean;
-  entryFile: string | null;
+export type TeamworkAgentLaunchResult = {
+  initialCommand: string;
+  injected: boolean;
   skippedReason?: "not-installed" | "unsupported-agent";
 };
 
-export async function ensureTeamworkEntryForAgent(repoPath: string, agentId: string): Promise<TeamworkEntryRepairResult> {
-  const entryFile = entryFileForAgent(agentId);
-  if (!entryFile) {
-    return { changed: false, entryFile: null, skippedReason: "unsupported-agent" };
+export async function prepareTeamworkAgentLaunch(repoPath: string, agentId: string, initialCommand: string): Promise<TeamworkAgentLaunchResult> {
+  const bootstrapArgs = teamworkBootstrapArgs(agentId, TEAMWORK_BOOTSTRAP_PROMPT);
+  if (!bootstrapArgs) {
+    return { initialCommand, injected: false, skippedReason: "unsupported-agent" };
   }
   if (!await hasSharkbayHarnessDir(repoPath)) {
-    return { changed: false, entryFile, skippedReason: "not-installed" };
+    return { initialCommand, injected: false, skippedReason: "not-installed" };
   }
 
   const protocolOptions = await resolveProtocolOptions(repoPath, agentId);
   await ensureProtocolFiles(repoPath, protocolOptions);
-  const block = wrapTeamworkEntryBlock(generateAdapterMd(protocolOptions.repo ?? ""));
-  const filePath = join(repoPath, entryFile);
-  const repaired = await repairEntryContent(filePath, block);
-  if (repaired.changed) {
-    await mkdir(dirname(filePath), { recursive: true });
-    await writeFile(filePath, repaired.content, "utf-8");
-  }
-  return { changed: repaired.changed, entryFile };
+  return { initialCommand: appendShellArgs(initialCommand, bootstrapArgs), injected: true };
 }
 
 async function hasSharkbayHarnessDir(repoPath: string): Promise<boolean> {
@@ -290,9 +286,22 @@ async function hasSharkbayHarnessDir(repoPath: string): Promise<boolean> {
   }
 }
 
-function entryFileForAgent(agentId: string): string | null {
+function teamworkBootstrapArgs(agentId: string, prompt: string): string[] | null {
   const normalized = agentId.trim().toLowerCase();
-  return AGENT_ENTRY_FILES[normalized as keyof typeof AGENT_ENTRY_FILES] ?? null;
+  if (normalized === "codex" || normalized === "claude") return [prompt];
+  if (normalized === "gemini" || normalized === "qwen") return ["-i", prompt];
+  if (normalized === "kiro") return ["chat", prompt];
+  if (normalized === "opencode") return ["--prompt", prompt];
+  return null;
+}
+
+function appendShellArgs(command: string, args: string[]): string {
+  const suffix = args.map(shellQuote).join(" ");
+  return suffix ? `${command} ${suffix}` : command;
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
 async function resolveProtocolOptions(repoPath: string, agentId: string): Promise<{ githubLogin: string; githubUserId: number; machineId: string; agent: string; repo?: string }> {
@@ -365,41 +374,6 @@ function githubRepoFromRemote(remoteOrigin: string | null): string | null {
   return match?.[1] ?? null;
 }
 
-async function repairEntryContent(filePath: string, block: string): Promise<{ content: string; changed: boolean }> {
-  let existing = "";
-  try {
-    existing = await readFile(filePath, "utf-8");
-  } catch {
-    return { content: block, changed: true };
-  }
-  const content = upsertTeamworkEntryBlock(existing, block);
-  return { content, changed: content !== existing };
-}
-
-export function wrapTeamworkEntryBlock(content: string): string {
-  return `${TEAMWORK_ENTRY_START}\n${content.trimEnd()}\n${TEAMWORK_ENTRY_END}\n`;
-}
-
-export function upsertTeamworkEntryBlock(existing: string, block: string): string {
-  const normalizedBlock = block.endsWith("\n") ? block : `${block}\n`;
-  const start = existing.indexOf(TEAMWORK_ENTRY_START);
-  const end = existing.indexOf(TEAMWORK_ENTRY_END);
-
-  if (start >= 0) {
-    const before = existing.slice(0, start).trimEnd();
-    const after = end > start ? existing.slice(end + TEAMWORK_ENTRY_END.length).replace(/^\r?\n/, "") : "";
-    return joinEntryParts(before, normalizedBlock, after);
-  }
-
-  if (end >= 0) {
-    const after = existing.slice(end + TEAMWORK_ENTRY_END.length).replace(/^\r?\n/, "");
-    return joinEntryParts("", normalizedBlock, after);
-  }
-
-  const prefix = existing.trimEnd();
-  return prefix ? `${prefix}\n\n${normalizedBlock}` : normalizedBlock;
-}
-
 function removeTeamworkEntryBlock(existing: string): string {
   const start = existing.indexOf(TEAMWORK_ENTRY_START);
   const end = existing.indexOf(TEAMWORK_ENTRY_END);
@@ -416,31 +390,6 @@ function removeTeamworkEntryBlock(existing: string): string {
 function joinEntryParts(before: string, block: string, after: string): string {
   const parts = [before.trimEnd(), block.trim(), after.trim()].filter((part) => part.length > 0);
   return parts.length ? `${parts.join("\n\n")}\n` : "";
-}
-
-function generateAdapterMd(repo: string): string {
-  return `<!-- sharkbay-generated: true -->
-<!-- sharkbay-local-only: true -->
-<!-- sharkbay-project: ${repo} -->
-<!-- sharkbay-protocol: .sharkbay/harness/protocol.md -->
-
-# SharkBay Local Agent Entry
-
-This worktree uses SharkBay Teamwork.
-
-⚠️ Follow this workflow for every task that edits project files:
-
-1. **Before editing** → create a task file in \`.sharkbay/tasks/\` (status: active)
-2. **During work** → update the task's Files and Work sections as you go
-3. **After commit** → write the commit hash into the task frontmatter
-4. **On completion** → set status: completed, fill Verification and Summary
-
-For task file format, naming, frontmatter, and full rules, read:
-\`.sharkbay/harness/protocol.md\`
-
-If the protocol file is missing or unreadable, ask the user whether to continue
-without SharkBay task tracking.
-`;
 }
 
 function generateProtocol(opts: { githubLogin: string; githubUserId: number; machineId: string; agent: string; repo?: string }): string {

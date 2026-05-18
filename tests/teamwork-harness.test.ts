@@ -5,12 +5,11 @@ import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import {
   cleanLocalExcludeContent,
-  ensureTeamworkEntryForAgent,
   installHarness,
   isHarnessInstalled,
+  prepareTeamworkAgentLaunch,
+  TEAMWORK_BOOTSTRAP_PROMPT,
   uninstallHarness,
-  upsertTeamworkEntryBlock,
-  wrapTeamworkEntryBlock,
 } from "../src/main/teamwork-harness.js";
 import { makeTempRoot, writeJson, writeText } from "./helpers.js";
 
@@ -71,73 +70,70 @@ describe("teamwork harness install", () => {
     await expect(isHarnessInstalled(repo)).resolves.toBe(false);
   });
 
-  it("creates only the matching agent entry file during agent launch repair", async () => {
-    const root = await makeTempRoot("teamwork-entry-create");
+  it("injects a Teamwork bootstrap prompt without creating agent entry files", async () => {
+    const root = await makeTempRoot("teamwork-bootstrap");
     const repo = await createRealGitRepoFixture(root);
     await installHarness(repo, harnessOptions);
 
-    const result = await ensureTeamworkEntryForAgent(repo, "codex");
+    const result = await prepareTeamworkAgentLaunch(repo, "codex", "codex");
 
-    expect(result).toEqual({ changed: true, entryFile: "AGENTS.md" });
-    const content = await fs.readFile(path.join(repo, "AGENTS.md"), "utf8");
-    expect(content).toContain("<!-- sharkbay-teamwork:start -->");
-    expect(content).toContain("<!-- sharkbay-generated: true -->");
-    expect(content).toContain("Follow this workflow for every task that edits project files");
-    expect(content).toContain("<!-- sharkbay-teamwork:end -->");
+    expect(result.injected).toBe(true);
+    expect(result.initialCommand).toContain("codex 'I'\\''m working in SharkBay Teamwork mode");
+    expect(result.initialCommand).toContain(".sharkbay/harness/protocol.md");
+    expect(TEAMWORK_BOOTSTRAP_PROMPT).toContain("This bootstrap message itself does not require a task record.");
+    await expect(fs.stat(path.join(repo, "AGENTS.md")).catch(() => null)).resolves.toBeNull();
     await expect(fs.stat(path.join(repo, "QWEN.md")).catch(() => null)).resolves.toBeNull();
   });
 
-  it("appends a Teamwork block to an existing matching agent entry file", async () => {
-    const root = await makeTempRoot("teamwork-entry-append");
+  it("keeps existing user entry files unchanged during bootstrap preparation", async () => {
+    const root = await makeTempRoot("teamwork-bootstrap-existing-entry");
     const repo = await createRealGitRepoFixture(root);
     await installHarness(repo, harnessOptions);
     await writeText(path.join(repo, "CLAUDE.md"), "# Project Claude Rules\n\nKeep this text.\n");
 
-    await ensureTeamworkEntryForAgent(repo, "claude");
+    const result = await prepareTeamworkAgentLaunch(repo, "claude", "claude");
 
-    const content = await fs.readFile(path.join(repo, "CLAUDE.md"), "utf8");
-    expect(content).toContain("# Project Claude Rules\n\nKeep this text.");
-    expect(content).toContain("<!-- sharkbay-teamwork:start -->");
-    expect(content).toContain("This worktree uses SharkBay Teamwork.");
+    expect(result.injected).toBe(true);
+    expect(result.initialCommand).toContain("claude 'I'\\''m working in SharkBay Teamwork mode");
+    await expect(fs.readFile(path.join(repo, "CLAUDE.md"), "utf8")).resolves.toBe("# Project Claude Rules\n\nKeep this text.\n");
   });
 
-  it("replaces an existing Teamwork block without duplicating it", async () => {
-    const root = await makeTempRoot("teamwork-entry-replace");
+  it("uses agent-specific bootstrap command arguments", async () => {
+    const root = await makeTempRoot("teamwork-bootstrap-agent-args");
     const repo = await createRealGitRepoFixture(root);
     await installHarness(repo, harnessOptions);
-    await writeText(path.join(repo, "AGENTS.md"), [
-      "# Project Rules",
-      "",
-      "<!-- sharkbay-teamwork:start -->",
-      "old block",
-      "<!-- sharkbay-teamwork:end -->",
-      "",
-    ].join("\n"));
 
-    const first = await ensureTeamworkEntryForAgent(repo, "codex");
-    const second = await ensureTeamworkEntryForAgent(repo, "codex");
-
-    const content = await fs.readFile(path.join(repo, "AGENTS.md"), "utf8");
-    expect(first.changed).toBe(true);
-    expect(second.changed).toBe(false);
-    expect(content).not.toContain("old block");
-    expect(content.match(/sharkbay-teamwork:start/g)).toHaveLength(1);
-    expect(content).toContain("# Project Rules");
+    await expect(prepareTeamworkAgentLaunch(repo, "gemini", "gemini")).resolves.toMatchObject({
+      injected: true,
+      initialCommand: expect.stringContaining("gemini '-i' 'I'\\''m working in SharkBay Teamwork mode"),
+    });
+    await expect(prepareTeamworkAgentLaunch(repo, "qwen", "qwen")).resolves.toMatchObject({
+      injected: true,
+      initialCommand: expect.stringContaining("qwen '-i' 'I'\\''m working in SharkBay Teamwork mode"),
+    });
+    await expect(prepareTeamworkAgentLaunch(repo, "kiro", "kiro-cli")).resolves.toMatchObject({
+      injected: true,
+      initialCommand: expect.stringContaining("kiro-cli 'chat' 'I'\\''m working in SharkBay Teamwork mode"),
+    });
+    await expect(prepareTeamworkAgentLaunch(repo, "opencode", "opencode")).resolves.toMatchObject({
+      injected: true,
+      initialCommand: expect.stringContaining("opencode '--prompt' 'I'\\''m working in SharkBay Teamwork mode"),
+    });
   });
 
-  it("skips entry repair when Teamwork is not installed or the agent has no entry file", async () => {
-    const root = await makeTempRoot("teamwork-entry-skip");
+  it("skips bootstrap injection when Teamwork is not installed or the agent is unsupported", async () => {
+    const root = await makeTempRoot("teamwork-bootstrap-skip");
     const repo = await createRealGitRepoFixture(root);
 
-    await expect(ensureTeamworkEntryForAgent(repo, "codex")).resolves.toMatchObject({
-      changed: false,
-      entryFile: "AGENTS.md",
+    await expect(prepareTeamworkAgentLaunch(repo, "codex", "codex")).resolves.toMatchObject({
+      injected: false,
+      initialCommand: "codex",
       skippedReason: "not-installed",
     });
     await installHarness(repo, harnessOptions);
-    await expect(ensureTeamworkEntryForAgent(repo, "opencode")).resolves.toMatchObject({
-      changed: false,
-      entryFile: null,
+    await expect(prepareTeamworkAgentLaunch(repo, "deepseek", "deepseek")).resolves.toMatchObject({
+      injected: false,
+      initialCommand: "deepseek",
       skippedReason: "unsupported-agent",
     });
   });
@@ -192,8 +188,14 @@ describe("teamwork harness install", () => {
     const root = await makeTempRoot("teamwork-harness-uninstall-user-file");
     const repo = await createRealGitRepoFixture(root);
     await installHarness(repo, harnessOptions);
-    await writeText(path.join(repo, "AGENTS.md"), "# User agent rules\n");
-    await ensureTeamworkEntryForAgent(repo, "codex");
+    await writeText(path.join(repo, "AGENTS.md"), [
+      "# User agent rules",
+      "",
+      "<!-- sharkbay-teamwork:start -->",
+      "legacy managed block",
+      "<!-- sharkbay-teamwork:end -->",
+      "",
+    ].join("\n"));
 
     const result = await uninstallHarness(repo);
 
@@ -209,13 +211,6 @@ describe("teamwork harness install", () => {
     expect(cleaned.content).toBe("# local\n/AGENTS.md\n/CLAUDE.md\n/GEMINI.md\n/QWEN.md\n/.kiro/steering/sharkbay-protocol.md\n.env\n");
   });
 
-  it("upserts Teamwork blocks without changing project content outside the block", () => {
-    const block = wrapTeamworkEntryBlock("managed\n");
-    const existing = "# Project Rules\n\n<!-- sharkbay-teamwork:start -->\nold\n<!-- sharkbay-teamwork:end -->\n\nKeep me.\n";
-
-    expect(upsertTeamworkEntryBlock(existing, block)).toBe("# Project Rules\n\n<!-- sharkbay-teamwork:start -->\nmanaged\n<!-- sharkbay-teamwork:end -->\n\nKeep me.\n");
-    expect(upsertTeamworkEntryBlock("# Project Rules\n", block)).toBe("# Project Rules\n\n<!-- sharkbay-teamwork:start -->\nmanaged\n<!-- sharkbay-teamwork:end -->\n");
-  });
 });
 
 async function createRealGitRepoFixture(root: string, name = "FixtureApp"): Promise<string> {

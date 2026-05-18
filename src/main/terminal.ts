@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 import * as pty from "node-pty";
 import { loadRuntimeConfig } from "./config.js";
 import { resolveRepoPath } from "./path-safety.js";
-import { ensureTeamworkEntryForAgent } from "./teamwork-harness.js";
+import { prepareTeamworkAgentLaunch } from "./teamwork-harness.js";
 import type {
   IpcRuntimeLike,
   TerminalCloseInput,
@@ -87,10 +87,11 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
     const shell = preferredShell();
     const id = `term-${Date.now().toString(36)}-${++this.sequence}`;
     const command = terminalCommand(shell);
-    const initialCommand = normalizeTerminalCommandLine(input.initialCommand);
+    let initialCommand = normalizeTerminalCommandLine(input.initialCommand);
     const initialCommandTitle = initialCommand ? normalizeTerminalCommandLine(input.initialCommandTitle) : null;
     if (input.agentId && initialCommand && !input.service) {
-      await ensureTeamworkEntryForAgent(cwd, input.agentId);
+      const launch = await prepareTeamworkAgentLaunch(cwd, input.agentId, initialCommand);
+      initialCommand = launch.initialCommand;
     }
     const commandSubmittedAt = initialCommand ? this.now() : null;
     const ptyProcess = pty.spawn(command.file, command.args, {

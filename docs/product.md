@@ -20,7 +20,7 @@ SharkBay supports one project source: exact directories selected by the user. Co
 
 ## Teamwork
 
-Teamwork is opt-in per project. Installing it adds a repo-local `.sharkbay` harness and enables task-file sync through the remote `sharkbay-team-context` branch when GitHub permissions allow it. Agent entry files are updated only on demand when launching the matching agent from SharkBay.
+Teamwork is opt-in per project. Installing it adds a repo-local `.sharkbay` harness and enables task-file sync through the remote `sharkbay-team-context` branch when GitHub permissions allow it. When SharkBay launches a supported agent, it injects a first-message bootstrap prompt that tells the agent to read `.sharkbay/harness/protocol.md`; it does not generate or repair per-agent entry files during launch.
 
 Teamwork does not replace Git commits or code review. It gives humans and agents a compact local record of current work, verification, files touched, and future context.
 

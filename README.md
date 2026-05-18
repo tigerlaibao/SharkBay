@@ -110,7 +110,7 @@ Outputs are written to `release/`. Local builds use ad-hoc signing unless signin
 - App config is stored in Electron `userData` as `config.json`.
 - Resizable column widths are stored in renderer `localStorage`.
 - Embedded browser tabs use Electron partition `persist:sharkbay-browser`.
-- Teamwork installs repo-local `.sharkbay/` files; per-agent entry files are repaired only when launching that agent from SharkBay.
+- Teamwork installs repo-local `.sharkbay/` files; supported agent launches receive a SharkBay bootstrap prompt instead of writing project entry files.
 - Teamwork sync uses the remote branch `sharkbay-team-context` and mirrors records into `.sharkbay/team-context/`.
 - Agent status watching reads recent local Codex and Claude transcript files from the user's home directory.
 

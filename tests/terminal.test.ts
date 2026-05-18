@@ -1,7 +1,10 @@
+import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import { getRuntimeConfigPath } from "../src/main/config.js";
+import { installHarness, TEAMWORK_BOOTSTRAP_PROMPT } from "../src/main/teamwork-harness.js";
 import {
   applyTerminalInputData,
   resolveTerminalCwd,
@@ -11,6 +14,16 @@ import {
   TerminalManager,
 } from "../src/main/terminal.js";
 import { createGitRepoFixture, makeTempRoot, writeJson } from "./helpers.js";
+
+const execFileAsync = promisify(execFile);
+
+const harnessOptions = {
+  githubLogin: "SharkUI",
+  githubUserId: 3960864,
+  machineId: "abcdef",
+  agent: "codex",
+  repo: "SharkUI/AIBF",
+};
 
 describe("terminal cwd validation", () => {
   it("starts shells without interactive TTY-only flags or Apple session restore", () => {
@@ -277,6 +290,47 @@ describe("terminal cwd validation", () => {
       expect(session.service).toEqual({ id: "dev", label: "dev", command: "npm run dev" });
       await expect(output).resolves.toContain("sharkbay-service-ok");
       await expect(exited).resolves.toBeUndefined();
+    } finally {
+      manager.close({ sessionId: session.id });
+    }
+  });
+
+  it("injects the Teamwork bootstrap prompt into agent launch commands", async () => {
+    const userDataPath = await makeTempRoot("terminal-agent-bootstrap-config");
+    const root = await makeTempRoot("terminal-agent-bootstrap-root");
+    const repo = await createGitRepoFixture(root, "TerminalAgentRepo");
+    await execFileAsync("git", ["init"], { cwd: repo });
+    await installHarness(repo, harnessOptions);
+    await writeJson(getRuntimeConfigPath({ userDataPath }), {
+      schemaVersion: 1,
+      configuredProjects: [repo],
+      updatedAt: "2026-05-18",
+    });
+
+    const manager = new TerminalManager();
+    let sessionId: string | null = null;
+    const output = new Promise<string>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("agent bootstrap output timed out")), 3000);
+      manager.on("data", (event) => {
+        if ((!sessionId || event.sessionId === sessionId) && event.data.includes("SharkBay Teamwork mode")) {
+          clearTimeout(timeout);
+          resolve(event.data);
+        }
+      });
+    });
+    const session = await manager.create({ userDataPath }, {
+      cwd: repo,
+      agentId: "codex",
+      initialCommand: "printf '%s\\n'",
+      initialCommandTitle: "Codex CLI",
+    });
+    sessionId = session.id;
+
+    try {
+      expect(session.title).toBe("Codex CLI");
+      await expect(output).resolves.toContain("SharkBay Teamwork mode");
+      await expect(fs.stat(path.join(repo, "AGENTS.md")).catch(() => null)).resolves.toBeNull();
+      expect(TEAMWORK_BOOTSTRAP_PROMPT).toContain("After reading the protocol, wait for my next instruction.");
     } finally {
       manager.close({ sessionId: session.id });
     }

@@ -84,7 +84,7 @@ During development, SharkBay writes runtime data outside the repository:
 - BrowserView partition data for embedded browser tabs.
 - Codex/Claude transcript reads from the user's home directory.
 
-When Teamwork is installed for a project, SharkBay writes repo-local `.sharkbay/` and a local `.git/info/exclude` entry for `/.sharkbay/`. Per-agent entry files are repaired only when launching that agent from SharkBay.
+When Teamwork is installed for a project, SharkBay writes repo-local `.sharkbay/` and a local `.git/info/exclude` entry for `/.sharkbay/`. Supported agent launches receive a first-message bootstrap prompt; SharkBay does not generate or repair per-agent entry files during launch.
 
 ## Verification Guidance
 

@@ -36,17 +36,18 @@ repo/
             <taskId>-<slug>.md
 ```
 
-Only `.sharkbay/` is added to `.git/info/exclude` during install. Root agent entry files are not generated during install and are not special-cased in `.git/info/exclude`.
+Only `.sharkbay/` is added to `.git/info/exclude` during install. Root agent entry files are not generated during install, are not special-cased in `.git/info/exclude`, and are not repaired during agent launch.
 
-When a supported agent is launched from SharkBay, SharkBay checks only that agent's entry file and repairs a managed `sharkbay-teamwork` block when Teamwork is installed:
+When a supported agent is launched from SharkBay and Teamwork is installed, SharkBay injects a first-message bootstrap prompt into the launch command. The bootstrap is phrased as the user's own working-context instruction and tells the agent to read `.sharkbay/harness/protocol.md` before further work. Supported launch adapters are:
 
-- Codex: `AGENTS.md`
-- Claude: `CLAUDE.md`
-- Gemini: `GEMINI.md`
-- Qwen: `QWEN.md`
-- Kiro: `.kiro/steering/sharkbay-protocol.md`
+- Codex: positional prompt
+- Claude: positional prompt
+- Gemini: `-i <prompt>`
+- Qwen: `-i <prompt>`
+- Kiro: `chat <prompt>`
+- OpenCode: `--prompt <prompt>`
 
-If the matching entry file does not exist, SharkBay creates it with the managed block. If it exists without the block, SharkBay appends the block. If the block exists but is stale or incomplete, SharkBay replaces only that block and preserves all project-owned content outside it.
+DeepSeek is not currently treated as a bootstrap-supported agent because its documented prompt forms are non-interactive or ambiguous.
 
 ## Task Files
 
@@ -85,7 +86,7 @@ The project context menu can turn Teamwork off. If the authenticated GitHub user
 
 ## Uninstall
 
-Uninstall removes `.sharkbay/`, removes SharkBay's `/.sharkbay/` local exclude entry when SharkBay added it, and removes only SharkBay-managed entry blocks. User-owned root instruction content outside those blocks is preserved.
+Uninstall removes `.sharkbay/`, removes SharkBay's `/.sharkbay/` local exclude entry when SharkBay added it, and cleans up legacy SharkBay-managed entry blocks from older versions. User-owned root instruction content outside those blocks is preserved.
 
 Optional team-context cleanup deletes the remote `sharkbay-team-context` branch and the local remote ref, but only for the repository owner.
 
