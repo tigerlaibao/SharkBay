@@ -1,17 +1,23 @@
-import { access, mkdir, readFile, rm, rmdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { randomBytes } from "node:crypto";
 import { resolveCommandPath } from "./command-path.js";
 
 const execFileAsync = promisify(execFile);
+const AGENT_ENTRY_FILES = {
+  codex: "AGENTS.md",
+  claude: "CLAUDE.md",
+  gemini: "GEMINI.md",
+  kiro: ".kiro/steering/sharkbay-protocol.md",
+  qwen: "QWEN.md",
+} as const;
 const ROOT_ADAPTER_FILES = ["AGENTS.md", "CLAUDE.md", "GEMINI.md", "QWEN.md"] as const;
 const KIRO_STEERING_FILE = ".kiro/steering/sharkbay-protocol.md";
-const LEGACY_ROOT_ADAPTER_FILES = [] as const;
-const LEGACY_INSTRUCTION_FILES = ["codex.md", "claude.md", "gemini.md"] as const;
-const GENERATED_MARKER = "<!-- sharkbay-generated: true -->";
-const EXCLUDE_ENTRIES = ["/.sharkbay/", ...ROOT_ADAPTER_FILES.map((name) => `/${name}`), `/${KIRO_STEERING_FILE}`];
+const TEAMWORK_ENTRY_START = "<!-- sharkbay-teamwork:start -->";
+const TEAMWORK_ENTRY_END = "<!-- sharkbay-teamwork:end -->";
+const EXCLUDE_ENTRIES = ["/.sharkbay/"];
 const LEGACY_EXCLUDE_ENTRIES = [] as string[];
 const EXCLUDE_REMOVAL_ENTRIES = new Set([...EXCLUDE_ENTRIES, ...LEGACY_EXCLUDE_ENTRIES]);
 const EXCLUDE_BACKUP_FILE = "git-info-exclude.backup";
@@ -52,7 +58,6 @@ export async function installHarness(
   options: { githubLogin: string; githubUserId: number; machineId: string; agent: string; repo?: string },
 ): Promise<void> {
   await assertHarnessInstallable(repoPath);
-  const adapterContent = generateAdapterMd(options.repo ?? "");
 
   const sbDir = join(repoPath, ".sharkbay");
   const harnessDir = join(sbDir, "harness");
@@ -66,26 +71,12 @@ export async function installHarness(
   await writeFile(join(sbDir, "machine-id"), options.machineId, "utf-8");
   await writeFile(join(harnessDir, "protocol.md"), generateProtocol(options), "utf-8");
 
-  // Root adapter files. Only SharkBay-generated adapters are overwritten.
-  for (const name of ROOT_ADAPTER_FILES) {
-    await writeFile(join(repoPath, name), adapterContent, "utf-8");
-  }
-
-  // Kiro steering file (nested path).
-  const kiroSteeringPath = join(repoPath, KIRO_STEERING_FILE);
-  await mkdir(join(repoPath, ".kiro", "steering"), { recursive: true });
-  await writeFile(kiroSteeringPath, adapterContent, "utf-8");
-
-  await cleanupLegacyAdapters(repoPath);
-  await cleanupLegacyInstructionFiles(harnessDir);
-
   await backupLocalExclude(repoPath, harnessDir);
   await ensureLocalExclude(repoPath);
 }
 
 export async function assertHarnessInstallable(repoPath: string): Promise<void> {
   await assertGitWorktree(repoPath);
-  await assertRootAdaptersCanBeManaged(repoPath);
 }
 
 async function assertGitWorktree(repoPath: string): Promise<void> {
@@ -96,28 +87,6 @@ async function assertGitWorktree(repoPath: string): Promise<void> {
     // Re-throw a SharkBay-facing message below.
   }
   throw new Error("Teamwork harness requires a Git repository. Run git init in this folder before installing Teamwork.");
-}
-
-async function assertRootAdaptersCanBeManaged(repoPath: string): Promise<void> {
-  const conflicts: string[] = [];
-
-  for (const name of [...ROOT_ADAPTER_FILES, KIRO_STEERING_FILE]) {
-    try {
-      const existing = await readFile(join(repoPath, name), "utf-8");
-      if (!existing.includes(GENERATED_MARKER)) {
-        conflicts.push(name);
-      }
-    } catch {
-      // Missing adapter is fine; SharkBay can create it.
-    }
-  }
-
-  if (conflicts.length > 0) {
-    throw new Error(
-      `Refusing to overwrite existing root instruction file(s): ${conflicts.join(", ")}. ` +
-      "Move or merge those files before installing SharkBay Teamwork.",
-    );
-  }
 }
 
 export async function isHarnessInstalled(repoPath: string): Promise<boolean> {
@@ -147,16 +116,11 @@ export async function uninstallHarness(repoPath: string): Promise<TeamworkUninst
   const removedPaths: string[] = [];
   const skippedPaths: string[] = [];
 
-  for (const name of [...ROOT_ADAPTER_FILES, ...LEGACY_ROOT_ADAPTER_FILES]) {
-    const removed = await removeGeneratedAdapter(repoPath, name);
+  for (const name of [...ROOT_ADAPTER_FILES, KIRO_STEERING_FILE]) {
+    const removed = await removeManagedEntryBlock(repoPath, name);
     if (removed === "removed") removedPaths.push(name);
     else if (removed === "skipped") skippedPaths.push(name);
   }
-
-  // Remove Kiro steering file.
-  const kiroResult = await removeGeneratedAdapter(repoPath, KIRO_STEERING_FILE);
-  if (kiroResult === "removed") removedPaths.push(KIRO_STEERING_FILE);
-  else if (kiroResult === "skipped") skippedPaths.push(KIRO_STEERING_FILE);
 
   const excludeRemovedLines = await restoreLocalExclude(repoPath);
   const sharkbayDir = join(repoPath, ".sharkbay");
@@ -171,7 +135,7 @@ export async function uninstallHarness(repoPath: string): Promise<TeamworkUninst
   return { removedPaths: removedPaths.sort(), skippedPaths: skippedPaths.sort(), excludeRemovedLines };
 }
 
-async function removeGeneratedAdapter(repoPath: string, name: string): Promise<"removed" | "skipped" | "missing"> {
+async function removeManagedEntryBlock(repoPath: string, name: string): Promise<"removed" | "skipped" | "missing"> {
   const filePath = join(repoPath, name);
   let existing: string;
   try {
@@ -179,8 +143,13 @@ async function removeGeneratedAdapter(repoPath: string, name: string): Promise<"
   } catch {
     return "missing";
   }
-  if (!existing.includes(GENERATED_MARKER)) return "skipped";
-  await rm(filePath, { force: true });
+  const stripped = removeTeamworkEntryBlock(existing);
+  if (stripped === existing) return "skipped";
+  if (stripped.trim().length === 0) {
+    await rm(filePath, { force: true });
+  } else {
+    await writeFile(filePath, stripped, "utf-8");
+  }
   return "removed";
 }
 
@@ -214,26 +183,28 @@ async function restoreLocalExclude(repoPath: string): Promise<string[]> {
     content = "";
   }
 
+  let backup = "";
   try {
-    const backup = await readFile(backupPath, "utf-8");
-    const cleaned = cleanLocalExcludeContent(content);
-    try {
-      await access(join(repoPath, ".sharkbay", "harness", EXCLUDE_MISSING_MARKER));
-      await rm(excludePath, { force: true });
-    } catch {
-      await writeFile(excludePath, backup, "utf-8");
-    }
-    return cleaned.removedLines;
+    backup = await readFile(backupPath, "utf-8");
   } catch {
-    return cleanLocalExclude(repoPath, content);
+    backup = "";
   }
-}
 
-async function cleanLocalExclude(repoPath: string, content?: string): Promise<string[]> {
-  const excludePath = join(repoPath, ".git", "info", "exclude");
-  const original = content ?? await readFile(excludePath, "utf-8").catch(() => "");
-  const cleaned = cleanLocalExcludeContent(original);
-  if (cleaned.removedLines.length > 0) {
+  if (backup.split("\n").includes("/.sharkbay/")) {
+    return [];
+  }
+
+  const cleaned = cleanLocalExcludeContent(content);
+  if (cleaned.removedLines.length === 0) return [];
+
+  try {
+    await access(join(repoPath, ".sharkbay", "harness", EXCLUDE_MISSING_MARKER));
+    if (cleaned.content.length === 0) {
+      await rm(excludePath, { force: true });
+    } else {
+      await writeFile(excludePath, cleaned.content, "utf-8");
+    }
+  } catch {
     await writeFile(excludePath, cleaned.content, "utf-8");
   }
   return cleaned.removedLines;
@@ -283,26 +254,168 @@ export async function ensureLocalExclude(repoPath: string): Promise<void> {
   }
 }
 
-async function cleanupLegacyAdapters(repoPath: string): Promise<void> {
-  for (const name of LEGACY_ROOT_ADAPTER_FILES) {
-    const filePath = join(repoPath, name);
-    try {
-      const existing = await readFile(filePath, "utf-8");
-      if (existing.includes(GENERATED_MARKER)) {
-        await rm(filePath);
-      }
-    } catch {
-      // Missing legacy adapter is fine.
-    }
+export type TeamworkEntryRepairResult = {
+  changed: boolean;
+  entryFile: string | null;
+  skippedReason?: "not-installed" | "unsupported-agent";
+};
+
+export async function ensureTeamworkEntryForAgent(repoPath: string, agentId: string): Promise<TeamworkEntryRepairResult> {
+  const entryFile = entryFileForAgent(agentId);
+  if (!entryFile) {
+    return { changed: false, entryFile: null, skippedReason: "unsupported-agent" };
+  }
+  if (!await hasSharkbayHarnessDir(repoPath)) {
+    return { changed: false, entryFile, skippedReason: "not-installed" };
+  }
+
+  const protocolOptions = await resolveProtocolOptions(repoPath, agentId);
+  await ensureProtocolFiles(repoPath, protocolOptions);
+  const block = wrapTeamworkEntryBlock(generateAdapterMd(protocolOptions.repo ?? ""));
+  const filePath = join(repoPath, entryFile);
+  const repaired = await repairEntryContent(filePath, block);
+  if (repaired.changed) {
+    await mkdir(dirname(filePath), { recursive: true });
+    await writeFile(filePath, repaired.content, "utf-8");
+  }
+  return { changed: repaired.changed, entryFile };
+}
+
+async function hasSharkbayHarnessDir(repoPath: string): Promise<boolean> {
+  try {
+    await access(join(repoPath, ".sharkbay"));
+    return true;
+  } catch {
+    return false;
   }
 }
 
-async function cleanupLegacyInstructionFiles(harnessDir: string): Promise<void> {
-  const instructionsDir = join(harnessDir, "instructions");
-  await Promise.all(
-    LEGACY_INSTRUCTION_FILES.map((name) => rm(join(instructionsDir, name), { force: true })),
-  );
-  await rmdir(instructionsDir).catch(() => {});
+function entryFileForAgent(agentId: string): string | null {
+  const normalized = agentId.trim().toLowerCase();
+  return AGENT_ENTRY_FILES[normalized as keyof typeof AGENT_ENTRY_FILES] ?? null;
+}
+
+async function resolveProtocolOptions(repoPath: string, agentId: string): Promise<{ githubLogin: string; githubUserId: number; machineId: string; agent: string; repo?: string }> {
+  const existing = await readExistingProtocolOptions(repoPath);
+  const machineId = await getMachineId(repoPath) ?? existing.machineId ?? generateMachineId();
+  let identity: GitHubIdentity | null = null;
+  if (!existing.githubLogin || !existing.githubUserId) {
+    try {
+      identity = await resolveGitHubIdentity();
+    } catch {
+      identity = null;
+    }
+  }
+  return {
+    githubLogin: identity?.login ?? existing.githubLogin ?? "unknown",
+    githubUserId: identity?.id ?? existing.githubUserId ?? 0,
+    machineId,
+    agent: agentId,
+    repo: await resolveRepoName(repoPath) || existing.repo,
+  };
+}
+
+async function readExistingProtocolOptions(repoPath: string): Promise<Partial<{ githubLogin: string; githubUserId: number; machineId: string; repo: string }>> {
+  let content = "";
+  try {
+    content = await readFile(join(repoPath, ".sharkbay", "harness", "protocol.md"), "utf-8");
+  } catch {
+    return {};
+  }
+  const githubUserId = Number(readProtocolField(content, "GitHub user id"));
+  return {
+    repo: readProtocolField(content, "Repo") ?? undefined,
+    githubLogin: readProtocolField(content, "GitHub login") ?? undefined,
+    githubUserId: Number.isFinite(githubUserId) && githubUserId > 0 ? githubUserId : undefined,
+    machineId: readProtocolField(content, "Machine id") ?? undefined,
+  };
+}
+
+function readProtocolField(content: string, field: string): string | null {
+  const escaped = field.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = content.match(new RegExp(`^- ${escaped}:\\s*(.*)$`, "m"));
+  return match?.[1]?.trim() || null;
+}
+
+async function ensureProtocolFiles(
+  repoPath: string,
+  options: { githubLogin: string; githubUserId: number; machineId: string; agent: string; repo?: string },
+): Promise<void> {
+  const sbDir = join(repoPath, ".sharkbay");
+  const harnessDir = join(sbDir, "harness");
+  await mkdir(harnessDir, { recursive: true });
+  await mkdir(join(sbDir, "tasks"), { recursive: true });
+  await mkdir(join(sbDir, "team-context"), { recursive: true });
+  await writeFile(join(sbDir, "machine-id"), options.machineId, "utf-8");
+  await writeFile(join(harnessDir, "protocol.md"), generateProtocol(options), "utf-8");
+  await ensureLocalExclude(repoPath);
+}
+
+async function resolveRepoName(repoPath: string): Promise<string> {
+  try {
+    const { stdout } = await execFileAsync("git", ["-C", repoPath, "config", "--get", "remote.origin.url"], { timeout: 3_000 });
+    return githubRepoFromRemote(stdout.trim()) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function githubRepoFromRemote(remoteOrigin: string | null): string | null {
+  const match = remoteOrigin?.match(/github\.com[:/]([^/\s]+\/[^/\s]+?)(?:\.git)?$/);
+  return match?.[1] ?? null;
+}
+
+async function repairEntryContent(filePath: string, block: string): Promise<{ content: string; changed: boolean }> {
+  let existing = "";
+  try {
+    existing = await readFile(filePath, "utf-8");
+  } catch {
+    return { content: block, changed: true };
+  }
+  const content = upsertTeamworkEntryBlock(existing, block);
+  return { content, changed: content !== existing };
+}
+
+export function wrapTeamworkEntryBlock(content: string): string {
+  return `${TEAMWORK_ENTRY_START}\n${content.trimEnd()}\n${TEAMWORK_ENTRY_END}\n`;
+}
+
+export function upsertTeamworkEntryBlock(existing: string, block: string): string {
+  const normalizedBlock = block.endsWith("\n") ? block : `${block}\n`;
+  const start = existing.indexOf(TEAMWORK_ENTRY_START);
+  const end = existing.indexOf(TEAMWORK_ENTRY_END);
+
+  if (start >= 0) {
+    const before = existing.slice(0, start).trimEnd();
+    const after = end > start ? existing.slice(end + TEAMWORK_ENTRY_END.length).replace(/^\r?\n/, "") : "";
+    return joinEntryParts(before, normalizedBlock, after);
+  }
+
+  if (end >= 0) {
+    const after = existing.slice(end + TEAMWORK_ENTRY_END.length).replace(/^\r?\n/, "");
+    return joinEntryParts("", normalizedBlock, after);
+  }
+
+  const prefix = existing.trimEnd();
+  return prefix ? `${prefix}\n\n${normalizedBlock}` : normalizedBlock;
+}
+
+function removeTeamworkEntryBlock(existing: string): string {
+  const start = existing.indexOf(TEAMWORK_ENTRY_START);
+  const end = existing.indexOf(TEAMWORK_ENTRY_END);
+  if (start < 0 && end < 0) return existing;
+  if (start >= 0) {
+    const before = existing.slice(0, start).trimEnd();
+    const after = end > start ? existing.slice(end + TEAMWORK_ENTRY_END.length).replace(/^\r?\n/, "") : "";
+    return joinEntryParts(before, "", after);
+  }
+  const after = existing.slice(end + TEAMWORK_ENTRY_END.length).replace(/^\r?\n/, "");
+  return after;
+}
+
+function joinEntryParts(before: string, block: string, after: string): string {
+  const parts = [before.trimEnd(), block.trim(), after.trim()].filter((part) => part.length > 0);
+  return parts.length ? `${parts.join("\n\n")}\n` : "";
 }
 
 function generateAdapterMd(repo: string): string {

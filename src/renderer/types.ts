@@ -89,6 +89,7 @@ export type TerminalCreateInput = {
   title?: string;
   initialCommand?: string;
   initialCommandTitle?: string;
+  agentId?: string;
   service?: { id: string; label: string; command: string };
   cols?: number;
   rows?: number;

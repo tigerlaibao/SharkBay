@@ -60,7 +60,7 @@ The renderer currently uses React hooks rather than a separate state library.
 - Legacy/helper config default: `~/.sharkbay/config.json` when config helpers are called outside Electron runtime.
 - Renderer layout state: `localStorage` keys for project/detail column widths.
 - Browser session storage: Electron partition `persist:sharkbay-browser`.
-- Teamwork local state: `.sharkbay/`, generated `AGENTS.md`, and `.git/info/exclude` entries in the target repository.
+- Teamwork local state: `.sharkbay/`, `/.sharkbay/` in `.git/info/exclude`, and per-agent managed entry blocks created only when launching that agent from SharkBay.
 - Teamwork shared state: remote branch `sharkbay-team-context`, mirrored locally under `.sharkbay/team-context/`.
 - Agent status sources: recent local files under `~/.codex/sessions` and `~/.claude/projects`.
 
@@ -74,7 +74,7 @@ Key boundaries:
 - file tree listing rejects unsafe directory paths and only marks contained, known text-like files as editable.
 - terminal cwd is resolved through the same allowed-project boundary.
 - BrowserView navigation accepts only `http:` and `https:` URLs; invalid or unsafe schemes become `about:blank`.
-- generated Teamwork adapters are only overwritten when they contain the SharkBay marker.
+- Teamwork entry repair only replaces the managed `sharkbay-teamwork` block and preserves project-owned instruction content.
 - Teamwork context cleanup is restricted to the repository owner.
 
 ## External Commands

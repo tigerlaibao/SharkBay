@@ -11,7 +11,7 @@ Teamwork is installed per project from the `TEAM` detail tab. Installation:
 3. Requires a GitHub `origin` remote.
 4. Checks that the user has `write` or `admin` permission.
 5. Creates or fetches the `sharkbay-team-context` remote branch.
-6. Writes the local harness files.
+6. Writes the local `.sharkbay` harness files.
 7. Starts immediate and periodic sync.
 
 ## Local Files
@@ -20,7 +20,6 @@ Installed Teamwork writes:
 
 ```text
 repo/
-  AGENTS.md
   .git/
     info/
       exclude
@@ -37,9 +36,17 @@ repo/
             <taskId>-<slug>.md
 ```
 
-`AGENTS.md` and `.sharkbay/` are local-only and ignored through `.git/info/exclude`. SharkBay only overwrites generated `AGENTS.md` files that contain its marker.
+Only `.sharkbay/` is added to `.git/info/exclude` during install. Root agent entry files are not generated during install and are not special-cased in `.git/info/exclude`.
 
-Older design drafts referenced generated `CLAUDE.md`, `GEMINI.md`, and per-agent instruction files. The current implementation uses a single generated `AGENTS.md` adapter plus `.sharkbay/harness/protocol.md`; generated legacy adapters are cleaned up when possible.
+When a supported agent is launched from SharkBay, SharkBay checks only that agent's entry file and repairs a managed `sharkbay-teamwork` block when Teamwork is installed:
+
+- Codex: `AGENTS.md`
+- Claude: `CLAUDE.md`
+- Gemini: `GEMINI.md`
+- Qwen: `QWEN.md`
+- Kiro: `.kiro/steering/sharkbay-protocol.md`
+
+If the matching entry file does not exist, SharkBay creates it with the managed block. If it exists without the block, SharkBay appends the block. If the block exists but is stale or incomplete, SharkBay replaces only that block and preserves all project-owned content outside it.
 
 ## Task Files
 
@@ -78,7 +85,7 @@ The project context menu can turn Teamwork off. If the authenticated GitHub user
 
 ## Uninstall
 
-Uninstall removes generated local Teamwork files and restores `.git/info/exclude` from the backup captured at install time when available. User-owned root instruction files are preserved.
+Uninstall removes `.sharkbay/`, removes SharkBay's `/.sharkbay/` local exclude entry when SharkBay added it, and removes only SharkBay-managed entry blocks. User-owned root instruction content outside those blocks is preserved.
 
 Optional team-context cleanup deletes the remote `sharkbay-team-context` branch and the local remote ref, but only for the repository owner.
 

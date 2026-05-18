@@ -997,7 +997,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
 
   async function openAgentProjectTab(agent: AgentCli) {
     if (!candidate?.path) return;
-    await openProjectTab(candidate.id, candidate.path, candidate.name, false, { initialCommand: shellQuote(agent.executablePath || agent.command), initialCommandTitle: agent.label });
+    await openProjectTab(candidate.id, candidate.path, candidate.name, false, { agentId: agent.id, initialCommand: shellQuote(agent.executablePath || agent.command), initialCommandTitle: agent.label });
   }
 
   async function openBrowserProjectTab() {
@@ -1029,7 +1029,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     },
   }));
 
-  async function openProjectTab(projectId: string, cwd: string, projectName: string, quiet = false, options: Pick<TerminalCreateInput, "initialCommand" | "initialCommandTitle" | "service"> = {}) {
+  async function openProjectTab(projectId: string, cwd: string, projectName: string, quiet = false, options: Pick<TerminalCreateInput, "agentId" | "initialCommand" | "initialCommandTitle" | "service"> = {}) {
     try {
       const session = await createTerminal(cwd, projectName, options);
       const terminal = createXTerm(session.id, appearanceTheme, setToast, recordTerminalInputActivity);
