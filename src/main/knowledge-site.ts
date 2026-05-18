@@ -275,15 +275,14 @@ function statusLabel(s: string): string {
 // --- HTML template ---
 
 function buildNav(sources: Sources): string {
-  let nav = `<div class="nav-section"><div class="nav-label">Knowledge</div><a class="nav-link" href="{base}index.html">Home</a></div>`;
+  let nav = `<a class="nav-link" href="{base}index.html">Home</a>`;
   if (sources.docs.length > 0) {
-    nav += `<div class="nav-section"><div class="nav-label">Docs</div><a class="nav-link" href="{base}docs/index.html">Docs</a>`;
+    nav += `<a class="nav-link" href="{base}docs/index.html">Docs</a>`;
     for (const sub of sources.docSubdirs) {
       nav += `<a class="nav-link" href="{base}docs/${sub}/index.html">${esc(sub)}</a>`;
     }
-    nav += `</div>`;
   }
-  nav += `<div class="nav-section"><div class="nav-label">Team</div><a class="nav-link" href="{base}tasks/index.html">Tasks</a></div>`;
+  nav += `<a class="nav-link" href="{base}tasks/index.html">Tasks</a>`;
   return nav;
 }
 
@@ -422,22 +421,9 @@ body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 20px;
+  gap: 4px;
   overflow: auto;
   padding-right: 3px;
-}
-
-.nav-section {
-  display: grid;
-  gap: 6px;
-}
-
-.nav-label {
-  color: var(--muted-soft);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.4;
-  text-transform: uppercase;
 }
 
 .nav-link {
@@ -746,10 +732,6 @@ details[open] > .task-summary::before {
     gap: 14px;
     overflow-x: auto;
     padding: 0 0 2px;
-  }
-
-  .nav-section {
-    align-content: start;
   }
 
   .sidebar-footer {
