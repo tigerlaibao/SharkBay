@@ -1,11 +1,11 @@
 import { readFile, readdir, writeFile, mkdir, stat } from "node:fs/promises";
-import { join, relative, basename, extname } from "node:path";
+import { dirname, join, relative, basename, extname } from "node:path";
 import { createHash } from "node:crypto";
 import { marked } from "marked";
 
 const SITE_DIR = ".sharkbay/site";
 const HASH_FILE = ".sharkbay/site/.content-hash";
-const SITE_TEMPLATE_VERSION = "knowledge-site-ui-v3";
+const SITE_TEMPLATE_VERSION = "knowledge-site-ui-v4";
 
 export type KnowledgeSiteResult = {
   generated: boolean;
@@ -38,62 +38,59 @@ export async function generateKnowledgeSite(repoPath: string): Promise<Knowledge
 
   const nav = buildNav(sources);
   const readmeHtml = sources.readme ? renderMarkdown(sources.readme.content) : "<p>No README.md found.</p>";
-  await writeFile(indexPath, wrapPage("Home", readmeHtml, nav, ""));
+  await writeSiteFile(indexPath, wrapPage("Home", readmeHtml, nav, ""));
 
   for (const doc of sources.docs) {
     const relFromDocs = doc.relativePath.replace(/^docs\//, "");
     const parts = relFromDocs.split("/");
-    const inSubdir = parts.length > 1;
-    const basePrefix = inSubdir ? "../../" : "../";
+    const basePrefix = "../".repeat(parts.length);
+    const outputPath = join(sitePath, "docs", outputRelativePathForDoc(doc));
 
     if (doc.kind === "html") {
-      const outName = relFromDocs;
-      await writeFile(join(sitePath, "docs", outName), doc.content);
+      await writeSiteFile(outputPath, doc.content);
     } else {
-      const slug = basename(doc.relativePath, extname(doc.relativePath));
-      const outName = inSubdir ? join(parts.slice(0, -1).join("/"), `${slug}.html`) : `${slug}.html`;
       const html = renderMarkdown(doc.content);
-      await writeFile(join(sitePath, "docs", outName), wrapPage(doc.title, html, nav, basePrefix));
+      await writeSiteFile(outputPath, wrapPage(doc.title, html, nav, basePrefix));
     }
   }
 
   if (sources.docs.length > 0) {
     const topDocs = sources.docs.filter(d => !d.relativePath.replace(/^docs\//, "").includes("/"));
     let docsIndexHtml = `<h1>Docs</h1>`;
+    if (sources.docSubdirs.length > 0) {
+      docsIndexHtml += `<h2>Sections</h2><div class="docs-section-list">`;
+      for (const sub of sources.docSubdirs) {
+        docsIndexHtml += `<a class="docs-section-row" href="${sub}/index.html"><span>${esc(sub)}</span><small>Open section</small></a>`;
+      }
+      docsIndexHtml += `</div>`;
+    }
     if (topDocs.length > 0) {
-      docsIndexHtml += `<ul>`;
+      docsIndexHtml += `<h2>Documents</h2><ul>`;
       for (const doc of topDocs) {
         const slug = doc.kind === "html" ? basename(doc.relativePath) : basename(doc.relativePath, extname(doc.relativePath)) + ".html";
         docsIndexHtml += `<li><a href="${slug}">${esc(doc.title)}</a></li>`;
       }
       docsIndexHtml += `</ul>`;
     }
-    if (sources.docSubdirs.length > 0) {
-      docsIndexHtml += `<h2>Subdirectories</h2><ul>`;
-      for (const sub of sources.docSubdirs) {
-        docsIndexHtml += `<li><a href="${sub}/index.html">${esc(sub)}</a></li>`;
-      }
-      docsIndexHtml += `</ul>`;
-    }
-    await writeFile(join(sitePath, "docs", "index.html"), wrapPage("Docs", docsIndexHtml, nav, "../"));
+    await writeSiteFile(join(sitePath, "docs", "index.html"), wrapPage("Docs", docsIndexHtml, nav, "../"));
 
     // Generate subdirectory index pages
     for (const sub of sources.docSubdirs) {
       const subDocs = sources.docs.filter(d => d.relativePath.replace(/^docs\//, "").startsWith(sub + "/"));
       let subHtml = `<h1>${esc(sub)}</h1><ul>`;
       for (const doc of subDocs) {
-        const fname = doc.kind === "html" ? basename(doc.relativePath) : basename(doc.relativePath, extname(doc.relativePath)) + ".html";
-        subHtml += `<li><a href="${fname}">${esc(doc.title)}</a></li>`;
+        const href = outputRelativePathForDoc(doc).slice(sub.length + 1);
+        subHtml += `<li><a href="${esc(href)}">${esc(doc.title)}</a></li>`;
       }
       subHtml += `</ul>`;
-      await writeFile(join(sitePath, "docs", sub, "index.html"), wrapPage(sub, subHtml, nav, "../../"));
+      await writeSiteFile(join(sitePath, "docs", sub, "index.html"), wrapPage(sub, subHtml, nav, "../../"));
     }
   }
 
   const tasksHtml = renderTasksPage(sources.tasks);
-  await writeFile(join(sitePath, "tasks", "index.html"), wrapPage("Team Tasks", tasksHtml, nav, "../"));
+  await writeSiteFile(join(sitePath, "tasks", "index.html"), wrapPage("Team Tasks", tasksHtml, nav, "../"));
 
-  await writeFile(join(sitePath, HASH_FILE.split("/").pop()!), currentHash);
+  await writeSiteFile(join(sitePath, HASH_FILE.split("/").pop()!), currentHash);
 
   return { generated: true, sitePath: indexPath };
 }
@@ -110,6 +107,13 @@ export function getKnowledgeSitePath(repoPath: string): string {
 type SourceFile = { relativePath: string; title: string; content: string; kind: "md" | "txt" | "html" };
 type TaskSource = { taskId: string; title: string; status: string; owner: string; createdAt: string; summary: string; raw: string };
 type Sources = { readme: SourceFile | null; docs: SourceFile[]; docSubdirs: string[]; tasks: TaskSource[] };
+
+function outputRelativePathForDoc(doc: SourceFile): string {
+  const relFromDocs = doc.relativePath.replace(/^docs\//, "");
+  if (doc.kind === "html") return relFromDocs;
+  const ext = extname(relFromDocs);
+  return `${relFromDocs.slice(0, -ext.length)}.html`;
+}
 
 async function discoverSources(repoPath: string): Promise<Sources> {
   const readme = await readSourceFile(repoPath, "README.md");
@@ -278,9 +282,6 @@ function buildNav(sources: Sources): string {
   let nav = `<a class="nav-link" href="{base}index.html">Home</a>`;
   if (sources.docs.length > 0) {
     nav += `<a class="nav-link" href="{base}docs/index.html">Docs</a>`;
-    for (const sub of sources.docSubdirs) {
-      nav += `<a class="nav-link" href="{base}docs/${sub}/index.html">${esc(sub)}</a>`;
-    }
   }
   nav += `<a class="nav-link" href="{base}tasks/index.html">Tasks</a>`;
   return nav;
@@ -548,6 +549,42 @@ li + li {
   margin-top: 6px;
 }
 
+.docs-section-list {
+  display: grid;
+  gap: 0;
+  margin-bottom: 24px;
+  border-top: 1px solid var(--hairline);
+}
+
+.docs-section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 4px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.docs-section-row:hover {
+  color: var(--primary-active);
+}
+
+.docs-section-row span {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docs-section-row small {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 blockquote {
   padding: 14px 16px;
   border-left: 3px solid var(--primary);
@@ -798,6 +835,11 @@ async function readPreviousHash(sitePath: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+async function writeSiteFile(filePath: string, content: string): Promise<void> {
+  await mkdir(dirname(filePath), { recursive: true });
+  await writeFile(filePath, content);
 }
 
 function extractTitle(md: string): string | null {
