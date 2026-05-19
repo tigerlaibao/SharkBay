@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SharkBayCoreService } from "../src/core/core-service.js";
 import { LocalProvider } from "../src/providers/local/local-provider.js";
 import { PluginHost } from "../src/plugins/plugin-host.js";
-import { agentBundledPlugin } from "../src/plugins/bundled/agent-detector.js";
+import { agentBundledPlugin, createAgentInstallRecipes } from "../src/plugins/bundled/agent-detector.js";
 import type { CommandResult, RunCommandOptions } from "../src/core/execution-provider.js";
 import type { InstallLogEvent, IpcRuntimeLike, MachineProfile } from "../src/shared/types.js";
 import { makeTestRuntime } from "./helpers.js";
@@ -17,6 +17,7 @@ class InstallTestProvider extends LocalProvider {
   readonly commands: string[] = [];
   platform: MachineProfile["os"]["platform"] = "darwin";
   npmAvailable = true;
+  curlAvailable = true;
 
   override readMachineProfile(_runtime: IpcRuntimeLike, _targetId: string): Promise<MachineProfile> {
     return Promise.resolve({
@@ -26,7 +27,13 @@ class InstallTestProvider extends LocalProvider {
       hostname: "test",
       os: { platform: this.platform, name: "Darwin", version: "1", arch: "arm64", kernel: "1" },
       shell: { path: "/bin/zsh", name: "zsh" },
-      tools: [],
+      tools: [{
+        id: "curl",
+        command: "curl",
+        available: this.curlAvailable,
+        path: this.curlAvailable ? "/usr/bin/curl" : null,
+        version: this.curlAvailable ? "curl 8" : null,
+      }],
       languages: [],
       packageManagers: [{ id: "npm", command: "npm", available: this.npmAvailable, path: this.npmAvailable ? "/usr/bin/npm" : null, version: this.npmAvailable ? "npm 10" : null }],
       agents: [],
@@ -44,6 +51,18 @@ class InstallTestProvider extends LocalProvider {
 }
 
 describe("CoreService installTool", () => {
+  it("has install recipes for every detected bundled agent CLI", () => {
+    expect(createAgentInstallRecipes().map((recipe) => recipe.toolId)).toEqual([
+      "codex",
+      "claude",
+      "gemini",
+      "kiro",
+      "deepseek",
+      "qwen",
+      "opencode",
+    ]);
+  });
+
   it("runs install recipe steps, verifies, and refreshes machine profile", async () => {
     const runtime = await makeTestRuntime("install-tool");
     const provider = new InstallTestProvider();
@@ -69,10 +88,40 @@ describe("CoreService installTool", () => {
     ]));
   });
 
+  it("runs the Kiro script recipe and verifies the detected command", async () => {
+    const runtime = await makeTestRuntime("install-tool-kiro");
+    const provider = new InstallTestProvider();
+    const core = new SharkBayCoreService([provider], pluginHostWithAgentPlugin());
+
+    const result = await core.installTool(runtime, { targetId: "local", recipeId: "kiro.official.script" });
+
+    expect(result).toMatchObject({
+      ok: true,
+      recipeId: "kiro.official.script",
+      targetId: "local",
+      verified: true,
+    });
+    expect(provider.commands).toEqual(expect.arrayContaining([
+      "curl -fsSL https://cli.kiro.dev/install | bash",
+      "'kiro-cli' '--version'",
+    ]));
+  });
+
   it("lists recipes compatible with target kind, OS, and preconditions", async () => {
     const runtime = await makeTestRuntime("install-tool-list");
     const provider = new InstallTestProvider();
     const core = new SharkBayCoreService([provider], pluginHostWithAgentPlugin());
+
+    const allRecipes = await core.listInstallRecipes(runtime, { targetId: "local" });
+    expect(allRecipes.map((recipe) => recipe.toolId)).toEqual([
+      "codex",
+      "claude",
+      "gemini",
+      "kiro",
+      "deepseek",
+      "qwen",
+      "opencode",
+    ]);
 
     const recipes = await core.listInstallRecipes(runtime, { targetId: "local", toolId: "codex" });
     expect(recipes.map((recipe) => recipe.id)).toEqual(["codex.npm.global"]);

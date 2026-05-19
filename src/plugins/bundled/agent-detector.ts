@@ -68,6 +68,22 @@ export function createAgentInstallRecipes(): InstallRecipe[] {
     npmGlobalRecipe("codex", "Install Codex CLI with npm", "npm install -g @openai/codex"),
     npmGlobalRecipe("claude", "Install Claude Code with npm", "npm install -g @anthropic-ai/claude-code"),
     npmGlobalRecipe("gemini", "Install Gemini CLI with npm", "npm install -g @google/gemini-cli"),
+    {
+      id: "kiro.official.script",
+      toolId: "kiro",
+      label: "Install Kiro CLI with official script",
+      targetKinds: ["local", "ssh"],
+      platforms: ["darwin", "linux"],
+      preconditions: [{ tool: "curl", available: true }],
+      steps: [{
+        kind: "command",
+        command: "curl -fsSL https://cli.kiro.dev/install | bash",
+        description: "Install Kiro CLI with official script",
+      }],
+      verification: { command: "kiro-cli", args: ["--version"] },
+    },
+    npmGlobalRecipe("deepseek", "Install DeepSeek TUI with npm", "npm install -g deepseek-tui"),
+    npmGlobalRecipe("qwen", "Install Qwen Code with npm", "npm install -g @qwen-code/qwen-code"),
     npmGlobalRecipe("opencode", "Install OpenCode with npm", "npm install -g opencode-ai"),
   ];
 }
