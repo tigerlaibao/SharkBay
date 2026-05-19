@@ -1,17 +1,15 @@
 import { BrowserWindow, dialog, ipcMain } from "electron";
 import {
+  addConfiguredRoot,
   addConfiguredProject,
-  loadRuntimeConfig,
+  getConfiguredRoots,
+  removeConfiguredRoot,
   removeConfiguredProject,
-  setAppearanceTheme
+  renameProject,
+  removeConfiguredRemoteMachine,
+  setAppearanceTheme,
+  upsertConfiguredRemoteMachine
 } from "../src/main/config.js";
-import { listProjectFiles } from "../src/main/project-files.js";
-import { scanProjects } from "../src/main/scanner.js";
-import { readGitMetadata, readGitHistory, readGitDirtyFiles } from "../src/main/git.js";
-import { TerminalManager } from "../src/main/terminal.js";
-import { assertHarnessInstallable, getMachineId, installHarness, isHarnessInstalled, resolveGitHubIdentity, generateMachineId, checkRepoPermission, uninstallHarness } from "../src/main/teamwork-harness.js";
-import { scanTasks, watchTasks } from "../src/main/teamwork-tasks.js";
-import { deleteTeamContextBranch, hasLocalContextBranch, TeamworkSync } from "../src/main/teamwork-sync.js";
 import type {
   AgentCli,
   AgentProjectStatusEvent,
@@ -25,14 +23,42 @@ import type {
   BrowserResizeInput,
   BrowserSession,
   BrowserUpdateEvent,
+  CreatePortForwardInput,
+  DetectRemotePortsInput,
+  InstallToolInput,
+  InstallToolResult,
+  InstallRecipe,
   KnowledgeSiteResult,
+  ListInstallRecipesInput,
+  DiagnosticsSnapshot,
+  MachineProfile,
+  PathExistsInput,
+  PathExistsResult,
+  ProfileReadOptions,
+  ProjectProfile,
+  ListPortForwardsInput,
+  PortForwardEvent,
   ProjectConfigInput,
+  ProjectScanInput,
   ProjectDetail,
   ProjectFilesInput,
   ProjectFilesResult,
+  ReadFileInput,
+  ReadFileResult,
+  WriteFileInput,
+  WriteFileResult,
+  RemoteDetectedPort,
+  RemoteMachineInput,
+  RemoteMachineTestResult,
+  RemotePortForward,
+  RenameProjectInput,
   RemoveProjectInput,
-  GitHubIdentity,
+  RemovePortForwardInput,
+  RemoveRemoteMachineInput,
+  RemoveRootInput,
+  RootConfigInput,
   ScanProjectsResult,
+  GitHubIdentity,
   TaskViewModel,
   TeamworkGetTasksInput,
   TeamworkInstallInput,
@@ -48,26 +74,58 @@ import type {
   TerminalUpdateEvent
 } from "../src/shared/types.js";
 import { ipcChannels as channels } from "../src/shared/ipc-channels.js";
-import { AgentSessionWatcher, listAvailableAgentClis } from "../src/main/agent-clis.js";
+import { AgentSessionWatcher } from "../src/main/agent-clis.js";
 import { BrowserManager } from "../src/main/browser-tabs.js";
-import { resolveProjectIconSources } from "../src/main/project-icons.js";
+import { PortForwardManager } from "../src/main/port-forwards.js";
+import { readGitMetadata } from "../src/main/git.js";
 import { resolveRepoPath } from "../src/main/path-safety.js";
+import { testRemoteMachineConnection } from "../src/main/remote-machines.js";
+import { createDefaultSecretStore } from "../src/main/secrets.js";
+import { assertHarnessInstallable, checkRepoPermission, generateMachineId, getMachineId, installHarness, isHarnessInstalled, resolveGitHubIdentity, uninstallHarness } from "../src/main/teamwork-harness.js";
+import { deleteTeamContextBranch, hasLocalContextBranch, TeamworkSync } from "../src/main/teamwork-sync.js";
+import { scanTasks, watchTasks } from "../src/main/teamwork-tasks.js";
 import { generateKnowledgeSite, getKnowledgeSitePath } from "../src/main/knowledge-site.js";
-import path from "node:path";
+import { spawnCoreClient, type CoreClient } from "./core-client.js";
+import { setPluginEnabledConfig } from "../src/main/config.js";
+import type { PluginSummary } from "../src/plugins/plugin-host.js";
 
 export type IpcRuntime = {
   userDataPath: string;
+  configPath?: string;
 };
 
 export type IpcCallbacks = {
   onAppearanceThemeChanged?: (theme: AppearanceTheme) => void;
 };
 
-const terminalManager = new TerminalManager();
+const secretStore = createDefaultSecretStore();
+let core: CoreClient | null = null;
 const agentSessionWatcher = new AgentSessionWatcher();
 const browserManager = new BrowserManager();
+const portForwardManager = new PortForwardManager({ secretStore });
 const teamworkSyncInstances = new Map<string, TeamworkSync>();
 const teamworkWatcherCleanups = new Map<string, () => void>();
+
+function requireCore(): CoreClient {
+  if (!core) throw new Error("Core client is not initialized; registerIpcHandlers must complete first");
+  return core;
+}
+
+export function closeAllTerminalSessions(): void {
+  void core?.dispose();
+  browserManager.closeAll();
+  void portForwardManager.closeAll();
+  for (const sync of teamworkSyncInstances.values()) sync.stop();
+  teamworkSyncInstances.clear();
+  for (const cleanup of teamworkWatcherCleanups.values()) cleanup();
+  teamworkWatcherCleanups.clear();
+}
+
+async function resolveTeamworkRepoPath(runtime: IpcRuntime, repoPath: string): Promise<string> {
+  const config = await getConfiguredRoots(runtime);
+  const safe = await resolveRepoPath(repoPath, config.configuredRoots, config.configuredProjects);
+  return safe.repoPath;
+}
 
 async function syncForStatus(repoPath: string, installed: boolean): Promise<TeamworkSync | null> {
   const existing = teamworkSyncInstances.get(repoPath);
@@ -154,39 +212,6 @@ function githubRepoFromRemote(remoteOrigin: string | null): string | null {
   return match?.[1] ?? null;
 }
 
-export function closeAllTerminalSessions(): void {
-  terminalManager.closeAll();
-  browserManager.closeAll();
-  for (const sync of teamworkSyncInstances.values()) sync.stop();
-  teamworkSyncInstances.clear();
-  for (const cleanup of teamworkWatcherCleanups.values()) cleanup();
-  teamworkWatcherCleanups.clear();
-}
-
-async function getProjectDetail(runtime: IpcRuntime, input: { repoPath?: string }): Promise<ProjectDetail> {
-  const config = await loadRuntimeConfig(runtime);
-  const configuredProjects = config.configuredProjects;
-  const safeRepo = await resolveRepoPath(input.repoPath ?? "", configuredProjects);
-  const repoPath = safeRepo.repoPath;
-  const [gitMeta, gitHistory, gitDirtyFiles, iconSources] = await Promise.all([
-    readGitMetadata(repoPath),
-    readGitHistory(repoPath),
-    readGitDirtyFiles(repoPath),
-    resolveProjectIconSources(repoPath, [safeRepo.containingRoot]),
-  ]);
-  return {
-    id: repoPath,
-    name: path.basename(repoPath),
-    path: repoPath,
-    iconSources,
-    repoUrl: gitMeta.remoteOrigin,
-    currentBranch: gitMeta.currentBranch,
-    dirtyWorktree: gitMeta.dirtyWorktree,
-    gitHistory,
-    gitDirtyFiles,
-  };
-}
-
 function handle<Payload, Result>(
   channel: string,
   callback: (payload: Payload) => Promise<Result>
@@ -195,28 +220,40 @@ function handle<Payload, Result>(
   ipcMain.handle(channel, (_event, payload: Payload) => callback(payload));
 }
 
-export function registerIpcHandlers(
+export async function registerIpcHandlers(
   runtime: IpcRuntime,
   callbacks: IpcCallbacks = {}
-): void {
-  terminalManager.removeAllListeners("data");
-  terminalManager.removeAllListeners("update");
-  terminalManager.removeAllListeners("exit");
+): Promise<void> {
+  if (!core) {
+    core = await spawnCoreClient();
+    const config = await getConfiguredRoots(runtime);
+    await core.call("applyDisabledPlugins", [config.disabledPluginIds ?? []]);
+  } else {
+    core.removeAllListeners("terminalData");
+    core.removeAllListeners("terminalUpdate");
+    core.removeAllListeners("terminalExit");
+  }
   agentSessionWatcher.removeAllListeners("status");
   browserManager.removeAllListeners("update");
-  terminalManager.on("data", (event) => {
+  portForwardManager.removeAllListeners("update");
+  core.on("terminalData", (event) => {
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send(channels.terminalData, event);
     });
   });
-  terminalManager.on("update", (event: TerminalUpdateEvent) => {
+  core.on("terminalUpdate", (event: TerminalUpdateEvent) => {
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send(channels.terminalUpdate, event);
     });
   });
-  terminalManager.on("exit", (event) => {
+  core.on("terminalExit", (event) => {
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send(channels.terminalExit, event);
+    });
+  });
+  core.on("installLog", (event) => {
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.webContents.send(channels.installLog, event);
     });
   });
   agentSessionWatcher.on("status", (event: AgentProjectStatusEvent) => {
@@ -230,10 +267,49 @@ export function registerIpcHandlers(
       window.webContents.send(channels.browserUpdate, event);
     });
   });
+  portForwardManager.on("update", (event: PortForwardEvent) => {
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.webContents.send(channels.portForwardUpdate, event);
+    });
+  });
 
-  handle<void, AppConfig>(channels.listConfig, () => loadRuntimeConfig(runtime));
+  handle<void, AppConfig>(channels.listRoots, () => getConfiguredRoots(runtime));
+  handle<RootConfigInput, AppConfig>(channels.addRoot, (payload) => addConfiguredRoot(runtime, payload));
+  handle<RemoveRootInput, AppConfig>(channels.removeRoot, (payload) => removeConfiguredRoot(runtime, payload));
   handle<ProjectConfigInput, AppConfig>(channels.addProject, (payload) => addConfiguredProject(runtime, payload));
   handle<RemoveProjectInput, AppConfig>(channels.removeProject, (payload) => removeConfiguredProject(runtime, payload));
+  handle<RenameProjectInput, AppConfig>(channels.renameProject, (payload) => renameProject(runtime, payload));
+  handle<RemoteMachineInput, AppConfig>(channels.addRemoteMachine, async (payload) => {
+    const result = await upsertConfiguredRemoteMachine(runtime, payload);
+    if (payload.password && result.machine.passwordSecretId) {
+      await secretStore.set(result.machine.passwordSecretId, payload.password);
+      result.machine.hasPassword = true;
+    }
+    return result.config;
+  });
+  handle<RemoveRemoteMachineInput, AppConfig>(channels.removeRemoteMachine, async (payload) => {
+    const config = await getConfiguredRoots(runtime);
+    const machine = config.configuredRemoteMachines.find((item) => item.id === payload.id);
+    const nextConfig = await removeConfiguredRemoteMachine(runtime, payload);
+    if (machine?.passwordSecretId) await secretStore.delete(machine.passwordSecretId);
+    return nextConfig;
+  });
+  handle<{ id: string } | RemoteMachineInput, RemoteMachineTestResult>(channels.testRemoteMachine, (payload) =>
+    testRemoteMachineConnection(runtime, payload, undefined, secretStore)
+  );
+  handle<ListPortForwardsInput | undefined, RemotePortForward[]>(channels.listPortForwards, (payload) =>
+    Promise.resolve(portForwardManager.list(payload?.machineId))
+  );
+  handle<DetectRemotePortsInput, RemoteDetectedPort[]>(channels.detectRemotePorts, (payload) =>
+    portForwardManager.detect(runtime, payload)
+  );
+  handle<CreatePortForwardInput, RemotePortForward>(channels.createPortForward, (payload) =>
+    portForwardManager.create(runtime, payload)
+  );
+  handle<RemovePortForwardInput, { ok: true }>(channels.removePortForward, async (payload) => {
+    await portForwardManager.remove(payload);
+    return { ok: true };
+  });
   ipcMain.removeHandler(channels.pickProjectFolder);
   ipcMain.handle(channels.pickProjectFolder, async (event) => {
     const window = BrowserWindow.fromWebContents(event.sender);
@@ -251,16 +327,49 @@ export function registerIpcHandlers(
       return config;
     })
   );
-  handle<void, ScanProjectsResult>(channels.scanProjects, () =>
-    scanProjects(runtime)
+  handle<ProjectScanInput | undefined, ScanProjectsResult>(channels.scanProjects, (payload) =>
+    requireCore().call("scanProjects", [runtime, payload])
   );
-  handle<{ repoPath?: string }, ProjectDetail>(channels.getProjectDetail, (payload) =>
-    getProjectDetail(runtime, payload)
+  handle<{ projectUri: string }, ProjectDetail>(channels.getProjectDetail, (payload) =>
+    requireCore().call("getProjectDetail", [runtime, payload])
   );
-  handle<ProjectFilesInput, ProjectFilesResult>(channels.listProjectFiles, async (payload) => {
-    return listProjectFiles(runtime, payload);
+  handle<ProjectFilesInput, ProjectFilesResult>(channels.listProjectFiles, (payload) =>
+    requireCore().call("listProjectFiles", [runtime, payload])
+  );
+  handle<ReadFileInput, ReadFileResult>(channels.readProjectFile, (payload) =>
+    requireCore().call("readProjectFile", [runtime, payload])
+  );
+  handle<WriteFileInput, WriteFileResult>(channels.writeProjectFile, (payload) =>
+    requireCore().call("writeProjectFile", [runtime, payload])
+  );
+  handle<{ cwdUri?: string } | undefined, AgentCli[]>(channels.listAgentClis, (payload) =>
+    requireCore().call("listAgentClis", [runtime, payload])
+  );
+  handle<ListInstallRecipesInput, InstallRecipe[]>(channels.listInstallRecipes, (payload) =>
+    requireCore().call("listInstallRecipes", [runtime, payload])
+  );
+  handle<InstallToolInput, InstallToolResult>(channels.installTool, (payload) =>
+    requireCore().call("installTool", [runtime, payload])
+  );
+  handle<{ targetId: string; options?: ProfileReadOptions }, MachineProfile>(channels.readMachineProfile, (payload) =>
+    requireCore().call("readMachineProfile", [runtime, payload.targetId, payload.options])
+  );
+  handle<{ projectUri: string; options?: ProfileReadOptions }, ProjectProfile>(channels.readProjectProfile, (payload) =>
+    requireCore().call("readProjectProfile", [runtime, payload.projectUri, payload.options])
+  );
+  handle<PathExistsInput, PathExistsResult>(channels.pathExistsOnTarget, (payload) =>
+    requireCore().call("pathExistsOnTarget", [runtime, payload])
+  );
+  handle<void, PluginSummary[]>(channels.listPlugins, () =>
+    requireCore().call("listPlugins", [])
+  );
+  handle<{ pluginId: string; enabled: boolean }, PluginSummary[]>(channels.setPluginEnabled, async (payload) => {
+    await setPluginEnabledConfig(runtime, payload.pluginId, payload.enabled);
+    return requireCore().call("setPluginEnabled", [payload.pluginId, payload.enabled]);
   });
-  handle<void, AgentCli[]>(channels.listAgentClis, () => listAvailableAgentClis());
+  handle<void, DiagnosticsSnapshot>(channels.readDiagnostics, () =>
+    requireCore().call("readDiagnostics", [])
+  );
   ipcMain.removeHandler(channels.createBrowser);
   ipcMain.handle(channels.createBrowser, (event, payload: BrowserCreateInput) => {
     const window = BrowserWindow.fromWebContents(event.sender);
@@ -288,30 +397,26 @@ export function registerIpcHandlers(
     Promise.resolve(browserManager.reload(payload))
   );
   handle<TerminalCreateInput, TerminalSession>(channels.createTerminal, (payload) =>
-    terminalManager.create(runtime, payload)
+    requireCore().call("createTerminal", [runtime, payload])
   );
-  handle<TerminalInput, TerminalSession>(channels.terminalInput, (payload) =>
-    Promise.resolve(terminalManager.input(payload))
+  handle<TerminalInput, TerminalSession | null>(channels.terminalInput, (payload) =>
+    requireCore().call("inputTerminal", [payload])
   );
-  handle<TerminalResizeInput, TerminalSession>(channels.resizeTerminal, (payload) =>
-    Promise.resolve(terminalManager.resize(payload))
+  handle<TerminalResizeInput, TerminalSession | null>(channels.resizeTerminal, (payload) =>
+    requireCore().call("resizeTerminal", [payload])
   );
-  handle<TerminalCloseInput, TerminalSession>(channels.closeTerminal, (payload) =>
-    Promise.resolve(terminalManager.close(payload))
+  handle<TerminalCloseInput, TerminalSession | null>(channels.closeTerminal, (payload) =>
+    requireCore().call("closeTerminal", [payload])
   );
 
-  // Teamwork handlers
   handle<TeamworkGetTasksInput, TaskViewModel[]>(channels.teamworkGetTasks, async (payload) => {
-    const config = await loadRuntimeConfig(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
-    const repoPath = safe.repoPath;
+    const repoPath = await resolveTeamworkRepoPath(runtime, payload.repoPath);
     const tasks = await scanTasks(repoPath);
-    // Start watcher if not already running
     if (!teamworkWatcherCleanups.has(repoPath)) {
       const cleanup = watchTasks(repoPath, (updated) => {
         const event: TeamworkTasksChangedEvent = { repoPath, tasks: updated };
-        BrowserWindow.getAllWindows().forEach((w) => {
-          w.webContents.send(channels.teamworkTasksChanged, event);
+        BrowserWindow.getAllWindows().forEach((window) => {
+          window.webContents.send(channels.teamworkTasksChanged, event);
         });
       });
       teamworkWatcherCleanups.set(repoPath, cleanup);
@@ -320,31 +425,24 @@ export function registerIpcHandlers(
   });
 
   handle<{ repoPath: string }, TeamworkStatus>(channels.teamworkGetStatus, async (payload) => {
-    const config = await loadRuntimeConfig(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
-    return getTeamworkStatus(safe.repoPath);
+    const repoPath = await resolveTeamworkRepoPath(runtime, payload.repoPath);
+    return getTeamworkStatus(repoPath);
   });
 
-  handle<void, GitHubIdentity>(channels.teamworkResolveIdentity, async () => {
-    return resolveGitHubIdentity();
-  });
+  handle<void, GitHubIdentity>(channels.teamworkResolveIdentity, async () => resolveGitHubIdentity());
 
   handle<TeamworkInstallInput, TeamworkStatus>(channels.teamworkInstall, async (payload) => {
-    const config = await loadRuntimeConfig(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
-    return installTeamwork(safe.repoPath);
+    const repoPath = await resolveTeamworkRepoPath(runtime, payload.repoPath);
+    return installTeamwork(repoPath);
   });
 
   handle<{ repoPath: string }, TeamworkStatus>(channels.teamworkEnable, async (payload) => {
-    const config = await loadRuntimeConfig(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
-    return installTeamwork(safe.repoPath);
+    const repoPath = await resolveTeamworkRepoPath(runtime, payload.repoPath);
+    return installTeamwork(repoPath);
   });
 
   handle<TeamworkUninstallInput, TeamworkUninstallResult>(channels.teamworkUninstall, async (payload) => {
-    const config = await loadRuntimeConfig(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
-    const repoPath = safe.repoPath;
+    const repoPath = await resolveTeamworkRepoPath(runtime, payload.repoPath);
     const sync = teamworkSyncInstances.get(repoPath);
     sync?.stop();
     teamworkSyncInstances.delete(repoPath);
@@ -360,16 +458,14 @@ export function registerIpcHandlers(
     cleanup?.();
     teamworkWatcherCleanups.delete(repoPath);
     const event: TeamworkTasksChangedEvent = { repoPath, tasks: [] };
-    BrowserWindow.getAllWindows().forEach((w) => {
-      w.webContents.send(channels.teamworkTasksChanged, event);
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.webContents.send(channels.teamworkTasksChanged, event);
     });
     return { ...result, contextBranchDeleted };
   });
 
   handle<{ repoPath: string }, void>(channels.teamworkSyncNow, async (payload) => {
-    const config = await loadRuntimeConfig(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
-    const repoPath = safe.repoPath;
+    const repoPath = await resolveTeamworkRepoPath(runtime, payload.repoPath);
     let sync = teamworkSyncInstances.get(repoPath);
     if (!sync) {
       sync = new TeamworkSync(repoPath);
@@ -379,16 +475,13 @@ export function registerIpcHandlers(
     await sync.syncOnce();
   });
 
-  // Knowledge Site handlers
   handle<{ repoPath: string }, KnowledgeSiteResult>(channels.knowledgeSiteGenerate, async (payload) => {
-    const config = await loadRuntimeConfig(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
-    return generateKnowledgeSite(safe.repoPath);
+    const repoPath = await resolveTeamworkRepoPath(runtime, payload.repoPath);
+    return generateKnowledgeSite(repoPath);
   });
 
   handle<{ repoPath: string }, string>(channels.knowledgeSiteGetPath, async (payload) => {
-    const config = await loadRuntimeConfig(runtime);
-    const safe = await resolveRepoPath(payload.repoPath, config.configuredProjects);
-    return getKnowledgeSitePath(safe.repoPath);
+    const repoPath = await resolveTeamworkRepoPath(runtime, payload.repoPath);
+    return getKnowledgeSitePath(repoPath);
   });
 }

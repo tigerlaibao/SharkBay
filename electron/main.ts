@@ -116,7 +116,9 @@ function createMainWindow(): BrowserWindow {
     void window.loadFile(join(currentDir, "../../dist/renderer/index.html"));
   } else {
     void window.loadURL(devServerUrl);
-    window.webContents.openDevTools({ mode: "detach" });
+    if (process.env.SHARKBAY_OPEN_DEVTOOLS === "1") {
+      window.webContents.openDevTools({ mode: "detach" });
+    }
   }
 
   return window;
@@ -125,11 +127,12 @@ function createMainWindow(): BrowserWindow {
 app.whenReady().then(async () => {
   const runtime = {
     userDataPath: app.getPath("userData"),
+    configPath: process.env.SHARKBAY_CONFIG_PATH,
   };
   const config = await loadAppConfig(getRuntimeConfigPath(runtime));
   appearanceTheme = config.appearanceTheme;
 
-  registerIpcHandlers(runtime, {
+  await registerIpcHandlers(runtime, {
     onAppearanceThemeChanged: setAppearanceTheme,
   });
 

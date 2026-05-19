@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { appChannels } from "../src/shared/app-events.js";
 import { ipcChannels as channels } from "../src/shared/ipc-channels.js";
+import type { PluginSummary } from "../src/plugins/plugin-host.js";
 import type {
   AgentCli,
   AgentProjectStatusEvent,
@@ -13,21 +14,43 @@ import type {
   BrowserResizeInput,
   BrowserSession,
   BrowserUpdateEvent,
+  CreatePortForwardInput,
+  DetectRemotePortsInput,
+  InstallToolInput,
+  InstallToolResult,
+  InstallRecipe,
   KnowledgeSiteResult,
+  ListInstallRecipesInput,
+  DiagnosticsSnapshot,
+  InstallLogEvent,
+  ListPortForwardsInput,
+  MachineProfile,
+  PathExistsInput,
+  PathExistsResult,
+  PortForwardEvent,
+  ProfileReadOptions,
   ProjectConfigInput,
+  ProjectProfile,
+  ProjectScanInput,
   ProjectDetail,
   ProjectFilesInput,
   ProjectFilesResult,
+  ReadFileInput,
+  ReadFileResult,
+  WriteFileInput,
+  WriteFileResult,
+  RemoteDetectedPort,
+  RemoteMachineInput,
+  RemoteMachineTestResult,
+  RemotePortForward,
+  RenameProjectInput,
   RemoveProjectInput,
+  RemovePortForwardInput,
+  RemoveRemoteMachineInput,
+  RemoveRootInput,
+  RootConfigInput,
   ScanProjectsResult,
   TaskViewModel,
-  TeamworkGetTasksInput,
-  TeamworkInstallInput,
-  TeamworkStatus,
-  TeamworkTasksChangedEvent,
-  TeamworkUninstallInput,
-  TeamworkUninstallResult,
-  GitHubIdentity,
   TerminalCloseInput,
   TerminalCreateInput,
   TerminalDataEvent,
@@ -35,7 +58,14 @@ import type {
   TerminalInput,
   TerminalResizeInput,
   TerminalSession,
-  TerminalUpdateEvent
+  TerminalUpdateEvent,
+  TeamworkGetTasksInput,
+  TeamworkInstallInput,
+  TeamworkStatus,
+  TeamworkTasksChangedEvent,
+  TeamworkUninstallInput,
+  TeamworkUninstallResult,
+  GitHubIdentity
 } from "../src/shared/types.js";
 
 const openSettingsListeners = new Set<() => void>();
@@ -65,16 +95,24 @@ const sharkBayApi = {
     }
   },
   config: {
-    listConfig: () => invoke<AppConfig>(channels.listConfig),
+    listRoots: () => invoke<AppConfig>(channels.listRoots),
+    addRoot: (input: RootConfigInput) => invoke<AppConfig>(channels.addRoot, input),
+    removeRoot: (input: RemoveRootInput) => invoke<AppConfig>(channels.removeRoot, input),
     addProject: (input: ProjectConfigInput) => invoke<AppConfig>(channels.addProject, input),
     removeProject: (input: RemoveProjectInput) => invoke<AppConfig>(channels.removeProject, input),
+    renameProject: (input: RenameProjectInput) => invoke<AppConfig>(channels.renameProject, input),
+    addRemoteMachine: (input: RemoteMachineInput) => invoke<AppConfig>(channels.addRemoteMachine, input),
+    removeRemoteMachine: (input: RemoveRemoteMachineInput) => invoke<AppConfig>(channels.removeRemoteMachine, input),
+    testRemoteMachine: (input: { id: string } | RemoteMachineInput) => invoke<RemoteMachineTestResult>(channels.testRemoteMachine, input),
     pickProjectFolder: () => invoke<{ cancelled: boolean; paths: string[] }>(channels.pickProjectFolder),
     setAppearanceTheme: (input: AppearanceThemeInput) => invoke<AppConfig>(channels.setAppearanceTheme, input)
   },
   projects: {
-    scan: () => invoke<ScanProjectsResult>(channels.scanProjects),
-    getDetail: (input: { repoPath: string }) => invoke<ProjectDetail>(channels.getProjectDetail, input),
-    listFiles: (input: ProjectFilesInput) => invoke<ProjectFilesResult>(channels.listProjectFiles, input)
+    scan: (input?: ProjectScanInput) => invoke<ScanProjectsResult>(channels.scanProjects, input),
+    getDetail: (input: { projectUri: string }) => invoke<ProjectDetail>(channels.getProjectDetail, input),
+    listFiles: (input: ProjectFilesInput) => invoke<ProjectFilesResult>(channels.listProjectFiles, input),
+    readFile: (input: ReadFileInput) => invoke<ReadFileResult>(channels.readProjectFile, input),
+    writeFile: (input: WriteFileInput) => invoke<WriteFileResult>(channels.writeProjectFile, input)
   },
   terminal: {
     create: (input: TerminalCreateInput) => invoke<TerminalSession>(channels.createTerminal, input),
@@ -112,12 +150,35 @@ const sharkBayApi = {
     }
   },
   agents: {
-    listClis: () => invoke<AgentCli[]>(channels.listAgentClis),
+    listClis: (input?: { cwdUri?: string }) => invoke<AgentCli[]>(channels.listAgentClis, input),
+    listInstallRecipes: (input: ListInstallRecipesInput) => invoke<InstallRecipe[]>(channels.listInstallRecipes, input),
+    installTool: (input: InstallToolInput) => invoke<InstallToolResult>(channels.installTool, input),
     onStatus: (callback: (event: AgentProjectStatusEvent) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: AgentProjectStatusEvent) => callback(payload);
       ipcRenderer.on(channels.agentStatus, listener);
       return () => ipcRenderer.removeListener(channels.agentStatus, listener);
+    },
+    onInstallLog: (callback: (event: InstallLogEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: InstallLogEvent) => callback(payload);
+      ipcRenderer.on(channels.installLog, listener);
+      return () => ipcRenderer.removeListener(channels.installLog, listener);
     }
+  },
+  profiles: {
+    readMachine: (input: { targetId: string; options?: ProfileReadOptions }) =>
+      invoke<MachineProfile>(channels.readMachineProfile, input),
+    readProject: (input: { projectUri: string; options?: ProfileReadOptions }) =>
+      invoke<ProjectProfile>(channels.readProjectProfile, input)
+  },
+  targets: {
+    pathExists: (input: PathExistsInput) => invoke<PathExistsResult>(channels.pathExistsOnTarget, input)
+  },
+  plugins: {
+    list: () => invoke<PluginSummary[]>(channels.listPlugins),
+    setEnabled: (input: { pluginId: string; enabled: boolean }) => invoke<PluginSummary[]>(channels.setPluginEnabled, input)
+  },
+  diagnostics: {
+    read: () => invoke<DiagnosticsSnapshot>(channels.readDiagnostics)
   },
   teamwork: {
     getTasks: (input: TeamworkGetTasksInput) => invoke<TaskViewModel[]>(channels.teamworkGetTasks, input),
@@ -135,7 +196,18 @@ const sharkBayApi = {
   },
   knowledgeSite: {
     generate: (input: { repoPath: string }) => invoke<KnowledgeSiteResult>(channels.knowledgeSiteGenerate, input),
-    getPath: (input: { repoPath: string }) => invoke<string>(channels.knowledgeSiteGetPath, input),
+    getPath: (input: { repoPath: string }) => invoke<string>(channels.knowledgeSiteGetPath, input)
+  },
+  portForwards: {
+    list: (input?: ListPortForwardsInput) => invoke<RemotePortForward[]>(channels.listPortForwards, input),
+    detect: (input: DetectRemotePortsInput) => invoke<RemoteDetectedPort[]>(channels.detectRemotePorts, input),
+    create: (input: CreatePortForwardInput) => invoke<RemotePortForward>(channels.createPortForward, input),
+    remove: (input: RemovePortForwardInput) => invoke<{ ok: true }>(channels.removePortForward, input),
+    onUpdate: (callback: (event: PortForwardEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: PortForwardEvent) => callback(payload);
+      ipcRenderer.on(channels.portForwardUpdate, listener);
+      return () => ipcRenderer.removeListener(channels.portForwardUpdate, listener);
+    }
   }
 };
 
