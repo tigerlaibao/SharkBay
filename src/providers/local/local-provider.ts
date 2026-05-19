@@ -10,6 +10,7 @@ import { readGitDirtyFiles, readGitHistory, readGitMetadata } from "../../main/g
 import { listProjectFiles } from "../../main/project-files.js";
 import { scanProjects } from "../../main/scanner.js";
 import { TerminalManager } from "../../main/terminal.js";
+import { resolveCommandPath } from "../../main/command-path.js";
 import type {
   ExecutionTarget,
   GitDirtyFile,
@@ -48,6 +49,7 @@ import {
 import { parseProjectUri } from "../../core/project-uri.js";
 
 const execFileAsync = promisify(execFile);
+type CommandPathResolver = (command: string) => Promise<string | null>;
 
 export class LocalProvider extends EventEmitter implements ExecutionProvider {
   readonly id = "local";
@@ -56,7 +58,7 @@ export class LocalProvider extends EventEmitter implements ExecutionProvider {
 
   private readonly terminalManager: TerminalManager;
 
-  constructor(terminalManager = new TerminalManager()) {
+  constructor(terminalManager = new TerminalManager(), private readonly commandPathResolver: CommandPathResolver = resolveCommandPath) {
     super();
     this.terminalManager = terminalManager;
     this.terminalManager.on("data", (event) => this.emit("terminalData", event));
@@ -116,10 +118,7 @@ export class LocalProvider extends EventEmitter implements ExecutionProvider {
     return {
       target,
       run: (command, options) => this.runCommand(runtime, targetId, command, options),
-      which: async (command) => {
-        const result = await this.runCommand(runtime, targetId, `command -v ${shellQuote(command)}`, { timeoutMs: 3000 }).catch(() => null);
-        return result?.stdout.trim().split(/\r?\n/u)[0] || null;
-      },
+      which: (command) => this.commandPathResolver(command),
       readTextFile: (filePath, options) => readTextFile(filePath, options),
     };
   }

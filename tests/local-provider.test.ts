@@ -34,4 +34,13 @@ describe("LocalProvider", () => {
       vcs: { type: "none" },
     });
   });
+
+  it("uses the shared command path resolver for machine probe lookup", async () => {
+    const runtime = await makeTestRuntime("local-provider-which");
+    const provider = new LocalProvider(undefined, async (command) => command === "opencode" ? "/Users/test/.opencode/bin/opencode" : null);
+
+    const ctx = await provider.createMachineProbeContext(runtime, "local");
+
+    await expect(ctx.which("opencode")).resolves.toBe("/Users/test/.opencode/bin/opencode");
+  });
 });

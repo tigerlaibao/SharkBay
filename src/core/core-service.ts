@@ -100,7 +100,7 @@ export class SharkBayCoreService extends EventEmitter<SharkBayCoreServiceEvents>
 
   async listAgentClis(runtime: IpcRuntimeLike, input?: { cwdUri?: string }): Promise<AgentCli[]> {
     const targetId = input?.cwdUri ? parseProjectUri(input.cwdUri).targetId : "local";
-    const profile = await this.readMachineProfile(runtime, targetId);
+    const profile = await this.readMachineProfile(runtime, targetId, targetId === "local" ? { refresh: true } : undefined);
     return profile.agents
       .filter((agent) => agent.available)
       .map((agent) => ({

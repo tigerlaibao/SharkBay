@@ -48,7 +48,7 @@ export function createAgentMachineDetector(): MachineDetector {
     async run(ctx) {
       const agents = await Promise.all(agentDefinitions.map(async (agent): Promise<ToolProfile> => {
         const executablePath = await ctx.which(agent.command);
-        const version = executablePath ? await readVersion(ctx, agent.command) : null;
+        const version = executablePath ? await readVersion(ctx, executablePath) : null;
         return {
           id: agent.id,
           command: agent.command,
@@ -72,8 +72,8 @@ export function createAgentInstallRecipes(): InstallRecipe[] {
   ];
 }
 
-async function readVersion(ctx: Parameters<MachineDetector["run"]>[0], command: string): Promise<string | null> {
-  const result = await ctx.run(`${shellQuote(command)} --version 2>/dev/null || true`, { timeoutMs: 3000 }).catch(() => null);
+async function readVersion(ctx: Parameters<MachineDetector["run"]>[0], executablePath: string): Promise<string | null> {
+  const result = await ctx.run(`${shellQuote(executablePath)} --version 2>/dev/null || true`, { timeoutMs: 3000 }).catch(() => null);
   const firstLine = result?.stdout.trim().split(/\r?\n/u)[0]?.trim();
   return firstLine || null;
 }
