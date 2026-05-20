@@ -31,6 +31,14 @@ interface CompletedTask {
   filename: string;
   completedAt: string;
   content: string;
+  targetPath?: string;
+}
+
+interface RemoteTask {
+  taskId: string;
+  path: string;
+  content: string;
+  updatedAtMs: number;
 }
 
 export class TeamworkSync {
@@ -106,16 +114,12 @@ export class TeamworkSync {
       // 2. Refresh mirror
       await this.refreshMirrorFromRemote();
 
-      // 3+4. Find completed local tasks not in mirror
-      const remoteFiles = await this.listRemoteFiles();
-      const pending = await this.findPendingTasks(remoteFiles);
-      this.pendingCount = pending.length;
-
-      // 5+6. Push pending tasks with retry
+      // 3+4. Find completed local tasks that are missing remotely or newer
+      // than the remote copy, then push with retry.
+      const pushedTasks = await this.pushPendingTasksWithRetry();
       const pushed: string[] = [];
-      if (pending.length > 0) {
-        await this.pushTasksWithRetry(pending);
-        pushed.push(...pending.map((t) => t.taskId));
+      if (pushedTasks.length > 0) {
+        pushed.push(...pushedTasks.map((t) => t.taskId));
         // 7. Refresh mirror again after successful push
         await this.refreshMirrorFromRemote();
       }
@@ -173,15 +177,7 @@ export class TeamworkSync {
       return [];
     }
 
-    // Extract full taskId from remote filenames (everything before the slug)
-    // Filename format: <taskTag>-u<userId>-m<machineId>-<slug>.md
-    // taskId is: <taskTag>-u<userId>-m<machineId>
-    const remoteTaskIds = new Set<string>();
-    for (const f of remoteFiles) {
-      const basename = f.split("/").pop()?.replace(/\.md$/, "") ?? "";
-      const taskId = extractTaskId(basename);
-      if (taskId) remoteTaskIds.add(taskId);
-    }
+    const remoteTasks = await this.readRemoteTasks(remoteFiles);
 
     const pending: CompletedTask[] = [];
     for (const entry of entries) {
@@ -189,27 +185,45 @@ export class TeamworkSync {
       const basename = entry.replace(/\.md$/, "");
       const taskId = extractTaskId(basename);
       if (!taskId) continue;
-      if (remoteTaskIds.has(taskId)) continue;
       const content = await readFile(join(tasksDir, entry), "utf-8");
-      const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-      if (!fmMatch) continue;
-      const hasCompleted = fmMatch[1]!.split("\n").some((l) => l.startsWith("status:") && l.includes("completed"));
-      if (!hasCompleted) continue;
-      pending.push({ taskId, filename: entry, completedAt: new Date().toISOString(), content });
+      const frontmatter = parseTaskFrontmatter(content);
+      if (!frontmatter || frontmatter["status"] !== "completed") continue;
+
+      const remote = remoteTasks.get(taskId);
+      if (remote && normalizeTaskContent(remote.content) === normalizeTaskContent(content)) continue;
+
+      const localUpdatedAtMs = taskUpdatedAtMs(frontmatter);
+      if (remote && !shouldPushLocalTask(localUpdatedAtMs, remote)) continue;
+
+      pending.push({
+        taskId,
+        filename: entry,
+        completedAt: taskCompletedAt(frontmatter),
+        content,
+        targetPath: remote?.path,
+      });
     }
     return pending;
   }
 
-  private async pushTasksWithRetry(tasks: CompletedTask[]): Promise<void> {
+  private async pushPendingTasksWithRetry(): Promise<CompletedTask[]> {
     for (let attempt = 0; attempt < MAX_PUSH_RETRIES; attempt++) {
+      const remoteFiles = await this.listRemoteFiles();
+      const tasks = await this.findPendingTasks(remoteFiles);
+      this.pendingCount = tasks.length;
+      if (tasks.length === 0) return [];
+
       try {
         await this.pushTasks(tasks);
-        return;
+        this.pendingCount = 0;
+        return tasks;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes("rejected") || msg.includes("non-fast-forward")) {
-          // Fetch and retry
+          // Fetch and recompute pending tasks; another agent may have pushed a
+          // newer copy while this sync was preparing its tree.
           await this.fetch();
+          await this.refreshMirrorFromRemote();
           continue;
         }
         throw e;
@@ -230,11 +244,11 @@ export class TeamworkSync {
       }
 
       for (const task of tasks) {
-        const date = new Date(task.completedAt);
+        const date = parseDateOrNow(task.completedAt);
         const yyyy = date.getFullYear().toString();
         const mm = (date.getMonth() + 1).toString().padStart(2, "0");
         const blobHash = await this.git(["hash-object", "-w", "--stdin"], task.content);
-        const path = `${TASKS_PREFIX}${yyyy}/${mm}/${task.filename}`;
+        const path = task.targetPath ?? `${TASKS_PREFIX}${yyyy}/${mm}/${task.filename}`;
         await this.gitEnv(["update-index", "--add", "--cacheinfo", `100644,${blobHash},${path}`], env);
       }
 
@@ -283,6 +297,26 @@ export class TeamworkSync {
     const { stdout } = await execFileAsync("git", ["-C", this.repoPath, ...args], { timeout: 15_000, maxBuffer: 4 * 1024 * 1024, env });
     return stdout.trimEnd();
   }
+
+  private async readRemoteTasks(remoteFiles: string[]): Promise<Map<string, RemoteTask>> {
+    const remoteTasks = new Map<string, RemoteTask>();
+    for (const path of remoteFiles) {
+      const basename = path.split("/").pop()?.replace(/\.md$/, "") ?? "";
+      const filenameTaskId = extractTaskId(basename);
+      if (!filenameTaskId) continue;
+
+      const content = await this.git(["show", `${REMOTE_REF}:${path}`]);
+      const frontmatter = parseTaskFrontmatter(content) ?? {};
+      const taskId = frontmatter["taskId"] || filenameTaskId;
+      remoteTasks.set(taskId, {
+        taskId,
+        path,
+        content,
+        updatedAtMs: taskUpdatedAtMs(frontmatter),
+      });
+    }
+    return remoteTasks;
+  }
 }
 
 export async function hasLocalContextBranch(repoPath: string): Promise<boolean> {
@@ -314,4 +348,50 @@ export async function deleteTeamContextBranch(repoPath: string): Promise<boolean
 function extractTaskId(basename: string): string | null {
   const match = basename.match(/^([A-Z0-9]{6}-u\d+-m[A-Za-z0-9]+)(?:-|$)/);
   return match?.[1] ?? null;
+}
+
+function parseTaskFrontmatter(content: string): Record<string, string> | null {
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return null;
+
+  const result: Record<string, string> = {};
+  for (const line of match[1]!.split("\n")) {
+    const idx = line.indexOf(":");
+    if (idx <= 0) continue;
+    const key = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+    result[key] = value;
+  }
+  return result;
+}
+
+function shouldPushLocalTask(localUpdatedAtMs: number, remote: RemoteTask): boolean {
+  return localUpdatedAtMs > remote.updatedAtMs;
+}
+
+function taskCompletedAt(frontmatter: Record<string, string>): string {
+  return frontmatter["completedAt"] || frontmatter["updatedAt"] || frontmatter["createdAt"] || new Date().toISOString();
+}
+
+function taskUpdatedAtMs(frontmatter: Record<string, string>): number {
+  return Math.max(
+    timestamp(frontmatter["updatedAt"]),
+    timestamp(frontmatter["completedAt"]),
+    timestamp(frontmatter["createdAt"]),
+  );
+}
+
+function timestamp(value?: string): number {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function parseDateOrNow(value: string): Date {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+}
+
+function normalizeTaskContent(content: string): string {
+  return content.replace(/\r\n/g, "\n").trimEnd();
 }
