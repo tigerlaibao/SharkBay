@@ -483,6 +483,7 @@ actor: ${opts.githubLogin}
 githubUserId: ${opts.githubUserId}
 machine: ${opts.machineId}
 agent: # e.g. Codex GPT-5.5
+branch: main
 createdAt: 2026-05-15T10:30:00Z
 updatedAt: 2026-05-15T10:30:00Z
 ---
@@ -492,6 +493,9 @@ Use the actual task executor identity in \`agent\`, for example:
 - Kiro Claude 4.6
 - Claude Code Sonnet 4.5
 - Gemini CLI 2.5 Pro
+
+Set \`branch\` to the current Git branch when the task is created. Keep that
+original task-creation branch even if later work switches branches.
 
 When the task is ready for team sync, add:
 
