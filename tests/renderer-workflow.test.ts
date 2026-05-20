@@ -6,6 +6,7 @@ import {
   resolveSelectedCandidate,
   shouldKeepCurrentServiceUrl,
   shouldResetTerminalObservationForInput,
+  terminalActivityAfterQuiet,
   terminalActivityForCandidate,
   validTerminalResizeDimensions,
 } from "../src/renderer/workflow.js";
@@ -46,6 +47,12 @@ describe("renderer workflow contracts", () => {
     const candidate = { id: "local:/workspace/App", uri: "local:/workspace/App" };
     expect(terminalActivityForCandidate(candidate, { "local:/workspace/App": "working" })).toBe("working");
     expect(terminalActivityForCandidate(candidate, {})).toBeNull();
+  });
+
+  it("downgrades working activity to attention after terminal output goes quiet", () => {
+    expect(terminalActivityAfterQuiet("working")).toBe("done");
+    expect(terminalActivityAfterQuiet("done")).toBe("idle");
+    expect(terminalActivityAfterQuiet("idle")).toBe("idle");
   });
 
   it("excludes service tabs from project terminal activity labels", () => {

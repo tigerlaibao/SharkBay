@@ -46,6 +46,7 @@ import {
   resolveSelectedCandidate,
   shouldKeepCurrentServiceUrl,
   shouldResetTerminalObservationForInput,
+  terminalActivityAfterQuiet,
   terminalActivityForCandidate,
   validTerminalResizeDimensions,
 } from "./workflow";
@@ -734,6 +735,7 @@ function DashboardView({
   const [agentListVersion, setAgentListVersion] = useState(0);
   const [agentStatusByProjectPath, setAgentStatusByProjectPath] = useState<AgentStatusByProjectPath>({});
   const [activeTerminalTabKind, setActiveTerminalTabKind] = useState<ActiveTerminalTabKind>(null);
+  const agentClisByTargetRef = useRef<Record<string, AgentCli[]>>({});
   const [projectColumnWidth, setProjectColumnWidth] = useState(() =>
     storedColumnWidth(projectColumnStorageKey, defaultProjectColumnWidth, minProjectColumnWidth),
   );
@@ -808,12 +810,18 @@ function DashboardView({
     let cancelled = false;
     const listClis = getBridge().agents?.listClis;
     if (!listClis) return;
-    setAgentClis([]);
+    const targetId = selectedCandidate?.providerId ?? "local";
+    const cached = agentClisByTargetRef.current[targetId];
+    if (cached) setAgentClis(cached);
     void listClis({ cwdUri: selectedCandidate?.uri })
-      .then((clis) => { if (!cancelled) setAgentClis(clis); })
+      .then((clis) => {
+        if (cancelled) return;
+        agentClisByTargetRef.current[targetId] = clis;
+        setAgentClis(clis);
+      })
       .catch((error) => { if (!cancelled) setToast({ tone: "error", message: asMessage(error) }); });
     return () => { cancelled = true; };
-  }, [bridgeAvailable, selectedCandidate?.uri, setToast, agentListVersion]);
+  }, [bridgeAvailable, selectedCandidate?.providerId, selectedCandidate?.uri, setToast, agentListVersion]);
 
   useEffect(() => {
     if (!bridgeAvailable) return;
@@ -954,7 +962,6 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [installAgentDialogOpen, setInstallAgentDialogOpen] = useState(false);
   const spacesRef = useRef<Record<string, TerminalSpace>>({});
-  const activeProjectIdRef = useRef<string | null>(null);
   const creatingProjects = useRef(new Set<string>());
   const quietTimers = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
   const selectedSpace = candidate?.id ? spaces[candidate.id] ?? null : null;
@@ -962,7 +969,6 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   const services = candidate?.services ?? [];
 
   useEffect(() => { spacesRef.current = spaces; }, [spaces]);
-  useEffect(() => { activeProjectIdRef.current = activeProjectId; }, [activeProjectId]);
   useEffect(() => () => { for (const timer of quietTimers.current.values()) window.clearTimeout(timer); quietTimers.current.clear(); }, []);
 
   useEffect(() => {
@@ -1210,8 +1216,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     if (existingTimer) window.clearTimeout(existingTimer);
     const timer = window.setTimeout(() => {
       quietTimers.current.delete(sessionId);
-      const isCurrentTab = isCurrentOpenTerminalTab(spacesRef.current, sessionId, activeProjectIdRef.current);
-      setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => ({ ...currentTab, activityState: currentTab.activityState === "working" && !isCurrentTab ? "done" : "idle", outputBurstStartedAt: null })));
+      setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => ({ ...currentTab, activityState: terminalActivityAfterQuiet(currentTab.activityState), outputBurstStartedAt: null })));
     }, terminalQuietDoneMs);
     quietTimers.current.set(sessionId, timer);
   }
@@ -1566,11 +1571,6 @@ function findTabWithSpace(spaces: Record<string, TerminalSpace>, tabId: string):
     if (index >= 0) { const tab = space.tabs[index]; if (tab) return { space, tab, index }; }
   }
   return null;
-}
-
-function isCurrentOpenTerminalTab(spaces: Record<string, TerminalSpace>, sessionId: string, activeProjectId: string | null): boolean {
-  const match = findTerminalTabWithSpace(spaces, sessionId);
-  return Boolean(match && match.space.projectId === activeProjectId && match.space.activeId === sessionId);
 }
 
 function mapTerminalTab(spaces: Record<string, TerminalSpace>, sessionId: string, mapTab: (tab: TerminalShellTab) => TerminalShellTab): Record<string, TerminalSpace> {

@@ -12,9 +12,10 @@ export type WorkflowProjectCandidate = {
 };
 
 export type WorkflowProjectTerminalActivityState = "working" | "idle";
+export type WorkflowTerminalActivityState = "idle" | "working" | "done";
 
 export type WorkflowTerminalActivityTab = {
-  activityState: "idle" | "working" | "done";
+  activityState: WorkflowTerminalActivityState;
   session: { service?: unknown };
 };
 
@@ -63,6 +64,10 @@ export function terminalActivityForCandidate(
   statesByProjectId: Record<string, WorkflowProjectTerminalActivityState>,
 ): WorkflowProjectTerminalActivityState | null {
   return statesByProjectId[candidate.id] ?? statesByProjectId[candidate.uri] ?? null;
+}
+
+export function terminalActivityAfterQuiet(activityState: WorkflowTerminalActivityState): WorkflowTerminalActivityState {
+  return activityState === "working" ? "done" : "idle";
 }
 
 export function firstHttpUrl(data: string): string | null {
