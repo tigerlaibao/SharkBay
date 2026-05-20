@@ -38,6 +38,7 @@ type TerminalRecord = TerminalSession & {
   currentCwd: string;
   foregroundProcess: string | null;
   activeCommandLine: string | null;
+  activeCommandTitle: string | null;
   pendingInputLine: string;
   commandSubmittedAt: number | null;
   foregroundCommandObserved: boolean;
@@ -60,6 +61,7 @@ export type TerminalTitleInput = {
   shell: string;
   foregroundProcess?: string | null;
   activeCommandLine?: string | null;
+  activeCommandTitle?: string | null;
   serviceLabel?: string | null;
 };
 
@@ -93,6 +95,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
   async create(runtime: IpcRuntimeLike, input: TerminalCreateInput): Promise<TerminalSession> {
     const spec = await this.resolveLaunchSpec(runtime, input.cwdUri);
     let initialCommand = normalizeTerminalCommandLine(input.initialCommand);
+    const initialCommandTitle = initialCommand ? normalizeTerminalCommandLine(input.initialCommandTitle) : null;
     if (!spec.isRemote && input.agentId && initialCommand && !input.service) {
       const launch = await prepareTeamworkAgentLaunch(spec.projectRoot, input.agentId, initialCommand);
       initialCommand = launch.initialCommand;
@@ -110,13 +113,14 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
     });
     const foregroundProcess = safeForegroundProcess(ptyProcess);
     const initialTitle = spec.isRemote
-      ? remoteTerminalDisplayTitle(spec.projectRoot, input.service?.label)
+      ? remoteTerminalDisplayTitle(spec.projectRoot, input.service?.label, initialCommandTitle)
       : terminalDisplayTitle({
           projectRoot: spec.projectRoot,
           currentCwd: spec.projectRoot,
           shell: spec.shell,
           foregroundProcess,
-          activeCommandLine: null,
+          activeCommandLine: initialCommand,
+          activeCommandTitle: initialCommandTitle,
           serviceLabel: input.service?.label,
         });
     const session: TerminalRecord = {
@@ -133,9 +137,10 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
       projectRoot: spec.projectRoot,
       currentCwd: spec.projectRoot,
       foregroundProcess,
-      activeCommandLine: null,
+      activeCommandLine: initialCommand,
+      activeCommandTitle: initialCommandTitle,
       pendingInputLine: "",
-      commandSubmittedAt: null,
+      commandSubmittedAt: initialCommand ? this.now() : null,
       foregroundCommandObserved: false,
       inspectTimer: null,
       inspecting: false,
@@ -157,8 +162,6 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
       this.startTitleInspection(session);
     }
     if (initialCommand && (!input.service || spec.isRemote)) {
-      session.activeCommandLine = initialCommand;
-      session.commandSubmittedAt = this.now();
       session.foregroundCommandObserved = false;
       ptyProcess.write(`${input.service ? serviceCommandLine(initialCommand) : initialCommand}\r`);
     }
@@ -283,6 +286,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
       return;
     }
     session.activeCommandLine = next.submittedCommand;
+    session.activeCommandTitle = null;
     session.commandSubmittedAt = this.now();
     session.foregroundCommandObserved = false;
   }
@@ -315,6 +319,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
         session.foregroundCommandObserved = true;
       } else if (session.foregroundCommandObserved) {
         session.activeCommandLine = null;
+        session.activeCommandTitle = null;
         session.commandSubmittedAt = null;
         session.foregroundCommandObserved = false;
       } else if (
@@ -322,6 +327,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
         this.now() - session.commandSubmittedAt > staleSubmittedCommandMs
       ) {
         session.activeCommandLine = null;
+        session.activeCommandTitle = null;
         session.commandSubmittedAt = null;
       }
 
@@ -331,6 +337,7 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
         shell: session.shell,
         foregroundProcess: session.foregroundProcess,
         activeCommandLine: session.activeCommandLine,
+        activeCommandTitle: session.activeCommandTitle,
         serviceLabel: session.service?.label,
       });
       if (nextTitle !== session.title) {
@@ -421,9 +428,11 @@ async function resolveSshLaunchSpec(
   };
 }
 
-function remoteTerminalDisplayTitle(remotePath: string, serviceLabel?: string | null): string {
+function remoteTerminalDisplayTitle(remotePath: string, serviceLabel?: string | null, initialCommandTitle?: string | null): string {
   const label = serviceLabel?.trim();
   if (label) return label;
+  const commandTitle = normalizeTerminalCommandLine(initialCommandTitle);
+  if (commandTitle) return commandTitle;
   return remotePath || "remote";
 }
 
@@ -465,6 +474,11 @@ export function terminalDisplayTitle(input: TerminalTitleInput): string {
   const serviceLabel = input.serviceLabel?.trim();
   if (serviceLabel) {
     return serviceLabel;
+  }
+
+  const activeCommandTitle = normalizeTerminalCommandLine(input.activeCommandTitle);
+  if (activeCommandTitle && normalizeTerminalCommandLine(input.activeCommandLine)) {
+    return activeCommandTitle;
   }
 
   const foregroundProcess = normalizeForegroundProcess(input.foregroundProcess);

@@ -559,6 +559,7 @@ export type TerminalCreateInput = {
   cwdUri: string;
   title?: string;
   initialCommand?: string;
+  initialCommandTitle?: string;
   agentId?: string;
   service?: { id: string; label: string; command: string };
   cols?: number;

@@ -1032,6 +1032,12 @@ body.is-resizing-columns * {
   font-size: 12px;
 }
 
+.teamwork-cleanup-options {
+  display: grid;
+  min-height: 28px;
+  padding: 0 16px 4px;
+}
+
 .runtime-link {
   color: #245b67;
   text-decoration: none;
@@ -1180,6 +1186,19 @@ body.is-resizing-columns * {
   background: transparent;
   border-bottom-color: #244f58;
   box-shadow: none;
+}
+
+.tab-badge {
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: #cf2d56;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
 }
 
 .detail-tab-panel {
@@ -4035,6 +4054,7 @@ body.is-resizing-columns .app-shell[data-theme="night"] .column-resizer::before 
 .app-shell[data-theme="night"] .remote-machine-form label,
 .app-shell[data-theme="night"] .remote-machine-field-label,
 .app-shell[data-theme="night"] .remote-machine-form-note,
+.app-shell[data-theme="night"] .checkbox-row,
 .app-shell[data-theme="night"] .modal-header p {
   color: #9caeaa;
 }

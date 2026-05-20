@@ -308,10 +308,10 @@ async function pickAndAddProjects(): Promise<string[]> {
   return [projectPath];
 }
 
-async function uninstallTeamwork(repoPath: string): Promise<void> {
+async function uninstallTeamwork(repoPath: string, cleanTeamContext = false): Promise<void> {
   const handler = getBridge().teamwork?.uninstall;
   if (!handler) throw new Error("Teamwork uninstall is not exposed by the preload API.");
-  await handler({ repoPath });
+  await handler({ repoPath, cleanTeamContext });
 }
 
 async function scanProjects(): Promise<ScanResult> {
@@ -335,7 +335,7 @@ async function listProjectFiles(project: ProjectCandidate | ProjectDetail, direc
 async function createTerminal(
   cwdUri: string,
   title?: string,
-  options: Pick<TerminalCreateInput, "agentId" | "initialCommand" | "service"> = {},
+  options: Pick<TerminalCreateInput, "agentId" | "initialCommand" | "initialCommandTitle" | "service"> = {},
 ): Promise<TerminalSession> {
   const handler = getBridge().terminal?.create;
   if (!handler) throw new Error("Terminal sessions are not exposed by the preload API.");
@@ -487,6 +487,10 @@ function localPathFromCandidate(candidate: ProjectCandidate): string | null {
   }
 }
 
+function githubOwnerFromRemote(remoteOrigin: string | null | undefined): string | null {
+  return remoteOrigin?.match(/github\.com[:/]([^/\s]+)\/[^/\s]+?(?:\.git)?$/)?.[1] ?? null;
+}
+
 function remoteProjectLabel(uri: string, machines: RemoteMachine[]): string {
   const match = /^ssh:\/\/([^/]+)(\/.*)$/.exec(uri);
   if (!match) return uri;
@@ -630,7 +634,7 @@ export function App() {
               }}
               onRemoveProject={async (uri) => { await removeProject(uri); await refreshProjects({ showToast: true }); }}
               onRenameProject={async (uri, name) => { await renameProjectAlias(uri, name); await refreshProjects({ showToast: false }); }}
-              onUninstallTeamwork={async (repoPath) => { await uninstallTeamwork(repoPath); await refreshProjects({ showToast: false }); }}
+              onUninstallTeamwork={async (repoPath, cleanTeamContext) => { await uninstallTeamwork(repoPath, cleanTeamContext); await refreshProjects({ showToast: false }); }}
               projectAliases={projectAliases}
             />
           </div>
@@ -719,7 +723,7 @@ function DashboardView({
   onPickProject: () => Promise<void>;
   onRemoveProject: (uri: string) => Promise<void>;
   onRenameProject: (uri: string, name: string) => Promise<void>;
-  onUninstallTeamwork: (repoPath: string) => Promise<void>;
+  onUninstallTeamwork: (repoPath: string, cleanTeamContext?: boolean) => Promise<void>;
 }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const terminalPaneRef = useRef<TerminalPaneHandle | null>(null);
@@ -1032,7 +1036,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     if (!candidate?.uri) return;
     const isRemote = candidate.providerKind === "ssh";
     const launchCommand = isRemote ? agent.command : (agent.executablePath || agent.command);
-    await openProjectTab(candidate.id, candidate.uri, displayProjectName ?? candidate.name, candidate.displayPath, false, { agentId: agent.id, initialCommand: shellQuote(launchCommand) });
+    await openProjectTab(candidate.id, candidate.uri, displayProjectName ?? candidate.name, candidate.displayPath, false, { agentId: agent.id, initialCommand: shellQuote(launchCommand), initialCommandTitle: agent.label });
   }
 
   async function openBrowserProjectTab() {
@@ -1140,7 +1144,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     }
   }
 
-  async function openProjectTab(projectId: string, cwdUri: string, projectName: string, displayPath: string, quiet = false, options: Pick<TerminalCreateInput, "agentId" | "initialCommand" | "service"> = {}) {
+  async function openProjectTab(projectId: string, cwdUri: string, projectName: string, displayPath: string, quiet = false, options: Pick<TerminalCreateInput, "agentId" | "initialCommand" | "initialCommandTitle" | "service"> = {}) {
     try {
       const session = await createTerminal(cwdUri, projectName, options);
       const terminal = createXTerm(session.id, appearanceTheme, setToast, recordTerminalInputActivity);
@@ -1654,6 +1658,22 @@ function sameProjectTerminalActivityStates(left: Record<string, ProjectTerminalA
   return leftKeys.every((key) => left[key] === right[key]);
 }
 
+type ConfirmUninstallState = {
+  repoPath: string;
+  name: string;
+  canCleanTeamContext: boolean;
+  cleanTeamContext: boolean;
+  ownerCheckError: string | null;
+  checkingOwner: boolean;
+};
+
+type ProjectMenuState = {
+  id: string;
+  x: number;
+  y: number;
+  canUninstallTeamwork: boolean;
+};
+
 function ProjectList({ agentStatusByProjectPath, candidates, projectAliases, runningServiceProjectIds, terminalActivityByProjectId, selectedId, onSelect, onRemoveProject, onRenameProject, onUninstallTeamwork }: {
   agentStatusByProjectPath: AgentStatusByProjectPath;
   candidates: ProjectCandidate[];
@@ -1664,13 +1684,13 @@ function ProjectList({ agentStatusByProjectPath, candidates, projectAliases, run
   onSelect: (id: string) => void;
   onRemoveProject: (uri: string) => Promise<void>;
   onRenameProject: (uri: string, name: string) => Promise<void>;
-  onUninstallTeamwork: (repoPath: string) => Promise<void>;
+  onUninstallTeamwork: (repoPath: string, cleanTeamContext?: boolean) => Promise<void>;
 }) {
-  const [menuOpen, setMenuOpen] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [menuOpen, setMenuOpen] = useState<ProjectMenuState | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [confirmRemove, setConfirmRemove] = useState<{ uri: string; name: string } | null>(null);
-  const [confirmUninstall, setConfirmUninstall] = useState<{ repoPath: string; name: string } | null>(null);
+  const [confirmUninstall, setConfirmUninstall] = useState<ConfirmUninstallState | null>(null);
   const [removing, setRemoving] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -1705,7 +1725,51 @@ function ProjectList({ agentStatusByProjectPath, candidates, projectAliases, run
   }
 
   function openProjectMenu(candidate: ProjectCandidate, x: number, y: number) {
-    setMenuOpen({ id: candidate.id, x, y });
+    setMenuOpen({ id: candidate.id, x, y, canUninstallTeamwork: false });
+    const repoPath = localPathFromCandidate(candidate);
+    const getStatus = getBridge().teamwork?.getStatus;
+    if (!repoPath || !getStatus) return;
+
+    void getStatus({ repoPath })
+      .then((status) => {
+        setMenuOpen((current) => current?.id === candidate.id
+          ? { ...current, canUninstallTeamwork: status.harnessInstalled }
+          : current
+        );
+      })
+      .catch(() => undefined);
+  }
+
+  async function openUninstallDialog(candidate: ProjectCandidate, repoPath: string) {
+    const name = projectAliases[candidate.uri] || candidate.name;
+    setConfirmUninstall({
+      repoPath,
+      name,
+      canCleanTeamContext: false,
+      cleanTeamContext: false,
+      ownerCheckError: null,
+      checkingOwner: true,
+    });
+
+    let canCleanTeamContext = false;
+    let ownerCheckError: string | null = null;
+    try {
+      const detail = await getProjectDetail(candidate);
+      const owner = githubOwnerFromRemote(detail.repoUrl);
+      if (owner) {
+        const resolveIdentity = getBridge().teamwork?.resolveIdentity;
+        if (!resolveIdentity) throw new Error("GitHub identity lookup is not exposed by the preload API.");
+        const identity = await resolveIdentity();
+        canCleanTeamContext = owner.toLowerCase() === identity.login.toLowerCase();
+      }
+    } catch (error) {
+      ownerCheckError = asMessage(error);
+    } finally {
+      setConfirmUninstall((current) => current?.repoPath === repoPath
+        ? { ...current, canCleanTeamContext, ownerCheckError, checkingOwner: false }
+        : current
+      );
+    }
   }
 
   if (!candidates.length) return null;
@@ -1796,18 +1860,39 @@ function ProjectList({ agentStatusByProjectPath, candidates, projectAliases, run
             <div className="modal-header">
               <div>
                 <h3 id="confirm-uninstall-teamwork-title">Uninstall Teamwork?</h3>
-                <p>This removes the local Teamwork harness from <strong>{confirmUninstall.name}</strong>. Source files are not deleted.</p>
+                <p>
+                  {confirmUninstall.cleanTeamContext
+                    ? <>This removes the local Teamwork harness from <strong>{confirmUninstall.name}</strong> and deletes the team context branch.</>
+                    : <>This removes the local Teamwork harness from <strong>{confirmUninstall.name}</strong>. Source files are not deleted.</>}
+                </p>
               </div>
               <button aria-label="Close" className="icon-button" disabled={uninstalling} type="button" onClick={() => setConfirmUninstall(null)}>x</button>
             </div>
+            <div className="teamwork-cleanup-options">
+              {confirmUninstall.canCleanTeamContext ? (
+                <label className="checkbox-row">
+                  <input
+                    checked={confirmUninstall.cleanTeamContext}
+                    disabled={uninstalling}
+                    type="checkbox"
+                    onChange={(event) => setConfirmUninstall((current) => current ? { ...current, cleanTeamContext: event.currentTarget.checked } : current)}
+                  />
+                  <span>Also clean the team context branch</span>
+                </label>
+              ) : confirmUninstall.checkingOwner ? (
+                <p className="form-note">Checking repository owner...</p>
+              ) : confirmUninstall.ownerCheckError ? (
+                <p className="form-note">Owner check unavailable.</p>
+              ) : null}
+            </div>
             <div className="remote-machine-form-actions" style={{ padding: "12px 16px 16px" }}>
               <button className="button secondary" disabled={uninstalling} type="button" onClick={() => setConfirmUninstall(null)}>Cancel</button>
-              <button className="button is-danger" disabled={uninstalling} type="button" onClick={async () => {
+              <button className="button is-danger" disabled={uninstalling || confirmUninstall.checkingOwner} type="button" onClick={async () => {
                 const target = confirmUninstall;
                 if (!target) return;
                 setUninstalling(true);
-                try { await onUninstallTeamwork(target.repoPath); setConfirmUninstall(null); } finally { setUninstalling(false); }
-              }}>{uninstalling ? "Uninstalling" : "Uninstall"}</button>
+                try { await onUninstallTeamwork(target.repoPath, target.cleanTeamContext); setConfirmUninstall(null); } finally { setUninstalling(false); }
+              }}>{uninstalling ? "Uninstalling" : confirmUninstall.checkingOwner ? "Checking" : "Uninstall"}</button>
             </div>
           </section>
         </div>
@@ -1831,14 +1916,14 @@ function ProjectList({ agentStatusByProjectPath, candidates, projectAliases, run
           {(() => {
             const candidate = candidates.find((c) => c.id === menuOpen.id);
             const repoPath = candidate ? localPathFromCandidate(candidate) : null;
-            if (!candidate || !repoPath) return null;
+            if (!candidate || !repoPath || !menuOpen.canUninstallTeamwork) return null;
             return (
               <button
                 className="project-context-menu-item"
                 type="button"
                 onClick={() => {
                   setMenuOpen(null);
-                  setConfirmUninstall({ repoPath, name: projectAliases[candidate.uri] || candidate.name });
+                  void openUninstallDialog(candidate, repoPath);
                 }}
               >
                 Uninstall Teamwork
@@ -1978,6 +2063,7 @@ function ProjectDetailPane({ detail, candidate, setToast, onRefresh, onOpenFileI
         {availableTabs.map((tab) => (
           <button aria-controls={`project-detail-tabpanel-${tab.id}`} aria-selected={visibleDetailTab === tab.id} className={cx("detail-tab-card", visibleDetailTab === tab.id && "is-active")} id={`project-detail-tab-${tab.id}`} key={tab.id} role="tab" tabIndex={visibleDetailTab === tab.id ? 0 : -1} type="button" onKeyDown={(event) => handleDetailTabKeyDown(event, tab.id)} onClick={() => setActiveDetailTab(tab.id)}>
             {tab.label}
+            {tab.id === "git" && (detail?.gitDirtyFiles?.length ?? 0) > 0 ? <span className="tab-badge">{detail!.gitDirtyFiles!.length}</span> : null}
           </button>
         ))}
       </div>

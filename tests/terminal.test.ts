@@ -88,6 +88,29 @@ describe("terminal cwd validation", () => {
       projectRoot: root,
       currentCwd: root,
       shell: "/bin/zsh",
+      foregroundProcess: "zsh",
+      activeCommandLine: "codex",
+      activeCommandTitle: "Codex CLI",
+    })).toBe("Codex CLI");
+    expect(terminalDisplayTitle({
+      projectRoot: root,
+      currentCwd: root,
+      shell: "/bin/zsh",
+      foregroundProcess: "zsh",
+      activeCommandTitle: "Codex CLI",
+    })).toBe(".");
+    expect(terminalDisplayTitle({
+      projectRoot: root,
+      currentCwd: root,
+      shell: "/bin/zsh",
+      foregroundProcess: "codex",
+      activeCommandLine: "10;rgb:d9d9/e5e5/dfdf",
+      activeCommandTitle: "Codex CLI",
+    })).toBe("Codex CLI");
+    expect(terminalDisplayTitle({
+      projectRoot: root,
+      currentCwd: root,
+      shell: "/bin/zsh",
       foregroundProcess: "codex",
       activeCommandLine: "10;rgb:d9d9/e5e5/dfdf",
     })).toBe("codex");
@@ -104,6 +127,7 @@ describe("terminal cwd validation", () => {
       shell: "/bin/zsh",
       foregroundProcess: "node",
       activeCommandLine: "pnpm dev",
+      activeCommandTitle: "Codex CLI",
       serviceLabel: "dev",
     })).toBe("dev");
   });
