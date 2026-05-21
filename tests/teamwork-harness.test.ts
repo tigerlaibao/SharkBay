@@ -52,8 +52,10 @@ describe("teamwork harness install", () => {
     expect(sessionHelperText).toContain("*kiro*)");
     expect(sessionHelperText).toContain("*deepseek*)");
     expect(sessionHelperText).toContain(".deepseek/audit.log");
+    expect(sessionHelperText).toContain("*opencode*)");
+    expect(sessionHelperText).toContain(".local\\/share\\/opencode\\/log");
     expect(sessionHelperText).toContain("*claude*|*gemini*|*qwen*)");
-    expect(sessionHelperText).toContain("codex|claude|deepseek|gemini|kiro|qwen");
+    expect(sessionHelperText).toContain("codex|claude|deepseek|gemini|kiro|opencode|qwen");
     const exclude = await fs.readFile(path.join(repo, ".git", "info", "exclude"), "utf8");
     expect(exclude).toContain("/.sharkbay/");
     expect(exclude).not.toContain("/AGENTS.md");
@@ -84,6 +86,69 @@ describe("teamwork harness install", () => {
     const { stdout } = await execFileAsync("sh", [path.join(repo, ".sharkbay", "harness", "agent-session-id.sh"), "deepseek"], {
       cwd: workspace,
       env: { ...process.env, HOME: home },
+    });
+
+    expect(stdout.trim()).toBe(sessionId);
+  });
+
+  it("resolves OpenCode session id from the active process logs", async () => {
+    const root = await makeTempRoot("teamwork-opencode-session");
+    const repo = await createRealGitRepoFixture(root);
+    const workspace = await fs.realpath(repo);
+    await installHarness(repo, harnessOptions);
+
+    const home = path.join(root, "home");
+    const logDir = path.join(home, ".local", "share", "opencode", "log");
+    const mainLog = path.join(logDir, "2026-05-21T152022.log");
+    const sessionLog = path.join(logDir, "2026-05-21T152023.log");
+    const sessionId = "ses_1b4e0115bffeHMF5TVmEhAbyhJ";
+    await writeText(mainLog, "INFO service=default args=[] process_role=main run_id=c21572ad opencode\n");
+    await writeText(sessionLog, [
+      `INFO service=session id=${sessionId} directory=${workspace} path= title=New session created`,
+      `INFO service=permission permission=bash pattern=.sharkbay/harness/agent-session-id.sh "OpenCode" evaluated`,
+      `INFO service=session.processor session.id=${sessionId} messageID=msg_123 process`,
+      "",
+    ].join("\n"));
+
+    const bin = path.join(root, "bin");
+    await writeText(path.join(bin, "ps"), [
+      "#!/bin/sh",
+      "case \"$2\" in",
+      "  command=) echo opencode ;;",
+      "  ppid=) echo 1 ;;",
+      "esac",
+      "",
+    ].join("\n"));
+    await writeText(path.join(bin, "lsof"), [
+      "#!/bin/sh",
+      `printf '%s\\n' 'opencode 48565 shark txt REG 1,2 1 ${mainLog}'`,
+      `printf '%s\\n' 'opencode 48565 shark txt REG 1,2 1 ${sessionLog}'`,
+      "",
+    ].join("\n"));
+    await writeText(path.join(bin, "opencode"), [
+      "#!/bin/sh",
+      "if [ \"$1\" = db ] && [ \"$2\" = path ]; then",
+      `  printf '%s\\n' '${path.join(home, ".local", "share", "opencode", "opencode.db")}'`,
+      "  exit 0",
+      "fi",
+      "cat <<'JSON'",
+      "[",
+      "  {",
+      `    "id": "${sessionId}",`,
+      `    "directory": "${workspace}",`,
+      "    \"path\": \"\"",
+      "  }",
+      "]",
+      "JSON",
+      "",
+    ].join("\n"));
+    await fs.chmod(path.join(bin, "ps"), 0o755);
+    await fs.chmod(path.join(bin, "lsof"), 0o755);
+    await fs.chmod(path.join(bin, "opencode"), 0o755);
+
+    const { stdout } = await execFileAsync("sh", [path.join(repo, ".sharkbay", "harness", "agent-session-id.sh"), "opencode"], {
+      cwd: workspace,
+      env: { ...process.env, HOME: home, PATH: `${bin}${path.delimiter}${process.env.PATH}` },
     });
 
     expect(stdout.trim()).toBe(sessionId);
