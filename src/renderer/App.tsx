@@ -964,6 +964,8 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   const spacesRef = useRef<Record<string, TerminalSpace>>({});
   const creatingProjects = useRef(new Set<string>());
   const quietTimers = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
+  const focusRequestNonce = useRef(0);
+  const [tabFocusRequest, setTabFocusRequest] = useState<{ projectId: string; nonce: number } | null>(null);
   const selectedSpace = candidate?.id ? spaces[candidate.id] ?? null : null;
   const canCreate = bridgeAvailable && Boolean(candidate?.uri) && (candidate?.providerKind === "local" || candidate?.providerKind === "ssh");
   const services = candidate?.services ?? [];
@@ -1025,6 +1027,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
       if (current[candidate.id]) return current;
       return { ...current, [candidate.id]: { projectId: candidate.id, projectName: displayProjectName ?? candidate.name, uri: candidate.uri, displayPath: candidate.displayPath, tabs: [], activeId: null, serviceUrl: null } };
     });
+    if (isVisible) requestProjectTabFocus(candidate.id);
     if (!isVisible) return;
     const existing = spacesRef.current[candidate.id];
     if (existing?.tabs.length) return;
@@ -1315,11 +1318,17 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   function setActiveTab(projectId: string, sessionId: string) {
     const nextKind = tabKindForId(spacesRef.current[projectId], sessionId);
     onActiveTabKindChange(nextKind);
+    requestProjectTabFocus(projectId);
     setSpaces((current) => {
       const space = current[projectId];
       if (!space) return current;
       return { ...current, [projectId]: { ...space, activeId: sessionId } };
     });
+  }
+
+  function requestProjectTabFocus(projectId: string) {
+    focusRequestNonce.current += 1;
+    setTabFocusRequest({ projectId, nonce: focusRequestNonce.current });
   }
 
   const displayProjectName = candidate ? (projectAliases[candidate.uri] || candidate.name) : null;
@@ -1388,11 +1397,12 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
             <div className="xterm-surface-stack">
               {space.tabs.map((tab) => {
                 const active = isVisible && space.projectId === activeProjectId && tabIdForTab(tab) === space.activeId;
+                const focusRequest = active && tabFocusRequest?.projectId === space.projectId ? tabFocusRequest.nonce : 0;
                 if (tab.kind === "terminal") {
-                  return <XTermSurface active={active} key={tab.session.id} tab={tab} onResize={(cols, rows) => void resizeTerminal(tab.session.id, cols, rows).catch((error) => setToast({ tone: "error", message: asMessage(error) }))} />;
+                  return <XTermSurface active={active} focusRequest={focusRequest} key={tab.session.id} tab={tab} onResize={(cols, rows) => void resizeTerminal(tab.session.id, cols, rows).catch((error) => setToast({ tone: "error", message: asMessage(error) }))} />;
                 }
                 if (tab.kind === "browser") {
-                  return <BrowserSurface active={active} key={tab.browser.id} setToast={setToast} tab={tab} onAddressChange={(value) => updateBrowserAddress(tab.browser.id, value)} onBrowserUpdate={(browser) => updateBrowserSession(browser)} />;
+                  return <BrowserSurface active={active} focusRequest={focusRequest} key={tab.browser.id} setToast={setToast} tab={tab} onAddressChange={(value) => updateBrowserAddress(tab.browser.id, value)} onBrowserUpdate={(browser) => updateBrowserSession(browser)} />;
                 }
                 return (
                   <EditorSurface
@@ -1443,12 +1453,14 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
 
 function BrowserSurface({
   active,
+  focusRequest,
   onAddressChange,
   onBrowserUpdate,
   setToast,
   tab,
 }: {
   active: boolean;
+  focusRequest: number;
   onAddressChange: (value: string) => void;
   onBrowserUpdate: (browser: BrowserSession) => void;
   setToast: (toast: Toast) => void;
@@ -1484,6 +1496,23 @@ function BrowserSurface({
     };
   }, [active, setToast, tab.browser.id]);
 
+  useEffect(() => {
+    if (!active || !focusRequest) return;
+    let frame = 0;
+    let secondFrame = 0;
+    frame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        const bounds = hostRef.current ? browserBoundsForElement(hostRef.current) : hiddenBrowserBounds();
+        if (!bounds.width || !bounds.height) return;
+        void resizeBrowser(tab.browser.id, bounds, true).catch((error) => setToast({ tone: "error", message: asMessage(error) }));
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [active, focusRequest, setToast, tab.browser.id]);
+
   async function submitAddress(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
@@ -1509,7 +1538,7 @@ function BrowserSurface({
   );
 }
 
-function XTermSurface({ active, onResize, tab }: { active: boolean; onResize: (cols: number, rows: number) => void; tab: TerminalShellTab }) {
+function XTermSurface({ active, focusRequest, onResize, tab }: { active: boolean; focusRequest: number; onResize: (cols: number, rows: number) => void; tab: TerminalShellTab }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const openedRef = useRef(false);
   const onResizeRef = useRef(onResize);
@@ -1530,7 +1559,7 @@ function XTermSurface({ active, onResize, tab }: { active: boolean; onResize: (c
     const observer = new ResizeObserver(() => fitAndResize());
     if (hostRef.current) observer.observe(hostRef.current);
     return () => { window.cancelAnimationFrame(frame); observer.disconnect(); };
-  }, [active, tab]);
+  }, [active, focusRequest, tab]);
   return <div aria-hidden={!active} className={cx("xterm-surface", active && "is-active")} ref={hostRef} />;
 }
 
