@@ -396,6 +396,9 @@ export async function registerIpcHandlers(
   handle<TerminalInput, TerminalSession | null>(channels.terminalInput, (payload) =>
     requireCore().call("inputTerminal", [payload])
   );
+  ipcMain.on(channels.terminalInput, (_event, payload: TerminalInput) => {
+    void requireCore().call("inputTerminal", [payload]);
+  });
   handle<TerminalResizeInput, TerminalSession | null>(channels.resizeTerminal, (payload) =>
     requireCore().call("resizeTerminal", [payload])
   );

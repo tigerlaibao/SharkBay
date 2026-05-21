@@ -1575,7 +1575,7 @@ function createXTerm(sessionId: string, appearanceTheme: AppearanceTheme, setToa
   const fitAddon = new FitAddon();
   instance.loadAddon(fitAddon);
   instance.loadAddon(new WebLinksAddon());
-  const inputDisposable = instance.onData((data) => { if (shouldResetTerminalObservationForInput(data)) onInput(sessionId); void sendTerminalInput(sessionId, data).catch((error) => setToast({ tone: "error", message: asMessage(error) })); });
+  const inputDisposable = instance.onData((data) => { if (shouldResetTerminalObservationForInput(data)) onInput(sessionId); const fire = getBridge().terminal?.inputFire; if (fire) { fire({ sessionId, data }); } else { void sendTerminalInput(sessionId, data).catch((error) => setToast({ tone: "error", message: asMessage(error) })); } });
   return { instance, fitAddon, disposables: [inputDisposable] };
 }
 

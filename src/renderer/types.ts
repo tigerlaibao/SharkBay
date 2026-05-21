@@ -602,6 +602,7 @@ export type SharkBayBridge = {
   terminal?: {
     create?: (input: TerminalCreateInput) => Promise<TerminalSession>;
     input?: (input: TerminalInput) => Promise<TerminalSession>;
+    inputFire?: (input: TerminalInput) => void;
     resize?: (input: TerminalResizeInput) => Promise<TerminalSession>;
     close?: (input: TerminalCloseInput) => Promise<TerminalSession>;
     onData?: (callback: (event: TerminalDataEvent) => void) => () => void;

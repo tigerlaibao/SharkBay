@@ -113,6 +113,7 @@ const sharkBayApi = {
   terminal: {
     create: (input: TerminalCreateInput) => invoke<TerminalSession>(channels.createTerminal, input),
     input: (input: TerminalInput) => invoke<TerminalSession>(channels.terminalInput, input),
+    inputFire: (input: TerminalInput) => { ipcRenderer.send(channels.terminalInput, input); },
     resize: (input: TerminalResizeInput) => invoke<TerminalSession>(channels.resizeTerminal, input),
     close: (input: TerminalCloseInput) => invoke<TerminalSession>(channels.closeTerminal, input),
     onData: (callback: (event: TerminalDataEvent) => void) => {
