@@ -22,7 +22,36 @@ const AGENT_SESSION_ID_SCRIPT = [
   "agent=\"$(printf '%s' \"${1:-}\" | tr '[:upper:]' '[:lower:]')\"",
   "",
   "case \"$agent\" in",
-  "  *claude*|*gemini*)",
+  "  *kiro*)",
+  "    pid=\"$PPID\"",
+  "    kiro_pid=\"\"",
+  "    while [ -n \"$pid\" ] && [ \"$pid\" != \"1\" ]; do",
+  "      cmd=\"$(ps -o command= -p \"$pid\" 2>/dev/null || true)\"",
+  "      case \"$cmd\" in",
+  "        *kiro-cli*|*kiro_cli*|*Kiro\\ CLI*) kiro_pid=\"$pid\"; break ;;",
+  "      esac",
+  "      pid=\"$(ps -o ppid= -p \"$pid\" 2>/dev/null | tr -d ' ' || true)\"",
+  "    done",
+  "    if [ -z \"$kiro_pid\" ]; then",
+  "      echo \"kiro process not found\" >&2",
+  "      exit 1",
+  "    fi",
+  "    for lock in \"$HOME\"/.kiro/sessions/cli/*.lock; do",
+  "      [ -f \"$lock\" ] || continue",
+  "      lock_pid=\"$(sed -n 's/.*\"pid\":\\([0-9][0-9]*\\).*/\\1/p' \"$lock\")\"",
+  "      [ \"$lock_pid\" = \"$kiro_pid\" ] || continue",
+  "      session_id=\"$(basename \"$lock\" .lock)\"",
+  "      meta=\"$HOME/.kiro/sessions/cli/$session_id.json\"",
+  "      cwd=\"$(sed -n 's/.*\"cwd\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' \"$meta\" 2>/dev/null)\"",
+  "      if [ \"$cwd\" = \"$PWD\" ]; then",
+  "        printf '%s\\n' \"$session_id\"",
+  "        exit 0",
+  "      fi",
+  "    done",
+  "    echo \"kiro session id not found\" >&2",
+  "    exit 1",
+  "    ;;",
+  "  *claude*|*gemini*|*qwen*)",
   "    if [ -z \"${SHARKBAY_SESSION_ID:-}\" ]; then",
   "      echo \"SHARKBAY_SESSION_ID not set\" >&2",
   "      exit 1",
@@ -32,7 +61,7 @@ const AGENT_SESSION_ID_SCRIPT = [
   "    ;;",
   "  *codex*) ;;",
   "  *)",
-  "    echo \"usage: $0 codex|claude|gemini\" >&2",
+  "    echo \"usage: $0 codex|claude|gemini|kiro|qwen\" >&2",
   "    exit 64",
   "    ;;",
   "esac",
@@ -343,7 +372,7 @@ function teamworkBootstrapArgs(agentId: string, prompt: string): string[] | null
 
 function withLaunchSessionId(agentId: string, command: string): string {
   const normalized = agentId.trim().toLowerCase();
-  if (normalized !== "claude" && normalized !== "gemini") return command;
+  if (normalized !== "claude" && normalized !== "gemini" && normalized !== "qwen") return command;
   const sessionId = randomUUID();
   return `SHARKBAY_SESSION_ID=${shellQuote(sessionId)} ${appendShellArgs(command, ["--session-id", sessionId])}`;
 }

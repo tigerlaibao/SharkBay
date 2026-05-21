@@ -48,6 +48,9 @@ describe("teamwork harness install", () => {
     expect(protocol).toContain("Use the actual task executor identity in `agent`");
     const sessionHelper = await fs.stat(path.join(repo, ".sharkbay", "harness", "agent-session-id.sh"));
     expect(sessionHelper.mode & 0o111).not.toBe(0);
+    const sessionHelperText = await fs.readFile(path.join(repo, ".sharkbay", "harness", "agent-session-id.sh"), "utf8");
+    expect(sessionHelperText).toContain("*kiro*)");
+    expect(sessionHelperText).toContain("*claude*|*gemini*|*qwen*)");
     const exclude = await fs.readFile(path.join(repo, ".git", "info", "exclude"), "utf8");
     expect(exclude).toContain("/.sharkbay/");
     expect(exclude).not.toContain("/AGENTS.md");
@@ -118,10 +121,12 @@ describe("teamwork harness install", () => {
     expect(geminiSessionMatch?.[1]).toBe(geminiSessionMatch?.[2]);
     expect(geminiResult.initialCommand).toContain("gemini '--session-id'");
     expect(geminiResult.initialCommand).toContain("'-i' 'I'\\''m working in SharkBay Teamwork mode");
-    await expect(prepareTeamworkAgentLaunch(repo, "qwen", "qwen")).resolves.toMatchObject({
-      injected: true,
-      initialCommand: expect.stringContaining("qwen '-i' 'I'\\''m working in SharkBay Teamwork mode"),
-    });
+    const qwenResult = await prepareTeamworkAgentLaunch(repo, "qwen", "qwen");
+    const qwenSessionMatch = qwenResult.initialCommand.match(/^SHARKBAY_SESSION_ID='([^']+)' qwen '--session-id' '([^']+)'/);
+    expect(qwenResult.injected).toBe(true);
+    expect(qwenSessionMatch?.[1]).toBe(qwenSessionMatch?.[2]);
+    expect(qwenResult.initialCommand).toContain("qwen '--session-id'");
+    expect(qwenResult.initialCommand).toContain("'-i' 'I'\\''m working in SharkBay Teamwork mode");
     await expect(prepareTeamworkAgentLaunch(repo, "kiro", "kiro-cli")).resolves.toMatchObject({
       injected: true,
       initialCommand: expect.stringContaining("kiro-cli 'chat' 'I'\\''m working in SharkBay Teamwork mode"),
