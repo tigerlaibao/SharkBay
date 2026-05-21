@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { access, chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -15,6 +15,50 @@ const LEGACY_EXCLUDE_ENTRIES = [] as string[];
 const EXCLUDE_REMOVAL_ENTRIES = new Set([...EXCLUDE_ENTRIES, ...LEGACY_EXCLUDE_ENTRIES]);
 const EXCLUDE_BACKUP_FILE = "git-info-exclude.backup";
 const EXCLUDE_MISSING_MARKER = "git-info-exclude.missing";
+const AGENT_SESSION_ID_SCRIPT = [
+  "#!/bin/sh",
+  "set -eu",
+  "",
+  "agent=\"$(printf '%s' \"${1:-}\" | tr '[:upper:]' '[:lower:]')\"",
+  "",
+  "case \"$agent\" in",
+  "  *claude*|*gemini*)",
+  "    if [ -z \"${SHARKBAY_SESSION_ID:-}\" ]; then",
+  "      echo \"SHARKBAY_SESSION_ID not set\" >&2",
+  "      exit 1",
+  "    fi",
+  "    printf '%s\\n' \"$SHARKBAY_SESSION_ID\"",
+  "    exit 0",
+  "    ;;",
+  "  *codex*) ;;",
+  "  *)",
+  "    echo \"usage: $0 codex|claude|gemini\" >&2",
+  "    exit 64",
+  "    ;;",
+  "esac",
+  "",
+  "transcript=\"$(",
+  "  lsof -p \"$PPID\" 2>/dev/null |",
+  "    awk '/\\/\\.codex\\/sessions\\/.*\\.jsonl$/ {print $NF; exit}'",
+  ")\"",
+  "",
+  "if [ -z \"$transcript\" ]; then",
+  "  echo \"codex session transcript not found\" >&2",
+  "  exit 1",
+  "fi",
+  "",
+  "session_id=\"$(",
+  "  head -n 1 \"$transcript\" |",
+  "    sed -n 's/.*\"payload\":{\"id\":\"\\([^\"]*\\)\".*/\\1/p'",
+  ")\"",
+  "",
+  "if [ -z \"$session_id\" ]; then",
+  "  echo \"codex session id not found\" >&2",
+  "  exit 1",
+  "fi",
+  "",
+  "printf '%s\\n' \"$session_id\"",
+].join("\n") + "\n";
 export const TEAMWORK_BOOTSTRAP_PROMPT = [
   "I'm working in SharkBay Teamwork mode for this project.",
   "Please read `.sharkbay/harness/protocol.md` first and follow it for the rest of this session.",
@@ -73,6 +117,8 @@ export async function installHarness(
 
   await writeFile(join(sbDir, "machine-id"), options.machineId, "utf-8");
   await writeFile(join(harnessDir, "protocol.md"), generateProtocol(options), "utf-8");
+  await writeFile(join(harnessDir, "agent-session-id.sh"), AGENT_SESSION_ID_SCRIPT, "utf-8");
+  await chmod(join(harnessDir, "agent-session-id.sh"), 0o755);
 
   await backupLocalExclude(repoPath, harnessDir);
   await ensureLocalExclude(repoPath);
@@ -490,6 +536,7 @@ actor: ${opts.githubLogin}
 githubUserId: ${opts.githubUserId}
 machine: ${opts.machineId}
 agent: # e.g. Codex GPT-5.5
+sessionId: # omit this line if unavailable
 branch: main
 createdAt: 2026-05-15T10:30:00Z
 updatedAt: 2026-05-15T10:30:00Z
@@ -500,6 +547,10 @@ Use the actual task executor identity in \`agent\`, for example:
 - Kiro Claude 4.6
 - Claude Code Sonnet 4.5
 - Gemini CLI 2.5 Pro
+
+When creating a task, run \`.sharkbay/harness/agent-session-id.sh "<agent>"\`.
+If it prints a session id, add \`sessionId: <id>\` immediately after
+\`agent\`. If it fails or prints no id, omit the \`sessionId\` line.
 
 Set \`branch\` to the current Git branch when the task is created. Keep that
 original task-creation branch even if later work switches branches.

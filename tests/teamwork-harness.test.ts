@@ -41,9 +41,13 @@ describe("teamwork harness install", () => {
     expect(protocol).toContain("Repo: SharkUI/AIBF");
     expect(protocol).not.toContain("- Agent:");
     expect(protocol).toContain("agent: # e.g. Codex GPT-5.5");
+    expect(protocol).toContain("sessionId: # omit this line if unavailable");
+    expect(protocol).toContain(".sharkbay/harness/agent-session-id.sh");
     expect(protocol).toContain("branch: main");
     expect(protocol).toContain("Set `branch` to the current Git branch when the task is created.");
     expect(protocol).toContain("Use the actual task executor identity in `agent`");
+    const sessionHelper = await fs.stat(path.join(repo, ".sharkbay", "harness", "agent-session-id.sh"));
+    expect(sessionHelper.mode & 0o111).not.toBe(0);
     const exclude = await fs.readFile(path.join(repo, ".git", "info", "exclude"), "utf8");
     expect(exclude).toContain("/.sharkbay/");
     expect(exclude).not.toContain("/AGENTS.md");
