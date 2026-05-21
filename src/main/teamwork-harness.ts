@@ -51,6 +51,34 @@ const AGENT_SESSION_ID_SCRIPT = [
   "    echo \"kiro session id not found\" >&2",
   "    exit 1",
   "    ;;",
+  "  *deepseek*)",
+  "    audit=\"$HOME/.deepseek/audit.log\"",
+  "    if [ ! -f \"$audit\" ]; then",
+  "      echo \"deepseek audit log not found\" >&2",
+  "      exit 1",
+  "    fi",
+  "    latest_event=\"$(",
+  "      tail -n 100 \"$audit\" |",
+  "        awk '/\"session_id\"[[:space:]]*:/ { line=$0 } END { if (line) print line }'",
+  "    )\"",
+  "    session_id=\"$(printf '%s\\n' \"$latest_event\" | sed -n 's/.*\"session_id\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p')\"",
+  "    if [ -z \"$session_id\" ]; then",
+  "      echo \"deepseek session id not found\" >&2",
+  "      exit 1",
+  "    fi",
+  "    meta=\"$HOME/.deepseek/sessions/$session_id.json\"",
+  "    if [ ! -f \"$meta\" ]; then",
+  "      echo \"deepseek session metadata not found\" >&2",
+  "      exit 1",
+  "    fi",
+  "    workspace=\"$(sed -n 's/.*\"workspace\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' \"$meta\" 2>/dev/null | head -n 1)\"",
+  "    if [ \"$workspace\" != \"$PWD\" ]; then",
+  "      echo \"deepseek session workspace mismatch\" >&2",
+  "      exit 1",
+  "    fi",
+  "    printf '%s\\n' \"$session_id\"",
+  "    exit 0",
+  "    ;;",
   "  *claude*|*gemini*|*qwen*)",
   "    if [ -z \"${SHARKBAY_SESSION_ID:-}\" ]; then",
   "      echo \"SHARKBAY_SESSION_ID not set\" >&2",
@@ -61,7 +89,7 @@ const AGENT_SESSION_ID_SCRIPT = [
   "    ;;",
   "  *codex*) ;;",
   "  *)",
-  "    echo \"usage: $0 codex|claude|gemini|kiro|qwen\" >&2",
+  "    echo \"usage: $0 codex|claude|deepseek|gemini|kiro|qwen\" >&2",
   "    exit 64",
   "    ;;",
   "esac",
@@ -363,7 +391,7 @@ async function hasSharkbayHarnessDir(repoPath: string): Promise<boolean> {
 
 function teamworkBootstrapArgs(agentId: string, prompt: string): string[] | null {
   const normalized = agentId.trim().toLowerCase();
-  if (normalized === "codex" || normalized === "claude") return [prompt];
+  if (normalized === "codex" || normalized === "claude" || normalized === "deepseek") return [prompt];
   if (normalized === "gemini" || normalized === "qwen") return ["-i", prompt];
   if (normalized === "kiro") return ["chat", prompt];
   if (normalized === "opencode") return ["--prompt", prompt];
