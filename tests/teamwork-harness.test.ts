@@ -96,7 +96,10 @@ describe("teamwork harness install", () => {
     const result = await prepareTeamworkAgentLaunch(repo, "claude", "claude");
 
     expect(result.injected).toBe(true);
-    expect(result.initialCommand).toContain("claude 'I'\\''m working in SharkBay Teamwork mode");
+    const sessionMatch = result.initialCommand.match(/^SHARKBAY_SESSION_ID='([^']+)' claude '--session-id' '([^']+)'/);
+    expect(sessionMatch?.[1]).toBe(sessionMatch?.[2]);
+    expect(result.initialCommand).toContain("claude '--session-id'");
+    expect(result.initialCommand).toContain("'I'\\''m working in SharkBay Teamwork mode");
     await expect(fs.readFile(path.join(repo, "CLAUDE.md"), "utf8")).resolves.toBe("# Project Claude Rules\n\nKeep this text.\n");
   });
 
@@ -105,10 +108,12 @@ describe("teamwork harness install", () => {
     const repo = await createRealGitRepoFixture(root);
     await installHarness(repo, harnessOptions);
 
-    await expect(prepareTeamworkAgentLaunch(repo, "gemini", "gemini")).resolves.toMatchObject({
-      injected: true,
-      initialCommand: expect.stringContaining("gemini '-i' 'I'\\''m working in SharkBay Teamwork mode"),
-    });
+    const geminiResult = await prepareTeamworkAgentLaunch(repo, "gemini", "gemini");
+    const geminiSessionMatch = geminiResult.initialCommand.match(/^SHARKBAY_SESSION_ID='([^']+)' gemini '--session-id' '([^']+)'/);
+    expect(geminiResult.injected).toBe(true);
+    expect(geminiSessionMatch?.[1]).toBe(geminiSessionMatch?.[2]);
+    expect(geminiResult.initialCommand).toContain("gemini '--session-id'");
+    expect(geminiResult.initialCommand).toContain("'-i' 'I'\\''m working in SharkBay Teamwork mode");
     await expect(prepareTeamworkAgentLaunch(repo, "qwen", "qwen")).resolves.toMatchObject({
       injected: true,
       initialCommand: expect.stringContaining("qwen '-i' 'I'\\''m working in SharkBay Teamwork mode"),

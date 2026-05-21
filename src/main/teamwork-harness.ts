@@ -2,7 +2,7 @@ import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { resolveCommandPath } from "./command-path.js";
 
 const execFileAsync = promisify(execFile);
@@ -274,7 +274,7 @@ export async function prepareTeamworkAgentLaunch(repoPath: string, agentId: stri
 
   const protocolOptions = await resolveProtocolOptions(repoPath, agentId);
   await ensureProtocolFiles(repoPath, protocolOptions);
-  return { initialCommand: appendShellArgs(initialCommand, bootstrapArgs), injected: true };
+  return { initialCommand: appendShellArgs(withLaunchSessionId(agentId, initialCommand), bootstrapArgs), injected: true };
 }
 
 async function hasSharkbayHarnessDir(repoPath: string): Promise<boolean> {
@@ -293,6 +293,13 @@ function teamworkBootstrapArgs(agentId: string, prompt: string): string[] | null
   if (normalized === "kiro") return ["chat", prompt];
   if (normalized === "opencode") return ["--prompt", prompt];
   return null;
+}
+
+function withLaunchSessionId(agentId: string, command: string): string {
+  const normalized = agentId.trim().toLowerCase();
+  if (normalized !== "claude" && normalized !== "gemini") return command;
+  const sessionId = randomUUID();
+  return `SHARKBAY_SESSION_ID=${shellQuote(sessionId)} ${appendShellArgs(command, ["--session-id", sessionId])}`;
 }
 
 function appendShellArgs(command: string, args: string[]): string {
