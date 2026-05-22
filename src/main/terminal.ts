@@ -26,6 +26,8 @@ import type {
 
 const execFileAsync = promisify(execFile);
 const defaultTerminalInspectIntervalMs = 1000;
+const initialCommandQuietDelayMs = 150;
+const initialCommandMaxDelayMs = 900;
 const staleSubmittedCommandMs = 2000;
 const interactiveForegroundProcesses = new Set(["btop", "claude", "codex", "htop", "top"]);
 
@@ -100,8 +102,11 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
       const launch = await prepareTeamworkAgentLaunch(spec.projectRoot, input.agentId, initialCommand);
       initialCommand = launch.initialCommand;
     }
+    const shellInitialCommand = !spec.isRemote && !input.service ? initialCommand : null;
     const command = !spec.isRemote && input.service && initialCommand
       ? serviceTerminalCommand(spec.shell, initialCommand)
+      : shellInitialCommand
+        ? initialCommandTerminalCommand(spec.shell, shellInitialCommand)
       : spec.command;
     const id = `term-${Date.now().toString(36)}-${++this.sequence}`;
     const ptyProcess = pty.spawn(command.file, command.args, {
@@ -149,10 +154,50 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
     };
 
     this.sessions.set(id, session);
+    const initialCommandLine = initialCommand && !shellInitialCommand && (!input.service || spec.isRemote)
+      ? input.service ? serviceCommandLine(initialCommand) : initialCommand
+      : null;
+    let pendingInitialCommand = initialCommandLine;
+    let pendingInitialCommandQuietTimer: ReturnType<typeof setTimeout> | null = null;
+    let pendingInitialCommandDeadlineTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const clearPendingInitialCommandTimers = () => {
+      if (pendingInitialCommandQuietTimer) {
+        clearTimeout(pendingInitialCommandQuietTimer);
+        pendingInitialCommandQuietTimer = null;
+      }
+      if (pendingInitialCommandDeadlineTimer) {
+        clearTimeout(pendingInitialCommandDeadlineTimer);
+        pendingInitialCommandDeadlineTimer = null;
+      }
+    };
+    const writePendingInitialCommand = () => {
+      const commandLine = pendingInitialCommand;
+      pendingInitialCommand = null;
+      clearPendingInitialCommandTimers();
+      if (!commandLine || session.status !== "running") {
+        return;
+      }
+      ptyProcess.write(`${commandLine}\r`);
+    };
+    const schedulePendingInitialCommand = () => {
+      if (!pendingInitialCommand) {
+        return;
+      }
+      if (pendingInitialCommandQuietTimer) {
+        clearTimeout(pendingInitialCommandQuietTimer);
+      }
+      pendingInitialCommandQuietTimer = setTimeout(writePendingInitialCommand, initialCommandQuietDelayMs);
+      pendingInitialCommandQuietTimer.unref?.();
+    };
+
     ptyProcess.onData((data) => {
       this.emit("data", { sessionId: id, data, stream: "stdout" });
+      schedulePendingInitialCommand();
     });
     ptyProcess.onExit(({ exitCode, signal }) => {
+      pendingInitialCommand = null;
+      clearPendingInitialCommandTimers();
       session.status = "exited";
       this.stopTitleInspection(session);
       void this.runCleanup(session);
@@ -161,9 +206,11 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
     if (!spec.isRemote) {
       this.startTitleInspection(session);
     }
-    if (initialCommand && (!input.service || spec.isRemote)) {
+    if (pendingInitialCommand) {
       session.foregroundCommandObserved = false;
-      ptyProcess.write(`${input.service ? serviceCommandLine(initialCommand) : initialCommand}\r`);
+      schedulePendingInitialCommand();
+      pendingInitialCommandDeadlineTimer = setTimeout(writePendingInitialCommand, initialCommandMaxDelayMs);
+      pendingInitialCommandDeadlineTimer.unref?.();
     }
 
     return publicSession(session);
@@ -460,6 +507,10 @@ export function terminalCommand(shell: string): { file: string; args: string[] }
 
 function serviceTerminalCommand(shell: string, command: string): { file: string; args: string[] } {
   return { file: shell, args: ["-lc", serviceCommandLine(command)] };
+}
+
+function initialCommandTerminalCommand(shell: string, command: string): { file: string; args: string[] } {
+  return { file: shell, args: ["-lic", `${command}\nexec ${shellQuote(shell)} -l`] };
 }
 
 function positiveTerminalDimension(value: number | null | undefined): number | null {

@@ -258,6 +258,47 @@ describe("terminal cwd validation", () => {
     }
   });
 
+  it("runs initial commands without echoing the command text", async () => {
+    const runtime = await makeTestRuntime("terminal-initial-command-config");
+    const root = await makeTempRoot("terminal-initial-command-root");
+    const repo = await createGitRepoFixture(root, "TerminalInitialCommandRepo");
+    await writeJson(getRuntimeConfigPath(runtime), {
+      schemaVersion: 1,
+      configuredRoots: [],
+      configuredProjects: [repo],
+      updatedAt: "2026-05-22",
+    });
+
+    const manager = new TerminalManager();
+    const outputChunks: string[] = [];
+    const output = new Promise<string>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("initial command output timed out")), 3000);
+      manager.on("data", (event) => {
+        outputChunks.push(event.data);
+        if (event.data.includes("sharkbay-initial-ok")) {
+          clearTimeout(timeout);
+          resolve(outputChunks.join(""));
+        }
+      });
+    });
+    const initialCommand = "node -e \"process.stdout.write(Buffer.from('c2hhcmtiYXktaW5pdGlhbC1vawo=','base64').toString())\"";
+    const session = await manager.create(runtime, {
+      cwdUri: toLocalProjectUri(repo),
+      title: "TerminalInitialCommandRepo",
+      initialCommand,
+      initialCommandTitle: "Initial Command",
+    });
+
+    try {
+      const outputText = await output;
+      expect(outputText).toContain("sharkbay-initial-ok");
+      expect(outputText).not.toContain(initialCommand);
+      expect(session.title).toBe("Initial Command");
+    } finally {
+      manager.close({ sessionId: session.id });
+    }
+  });
+
   it("can start a service session with an initial command and service metadata", async () => {
     const runtime = await makeTestRuntime("terminal-service-config");
     const root = await makeTempRoot("terminal-service-root");
