@@ -151,6 +151,7 @@ const minDetailColumnWidth = 340;
 const minTerminalColumnWidth = 420;
 const terminalWorkingThresholdMs = 5000;
 const terminalQuietDoneMs = 5000;
+const maxPendingTerminalOutputChars = 1024 * 1024;
 const defaultProjectColumnWidth = minProjectColumnWidth;
 const defaultDetailColumnWidth = minDetailColumnWidth;
 const resizerColumnWidth = 12;
@@ -964,6 +965,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   const spacesRef = useRef<Record<string, TerminalSpace>>({});
   const creatingProjects = useRef(new Set<string>());
   const quietTimers = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
+  const pendingTerminalOutput = useRef(new Map<string, string>());
   const focusRequestNonce = useRef(0);
   const [tabFocusRequest, setTabFocusRequest] = useState<{ projectId: string; nonce: number } | null>(null);
   const selectedSpace = candidate?.id ? spaces[candidate.id] ?? null : null;
@@ -971,7 +973,16 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   const services = candidate?.services ?? [];
 
   useEffect(() => { spacesRef.current = spaces; }, [spaces]);
-  useEffect(() => () => { for (const timer of quietTimers.current.values()) window.clearTimeout(timer); quietTimers.current.clear(); }, []);
+  useEffect(() => {
+    const pending = pendingTerminalOutput.current;
+    for (const [sessionId, data] of [...pending]) {
+      const tab = findTerminalTab(spaces, sessionId);
+      if (!tab) continue;
+      pending.delete(sessionId);
+      writeTerminalOutputToTab(sessionId, tab, data);
+    }
+  }, [spaces]);
+  useEffect(() => () => { for (const timer of quietTimers.current.values()) window.clearTimeout(timer); quietTimers.current.clear(); pendingTerminalOutput.current.clear(); }, []);
 
   useEffect(() => {
     const hasDirtyEditor = Object.values(spaces).some((space) =>
@@ -1191,9 +1202,26 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
 
   function appendTerminalOutput(event: TerminalDataEvent) {
     const tab = findTerminalTab(spacesRef.current, event.sessionId);
-    tab?.terminal.write(event.data);
-    if (tab && isRunningServiceTab(tab)) recordServiceUrl(event.sessionId, event.data);
-    recordTerminalOutputActivity(event.sessionId);
+    if (!tab) {
+      bufferPendingTerminalOutput(event);
+      return;
+    }
+    writeTerminalOutputToTab(event.sessionId, tab, event.data);
+  }
+
+  function writeTerminalOutputToTab(sessionId: string, tab: TerminalShellTab, data: string) {
+    tab.terminal.write(data);
+    if (isRunningServiceTab(tab)) recordServiceUrl(sessionId, data);
+    recordTerminalOutputActivity(sessionId);
+  }
+
+  function bufferPendingTerminalOutput(event: TerminalDataEvent) {
+    const existing = pendingTerminalOutput.current.get(event.sessionId) ?? "";
+    const combined = `${existing}${event.data}`;
+    pendingTerminalOutput.current.set(
+      event.sessionId,
+      combined.length > maxPendingTerminalOutputChars ? combined.slice(-maxPendingTerminalOutputChars) : combined,
+    );
   }
 
   function recordTerminalOutputActivity(sessionId: string) {
@@ -1251,6 +1279,13 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     clearTerminalQuietTimer(event.sessionId);
     const message = `\r\n[process exited${event.exitCode === null ? "" : ` with code ${event.exitCode}`}${event.signal ? `, signal ${event.signal}` : ""}]\r\n`;
     const match = findTerminalTabWithSpace(spacesRef.current, event.sessionId);
+    const pending = pendingTerminalOutput.current.get(event.sessionId);
+    if (pending && match?.tab) {
+      pendingTerminalOutput.current.delete(event.sessionId);
+      match.tab.terminal.write(pending);
+    } else if (!match?.tab) {
+      pendingTerminalOutput.current.delete(event.sessionId);
+    }
     match?.tab.terminal.write(message);
     if (match?.tab) {
       const hint = explainEarlyTerminalExit(match.tab, event);
