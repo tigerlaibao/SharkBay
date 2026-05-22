@@ -1204,14 +1204,20 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
       if (currentTab.session.status !== "running") return currentTab;
       const burstStartedAt = currentTab.outputBurstStartedAt ?? now;
       const sustained = now - burstStartedAt >= terminalWorkingThresholdMs;
-      return { ...currentTab, activityState: sustained ? "working" : currentTab.activityState === "done" ? "idle" : currentTab.activityState, outputBurstStartedAt: burstStartedAt };
+      const activityState = sustained ? "working" : currentTab.activityState === "done" ? "idle" : currentTab.activityState;
+      if (currentTab.activityState === activityState && currentTab.outputBurstStartedAt === burstStartedAt) return currentTab;
+      return { ...currentTab, activityState, outputBurstStartedAt: burstStartedAt };
     }));
     scheduleTerminalQuietTimer(sessionId);
   }
 
   function recordTerminalInputActivity(sessionId: string) {
     clearTerminalQuietTimer(sessionId);
-    setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => ({ ...currentTab, activityState: currentTab.activityState === "done" ? "done" : "idle", outputBurstStartedAt: null })));
+    setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => {
+      const activityState = currentTab.activityState === "done" ? "done" : "idle";
+      if (currentTab.activityState === activityState && currentTab.outputBurstStartedAt === null) return currentTab;
+      return { ...currentTab, activityState, outputBurstStartedAt: null };
+    }));
   }
 
   function scheduleTerminalQuietTimer(sessionId: string) {
@@ -1219,7 +1225,11 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     if (existingTimer) window.clearTimeout(existingTimer);
     const timer = window.setTimeout(() => {
       quietTimers.current.delete(sessionId);
-      setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => ({ ...currentTab, activityState: terminalActivityAfterQuiet(currentTab.activityState), outputBurstStartedAt: null })));
+      setSpaces((current) => mapTerminalTab(current, sessionId, (currentTab) => {
+        const activityState = terminalActivityAfterQuiet(currentTab.activityState);
+        if (currentTab.activityState === activityState && currentTab.outputBurstStartedAt === null) return currentTab;
+        return { ...currentTab, activityState, outputBurstStartedAt: null };
+      }));
     }, terminalQuietDoneMs);
     quietTimers.current.set(sessionId, timer);
   }
@@ -1616,9 +1626,11 @@ function mapTabById(spaces: Record<string, TerminalSpace>, tabId: string, mapTab
     let spaceChanged = false;
     const nextTabs = space.tabs.map((tab) => {
       if (tabIdForTab(tab) !== tabId) return tab;
+      const nextTab = mapTab(tab);
+      if (nextTab === tab) return tab;
       spaceChanged = true;
       changed = true;
-      return mapTab(tab);
+      return nextTab;
     });
     return [projectId, spaceChanged ? { ...space, tabs: nextTabs } : space];
   }));
