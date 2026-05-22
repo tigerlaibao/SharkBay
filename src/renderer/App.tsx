@@ -1045,8 +1045,12 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
       return { ...current, [candidate.id]: { projectId: candidate.id, projectName: displayProjectName ?? candidate.name, uri: candidate.uri, displayPath: candidate.displayPath, tabs: [], activeId: null, serviceUrl: null } };
     });
     if (isVisible) requestProjectTabFocus(candidate.id);
-    if (!isVisible) return;
     const existing = spacesRef.current[candidate.id];
+    if (existing?.activeId) {
+      const activeTab = existing.tabs.find((tab) => tab.kind === "terminal" && tab.session.id === existing.activeId);
+      if (activeTab && activeTab.kind === "terminal" && activeTab.activityState === "done") clearTerminalDoneState(activeTab.session.id);
+    }
+    if (!isVisible) return;
     if (existing?.tabs.length) return;
     if (creatingProjects.current.has(candidate.id)) return;
     creatingProjects.current.add(candidate.id);
