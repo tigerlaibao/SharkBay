@@ -261,7 +261,7 @@ describe("teamwork harness install", () => {
     });
     await expect(prepareTeamworkAgentLaunch(repo, "deepseek", "deepseek")).resolves.toMatchObject({
       injected: true,
-      initialCommand: expect.stringContaining("deepseek 'I'\\''m working in SharkBay Teamwork mode"),
+      initialCommand: "deepseek",
     });
     await expect(prepareTeamworkAgentLaunch(repo, "opencode", "opencode")).resolves.toMatchObject({
       injected: true,

@@ -10,7 +10,7 @@ import { parseProjectUri } from "../core/project-uri.js";
 import { resolveProjectUri } from "./path-safety.js";
 import { createAskPassScript, sshArgsForRemoteMachine } from "./remote-machines.js";
 import { createDefaultSecretStore, type SecretStore } from "./secrets.js";
-import { prepareTeamworkAgentLaunch } from "./teamwork-harness.js";
+import { prepareTeamworkAgentLaunch, TEAMWORK_BOOTSTRAP_PROMPT } from "./teamwork-harness.js";
 import type {
   IpcRuntimeLike,
   RemoteMachine,
@@ -29,7 +29,8 @@ const defaultTerminalInspectIntervalMs = 1000;
 const initialCommandQuietDelayMs = 150;
 const initialCommandMaxDelayMs = 900;
 const staleSubmittedCommandMs = 2000;
-const interactiveForegroundProcesses = new Set(["btop", "claude", "codex", "htop", "top"]);
+const delayedBootstrapWriteMs = 2000;
+const interactiveForegroundProcesses = new Set(["btop", "claude", "codex", "deepseek", "htop", "top"]);
 
 type CwdInspector = (pid: number) => Promise<string | null>;
 
@@ -98,8 +99,12 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
     const spec = await this.resolveLaunchSpec(runtime, input.cwdUri);
     let initialCommand = normalizeTerminalCommandLine(input.initialCommand);
     const initialCommandTitle = initialCommand ? normalizeTerminalCommandLine(input.initialCommandTitle) : null;
+    let delayedBootstrapPrompt: string | null = null;
     if (!spec.isRemote && input.agentId && initialCommand && !input.service) {
       const launch = await prepareTeamworkAgentLaunch(spec.projectRoot, input.agentId, initialCommand);
+      if (launch.injected && input.agentId === "deepseek" && launch.initialCommand === initialCommand) {
+        delayedBootstrapPrompt = TEAMWORK_BOOTSTRAP_PROMPT;
+      }
       initialCommand = launch.initialCommand;
     }
     const shellInitialCommand = !spec.isRemote && !input.service ? initialCommand : null;
@@ -211,6 +216,15 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
       schedulePendingInitialCommand();
       pendingInitialCommandDeadlineTimer = setTimeout(writePendingInitialCommand, initialCommandMaxDelayMs);
       pendingInitialCommandDeadlineTimer.unref?.();
+    }
+    if (delayedBootstrapPrompt) {
+      const prompt = delayedBootstrapPrompt;
+      const timer = setTimeout(() => {
+        if (session.status === "running") {
+          ptyProcess.write(`${"\b".repeat(100)}${prompt}`);
+        }
+      }, delayedBootstrapWriteMs);
+      timer.unref?.();
     }
 
     return publicSession(session);

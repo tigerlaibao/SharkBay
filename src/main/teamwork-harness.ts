@@ -527,7 +527,8 @@ async function hasSharkbayHarnessDir(repoPath: string): Promise<boolean> {
 
 function teamworkBootstrapArgs(agentId: string, prompt: string): string[] | null {
   const normalized = agentId.trim().toLowerCase();
-  if (normalized === "codex" || normalized === "claude" || normalized === "deepseek") return [prompt];
+  if (normalized === "codex" || normalized === "claude") return [prompt];
+  if (normalized === "deepseek") return [];
   if (normalized === "gemini" || normalized === "qwen") return ["-i", prompt];
   if (normalized === "kiro") return ["chat", prompt];
   if (normalized === "opencode") return ["--prompt", prompt];
