@@ -1,22 +1,67 @@
-# SharkBay
+<p align="center">
+  <img src="resources/shark.png" width="128" height="128" alt="SharkBay icon">
+</p>
 
-SharkBay is a local-first macOS workbench for software projects. It helps you keep a set of local repositories visible, open project-scoped terminals and browser tabs, inspect Git state, and coordinate agent work through local Markdown task records.
+<h1 align="center">SharkBay</h1>
 
-## What It Does
+<p align="center">
+  <strong>macOS workbench for multi-agent vibe coding</strong>
+</p>
 
-- Adds and removes individual project folders selected by the user.
-- Shows project icons, branch names, dirty worktree state, dirty files, recent Git activity, and a lazy file tree.
-- Opens per-project terminal workspaces backed by xterm and `node-pty`.
-- Detects common development services from `package.json` `dev` / `dev:*` scripts and supported Python CLI web commands.
-- Opens embedded browser tabs for local or web URLs from the same project workspace.
-- Discovers installed agent CLIs such as Codex, Claude Code, Gemini, Kiro, DeepSeek, Qwen, and OpenCode, then launches them in visible project terminals.
-- Watches recent Codex and Claude transcript files for short project status snippets.
-- Supports SharkBay Teamwork: a project-local `.sharkbay` harness, Markdown task files, read-only team context mirror, knowledge site generation, and optional sync through a GitHub remote branch.
-- Provides Settings for configured projects, project status, and day/night/morning appearance themes.
+<p align="center">
+  <img src="docs/screenshot.png" width="720" alt="SharkBay screenshot">
+</p>
+
+## Features
+
+### Multi-Agent Support
+
+Launch and manage multiple AI coding agents from one workspace.
+
+Supported agents: **Claude Code** · **Codex** · **Gemini** · **Kiro** · **DeepSeek** · **Qwen** · **OpenCode**
+
+### Agent Status
+
+Real-time status indicators from agent transcripts — see what each agent is working on without switching terminals.
+
+### Multi-Project Workspace
+
+Manage local and remote projects in a unified sidebar. Add, remove, and switch between repositories instantly.
+
+### GitHub-Compatible Teamwork
+
+Project-local `.sharkbay` harness with Markdown task records, synced through a GitHub remote branch. Works with any agent that reads files.
+
+### Team Context Sharing & Session Restore
+
+Task records provide shared context across agents and team members. Restore previous agent sessions from completed tasks with one click.
+
+### Integrated Browser
+
+Embedded browser tabs for local dev servers and web URLs, right next to your terminals — no app-switching.
+
+### Dev Environment Quick Launch
+
+Auto-discovers `dev` / `dev:*` scripts from `package.json` and Python CLI web commands. Start and stop services without leaving the workbench.
+
+### Git at a Glance
+
+Branch name, dirty state, changed files, and recent reflog activity — all visible in the project panel without running commands.
+
+### Quick File Editor
+
+Built-in CodeMirror editor with syntax highlighting for 20+ languages. Open, edit, and save project files in tabs — Cmd+S to save, dirty state tracking, 5 MB file support.
+
+### Knowledge Site
+
+Auto-generated HTML site from project docs and team task history — readable, browsable context for humans and agents alike.
+
+### Remote Machines
+
+SSH into remote development machines with full support for file browsing, editing, Git status, terminals, and agent launches. Auth via ssh-config, ssh-agent, key file, or password (stored in macOS Keychain).
 
 ## Documentation
 
-- [Documentation index](docs/index.md)
 - [Product notes](docs/product.md)
 - [Architecture](docs/architecture.md)
 - [Development guide](docs/development.md)
@@ -24,72 +69,28 @@ SharkBay is a local-first macOS workbench for software projects. It helps you ke
 - [Release and packaging](docs/release.md)
 - [Teamwork](docs/teamwork.md)
 - [Agent guide](docs/agents.md)
+- [Remote machines](docs/remote-machine.md)
 - [Roadmap](docs/roadmap.md)
-
-## Project Model
-
-SharkBay treats a project as a local directory selected by the user. Removing a project only removes it from the SharkBay workspace; it does not delete files from disk.
-
-Project metadata is discovered from ordinary repository files and local tools:
-
-- `.git` identifies repository metadata when present.
-- Git commands provide branch, remote, reflog, dirty-worktree, and changed-file data.
-- `package.json` and selected `pyproject.toml` patterns contribute development service commands.
-- Common icon locations and Electron Builder icon fields provide project avatars.
-- Teamwork metadata is stored inside the target repository only after Teamwork is explicitly installed for that project.
-
-The app is local-first by default. It reads local files and spawns local shells inside configured project boundaries. Network and remote Git operations are limited to explicit features such as Teamwork install/sync and web content opened in embedded or external browsers.
-
-## Data Directory
-
-SharkBay stores product data in the user's SharkBay home directory:
-
-```text
-~/.sharkbay/
-```
-
-Current client configuration is stored at:
-
-```text
-~/.sharkbay/config.json
-```
-
-That file contains manually added projects, appearance theme, and config metadata. Electron may still use its platform `userData` directory for Chromium/runtime state, but SharkBay workspace data should live under `~/.sharkbay`.
 
 ## Tech Stack
 
-- Electron
-- React
-- TypeScript
-- Vite
-- Vitest
-- xterm
-- node-pty
+Electron · React · TypeScript · Vite · xterm · node-pty · CodeMirror
 
 ## Requirements
 
-- macOS for the desktop app workflow
-- Node.js `>=20.11`
-- npm
-- Native build tooling required by Electron native modules, including `node-pty`
-- Git for repository metadata
-- GitHub CLI `gh` only when using SharkBay Teamwork sync
+- macOS
+- Node.js >= 20.11
+- Git
+- `gh` CLI (only for Teamwork sync)
 
 ## Development
 
-Install dependencies:
-
 ```bash
 npm install
-```
-
-Run the development app:
-
-```bash
 npm run dev
 ```
 
-Run checks:
+## Checks
 
 ```bash
 npm run typecheck
@@ -97,47 +98,13 @@ npm test
 npm run build
 ```
 
-`npm run lint` currently delegates to `npm run typecheck`.
-
-If Electron or native terminal dependencies change, rebuild native modules:
-
-```bash
-npm run rebuild:native
-```
-
 ## Packaging
 
-Create an unpacked local macOS app for smoke testing:
-
 ```bash
-npm run pack
+npm run pack    # unpacked app for smoke testing
+npm run dist    # distributable macOS artifacts in release/
 ```
 
-Create distributable macOS artifacts:
+## License
 
-```bash
-npm run dist
-```
-
-Outputs are written to `release/`. Local builds use ad-hoc signing unless signing and notarization credentials are configured.
-
-## Runtime Data
-
-- App config is stored in Electron `userData` as `config.json`.
-- Resizable column widths are stored in renderer `localStorage`.
-- Embedded browser tabs use Electron partition `persist:sharkbay-browser`.
-- Teamwork installs repo-local `.sharkbay/` files; supported agent launches receive a SharkBay bootstrap prompt instead of writing project entry files.
-- Teamwork sync uses the remote branch `sharkbay-team-context` and mirrors records into `.sharkbay/team-context/`.
-- Agent status watching reads recent local Codex and Claude transcript files from the user's home directory.
-
-## Safety Notes
-
-SharkBay keeps project operations scoped to user-configured projects:
-
-- Renderer-provided paths are resolved in the main process against persisted configured projects before filesystem, Git, terminal, file-tree, or Teamwork operations run.
-- Project files are exposed through scoped file-tree listing, not arbitrary path reads.
-- Terminal sessions are spawned only after the main process resolves the requested cwd inside an allowed project boundary.
-- Embedded browser tabs accept only `http:` and `https:` URLs; unsafe schemes fall back to `about:blank`.
-- New windows from app and embedded browser content are opened through Electron shell handling instead of privileged app contexts.
-- Agent CLIs are not run as hidden background services; when launched, they run in ordinary visible project terminal tabs.
-- Teamwork remote operations require an explicit install action, a GitHub origin, authenticated `gh`, and write/admin repository permission.
+Private — not open source.
