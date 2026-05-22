@@ -2154,7 +2154,7 @@ function TasksDetailTab({ active, candidate, setToast, onOpenBrowserTab, onRefre
   const [tasks, setTasks] = useState<TaskViewModel[]>([]);
   const [status, setStatus] = useState<TeamworkStatus | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [busyAction, setBusyAction] = useState<"install" | "site" | null>(null);
+  const [busyAction, setBusyAction] = useState<"install" | "site" | "harness" | null>(null);
   const selected = useMemo(
     () => selectedTaskId ? tasks.find((task) => task.taskId === selectedTaskId) ?? null : null,
     [selectedTaskId, tasks],
@@ -2239,6 +2239,22 @@ function TasksDetailTab({ active, candidate, setToast, onOpenBrowserTab, onRefre
     }
   }
 
+  async function updateTeamworkHarness() {
+    if (!repoPath) return;
+    setBusyAction("harness");
+    try {
+      const updateHarness = getBridge().teamwork?.updateHarness;
+      if (!updateHarness) throw new Error("Teamwork harness update API is not available.");
+      const nextStatus = await updateHarness({ repoPath });
+      setStatus(nextStatus);
+      setToast({ tone: "success", message: "Teamwork harness updated." });
+    } catch (error) {
+      setToast({ tone: "error", message: asMessage(error) });
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   if (!repoPath) return <EmptyState title="Teamwork unavailable" body="Teamwork is available for local Git projects." />;
 
   if (selected) {
@@ -2279,6 +2295,25 @@ function TasksDetailTab({ active, candidate, setToast, onOpenBrowserTab, onRefre
             </button>
           </div>
         </section>
+      ) : null}
+
+      {status?.installed ? (
+        status.harnessUpdate.required ? (
+          <section className="subpanel confirm-panel teamwork-action-card teamwork-harness-card">
+            <div>
+              <h4>Harness Update</h4>
+              <p className="summary-text">Harness files differ from the current source. Update them?</p>
+              <p className="summary-text teamwork-harness-files">
+                {status.harnessUpdate.files.length} {status.harnessUpdate.files.length === 1 ? "file" : "files"} need attention: {status.harnessUpdate.files.map((file) => file.path).join(", ")}
+              </p>
+            </div>
+            <div className="button-row">
+              <button className="button compact" disabled={busyAction !== null} type="button" onClick={() => void updateTeamworkHarness()}>
+                {busyAction === "harness" ? "Updating" : "Update Harness"}
+              </button>
+            </div>
+          </section>
+        ) : null
       ) : null}
 
       {status?.installed ? (

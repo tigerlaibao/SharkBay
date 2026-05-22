@@ -185,6 +185,7 @@ const sharkBayApi = {
     uninstall: (input: TeamworkUninstallInput) => invoke<TeamworkUninstallResult>(channels.teamworkUninstall, input),
     resolveIdentity: () => invoke<GitHubIdentity>(channels.teamworkResolveIdentity),
     syncNow: (input: { repoPath: string }) => invoke<void>(channels.teamworkSyncNow, input),
+    updateHarness: (input: { repoPath: string }) => invoke<TeamworkStatus>(channels.teamworkUpdateHarness, input),
     onTasksChanged: (callback: (event: TeamworkTasksChangedEvent) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: TeamworkTasksChangedEvent) => callback(payload);
       ipcRenderer.on(channels.teamworkTasksChanged, listener);

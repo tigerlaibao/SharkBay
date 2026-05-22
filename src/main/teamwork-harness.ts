@@ -1,4 +1,4 @@
-import { access, chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { access, chmod, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -175,6 +175,30 @@ export type GitHubIdentity = {
   avatarUrl: string;
 };
 
+type ProtocolOptions = {
+  githubLogin: string;
+  githubUserId: number;
+  machineId: string;
+  agent: string;
+  repo?: string;
+};
+
+type ManagedHarnessFile = {
+  path: string;
+  content: string;
+  executable?: boolean;
+};
+
+export type TeamworkHarnessFileIssue = {
+  path: string;
+  reason: "missing" | "changed";
+};
+
+export type TeamworkHarnessUpdateStatus = {
+  required: boolean;
+  files: TeamworkHarnessFileIssue[];
+};
+
 export async function resolveGitHubIdentity(): Promise<GitHubIdentity> {
   const ghPath = await resolveGitHubCliPath();
   const { stdout } = await execFileAsync(ghPath, ["api", "user", "--jq", ".login + \"\\n\" + (.id|tostring) + \"\\n\" + .avatar_url"], { timeout: 10_000 });
@@ -199,27 +223,57 @@ export function generateMachineId(): string {
   return randomBytes(3).toString("hex");
 }
 
+function managedHarnessFiles(options: ProtocolOptions): ManagedHarnessFile[] {
+  return [
+    {
+      path: ".sharkbay/harness/protocol.md",
+      content: generateProtocol(options),
+    },
+    {
+      path: ".sharkbay/harness/agent-session-id.sh",
+      content: AGENT_SESSION_ID_SCRIPT,
+      executable: true,
+    },
+  ];
+}
+
+async function writeManagedHarnessFiles(repoPath: string, options: ProtocolOptions): Promise<void> {
+  const sbDir = join(repoPath, ".sharkbay");
+  const harnessDir = join(sbDir, "harness");
+
+  await mkdir(harnessDir, { recursive: true });
+  await mkdir(join(sbDir, "tasks"), { recursive: true });
+  await mkdir(join(sbDir, "team-context"), { recursive: true });
+
+  await writeFile(join(sbDir, "machine-id"), options.machineId, "utf-8");
+  for (const file of managedHarnessFiles(options)) {
+    await writeFile(join(repoPath, file.path), file.content, "utf-8");
+    if (file.executable) await chmod(join(repoPath, file.path), 0o755);
+  }
+}
+
+export async function getHarnessUpdateStatus(repoPath: string): Promise<TeamworkHarnessUpdateStatus> {
+  if (!await hasSharkbayHarnessDir(repoPath)) return { required: false, files: [] };
+  const options = await resolveProtocolOptions(repoPath, "", { resolveIdentity: false, generateMachineId: false });
+  return compareManagedHarnessFiles(repoPath, options);
+}
+
+export async function updateHarnessFiles(repoPath: string): Promise<TeamworkHarnessUpdateStatus> {
+  await assertHarnessInstallable(repoPath);
+  const options = await resolveProtocolOptions(repoPath, "", { resolveIdentity: true, generateMachineId: true });
+  await writeManagedHarnessFiles(repoPath, options);
+  await ensureLocalExclude(repoPath);
+  return compareManagedHarnessFiles(repoPath, options);
+}
+
 export async function installHarness(
   repoPath: string,
-  options: { githubLogin: string; githubUserId: number; machineId: string; agent: string; repo?: string },
+  options: ProtocolOptions,
 ): Promise<void> {
   await assertHarnessInstallable(repoPath);
 
-  const sbDir = join(repoPath, ".sharkbay");
-  const harnessDir = join(sbDir, "harness");
-  const tasksDir = join(sbDir, "tasks");
-  const teamContextDir = join(sbDir, "team-context");
-
-  await mkdir(harnessDir, { recursive: true });
-  await mkdir(tasksDir, { recursive: true });
-  await mkdir(teamContextDir, { recursive: true });
-
-  await writeFile(join(sbDir, "machine-id"), options.machineId, "utf-8");
-  await writeFile(join(harnessDir, "protocol.md"), generateProtocol(options), "utf-8");
-  await writeFile(join(harnessDir, "agent-session-id.sh"), AGENT_SESSION_ID_SCRIPT, "utf-8");
-  await chmod(join(harnessDir, "agent-session-id.sh"), 0o755);
-
-  await backupLocalExclude(repoPath, harnessDir);
+  await writeManagedHarnessFiles(repoPath, options);
+  await backupLocalExclude(repoPath, join(repoPath, ".sharkbay", "harness"));
   await ensureLocalExclude(repoPath);
 }
 
@@ -379,6 +433,33 @@ export function cleanLocalExcludeContent(content: string): { content: string; re
   };
 }
 
+async function compareManagedHarnessFiles(repoPath: string, options: ProtocolOptions): Promise<TeamworkHarnessUpdateStatus> {
+  const files: TeamworkHarnessFileIssue[] = [];
+  for (const file of managedHarnessFiles(options)) {
+    const filePath = join(repoPath, file.path);
+    let current: string;
+    try {
+      current = await readFile(filePath, "utf-8");
+    } catch {
+      files.push({ path: file.path, reason: "missing" });
+      continue;
+    }
+
+    let changed = current !== file.content;
+    if (!changed && file.executable) {
+      try {
+        const fileStat = await stat(filePath);
+        changed = (fileStat.mode & 0o111) === 0;
+      } catch {
+        changed = true;
+      }
+    }
+    if (changed) files.push({ path: file.path, reason: "changed" });
+  }
+
+  return { required: files.length > 0, files };
+}
+
 export async function ensureLocalExclude(repoPath: string): Promise<void> {
   const excludePath = join(repoPath, ".git", "info", "exclude");
   await mkdir(join(repoPath, ".git", "info"), { recursive: true });
@@ -417,8 +498,6 @@ export async function prepareTeamworkAgentLaunch(repoPath: string, agentId: stri
     return { initialCommand, injected: false, skippedReason: "not-installed" };
   }
 
-  const protocolOptions = await resolveProtocolOptions(repoPath, agentId);
-  await ensureProtocolFiles(repoPath, protocolOptions);
   return { initialCommand: appendShellArgs(withLaunchSessionId(agentId, initialCommand), bootstrapArgs), injected: true };
 }
 
@@ -456,11 +535,18 @@ function shellQuote(value: string): string {
   return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
-async function resolveProtocolOptions(repoPath: string, agentId: string): Promise<{ githubLogin: string; githubUserId: number; machineId: string; agent: string; repo?: string }> {
+async function resolveProtocolOptions(
+  repoPath: string,
+  agentId: string,
+  options: { resolveIdentity?: boolean; generateMachineId?: boolean } = {},
+): Promise<ProtocolOptions> {
   const existing = await readExistingProtocolOptions(repoPath);
-  const machineId = await getMachineId(repoPath) ?? existing.machineId ?? generateMachineId();
+  const shouldResolveIdentity = options.resolveIdentity ?? true;
+  const machineId = await getMachineId(repoPath)
+    ?? existing.machineId
+    ?? (options.generateMachineId === false ? "unknown" : generateMachineId());
   let identity: GitHubIdentity | null = null;
-  if (!existing.githubLogin || !existing.githubUserId) {
+  if (shouldResolveIdentity && (!existing.githubLogin || !existing.githubUserId)) {
     try {
       identity = await resolveGitHubIdentity();
     } catch {
@@ -496,20 +582,6 @@ function readProtocolField(content: string, field: string): string | null {
   const escaped = field.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const match = content.match(new RegExp(`^- ${escaped}:\\s*(.*)$`, "m"));
   return match?.[1]?.trim() || null;
-}
-
-async function ensureProtocolFiles(
-  repoPath: string,
-  options: { githubLogin: string; githubUserId: number; machineId: string; agent: string; repo?: string },
-): Promise<void> {
-  const sbDir = join(repoPath, ".sharkbay");
-  const harnessDir = join(sbDir, "harness");
-  await mkdir(harnessDir, { recursive: true });
-  await mkdir(join(sbDir, "tasks"), { recursive: true });
-  await mkdir(join(sbDir, "team-context"), { recursive: true });
-  await writeFile(join(sbDir, "machine-id"), options.machineId, "utf-8");
-  await writeFile(join(harnessDir, "protocol.md"), generateProtocol(options), "utf-8");
-  await ensureLocalExclude(repoPath);
 }
 
 async function resolveRepoName(repoPath: string): Promise<string> {

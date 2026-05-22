@@ -5,11 +5,13 @@ import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import {
   cleanLocalExcludeContent,
+  getHarnessUpdateStatus,
   installHarness,
   isHarnessInstalled,
   prepareTeamworkAgentLaunch,
   TEAMWORK_BOOTSTRAP_PROMPT,
   uninstallHarness,
+  updateHarnessFiles,
 } from "../src/main/teamwork-harness.js";
 import { makeTempRoot, writeJson, writeText } from "./helpers.js";
 
@@ -174,6 +176,35 @@ describe("teamwork harness install", () => {
     await expect(installHarness(repo, harnessOptions)).rejects.toThrow(/requires a Git repository/);
     await expect(fs.stat(path.join(repo, ".git")).catch(() => null)).resolves.toBeNull();
     await expect(isHarnessInstalled(repo)).resolves.toBe(false);
+  });
+
+  it("reports harness drift and updates managed files only when requested", async () => {
+    const root = await makeTempRoot("teamwork-harness-update");
+    const repo = await createRealGitRepoFixture(root);
+    await installHarness(repo, harnessOptions);
+    const protocolPath = path.join(repo, ".sharkbay", "harness", "protocol.md");
+    const helperPath = path.join(repo, ".sharkbay", "harness", "agent-session-id.sh");
+    const originalProtocol = await fs.readFile(protocolPath, "utf8");
+    await writeText(protocolPath, `${originalProtocol}\n# local stale copy\n`);
+    await fs.rm(helperPath);
+
+    const staleStatus = await getHarnessUpdateStatus(repo);
+    expect(staleStatus).toEqual({
+      required: true,
+      files: [
+        { path: ".sharkbay/harness/protocol.md", reason: "changed" },
+        { path: ".sharkbay/harness/agent-session-id.sh", reason: "missing" },
+      ],
+    });
+
+    await expect(prepareTeamworkAgentLaunch(repo, "codex", "codex")).resolves.toMatchObject({ injected: true });
+    await expect(fs.readFile(protocolPath, "utf8")).resolves.toBe(`${originalProtocol}\n# local stale copy\n`);
+    await expect(fs.stat(helperPath).catch(() => null)).resolves.toBeNull();
+
+    await expect(updateHarnessFiles(repo)).resolves.toEqual({ required: false, files: [] });
+    await expect(fs.readFile(protocolPath, "utf8")).resolves.toBe(originalProtocol);
+    const helperStat = await fs.stat(helperPath);
+    expect(helperStat.mode & 0o111).not.toBe(0);
   });
 
   it("injects a Teamwork bootstrap prompt without creating agent entry files", async () => {
