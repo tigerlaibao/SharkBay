@@ -1136,7 +1136,7 @@ body.is-resizing-columns * {
 .detail-tab-cards {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 5;
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
@@ -1447,7 +1447,7 @@ button.project-file-toggle:focus-visible {
   align-items: center;
   gap: 7px;
   min-height: 34px;
-  margin: -4px 8px 0 28px;
+  margin: -4px 8px 0 23px;
   padding: 8px 9px 6px;
   color: #435257;
   background: #f1f5f2;
