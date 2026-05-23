@@ -35,7 +35,6 @@ Before doing anything in this worktree, you must read:
 | Build | `npm run build` |
 | Package unpacked app | `npm run pack` |
 | Build distributable app | `npm run dist` |
-| Rebuild native modules | `npm run rebuild:native` |
 | Check whitespace | `git diff --check` |
 
 `npm run lint` currently runs the TypeScript typecheck.

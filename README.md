@@ -74,7 +74,7 @@ SSH into remote development machines with full support for file browsing, editin
 
 ## Tech Stack
 
-Electron · React · TypeScript · Vite · xterm · node-pty · CodeMirror
+Electron · React · TypeScript · Vite · xterm · @lydell/node-pty · CodeMirror
 
 ## Requirements
 

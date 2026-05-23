@@ -39,13 +39,7 @@ The package entry is `dist-electron/electron/main.js`.
 
 ## Native Modules
 
-`node-pty` is a native module and is unpacked from ASAR. The install and rebuild scripts run `electron-rebuild` and fix native helper permissions.
-
-Run this after Electron, Node, or native dependency changes:
-
-```bash
-npm run rebuild:native
-```
+The PTY layer is provided by `@lydell/node-pty` (Node.js / Electron) or `bun-pty` (Bun). Both ship N-API prebuilt binaries via platform-specific optional packages, so no `electron-rebuild` step is required. Electron Builder unpacks `@lydell/node-pty` and its platform packages from ASAR.
 
 ## Resources
 

@@ -4,7 +4,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import * as pty from "node-pty";
+import * as pty from "./pty.js";
 import { getConfiguredRoots } from "./config.js";
 import { parseProjectUri } from "../core/project-uri.js";
 import { resolveProjectUri } from "./path-safety.js";

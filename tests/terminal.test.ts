@@ -201,7 +201,7 @@ describe("terminal cwd validation", () => {
     expect(manager.list()).toHaveLength(0);
   });
 
-  it("ignores invalid resize dimensions without surfacing node-pty errors", async () => {
+  it("ignores invalid resize dimensions without surfacing pty errors", async () => {
     const runtime = await makeTestRuntime("terminal-config");
     const root = await makeTempRoot("terminal-root");
     const repo = await createGitRepoFixture(root, "TerminalRepo");

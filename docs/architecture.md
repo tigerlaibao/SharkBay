@@ -37,7 +37,8 @@ Renderer-facing data types are mirrored in `src/renderer/types.ts`; stricter sha
 | `src/main/project-files.ts` | Return safe lazy file-tree entries and editable-file flags. |
 | `src/main/project-icons.ts` | Resolve local project icon candidates and favicon fallbacks. |
 | `src/main/dev-services.ts` | Discover runnable development services. |
-| `src/main/terminal.ts` | Manage `node-pty` sessions and terminal titles. |
+| `src/main/terminal.ts` | Manage PTY sessions and terminal titles. |
+| `src/main/pty.ts` | Runtime-detecting PTY facade (`@lydell/node-pty` on Node/Electron, `bun-pty` on Bun). |
 | `src/main/browser-tabs.ts` | Manage embedded Electron `BrowserView` tabs. |
 | `src/main/agent-clis.ts` | Discover agent CLIs and watch Codex/Claude transcript status. |
 | `src/main/teamwork-*.ts` | Install Teamwork harness, parse tasks, and sync context records. |
@@ -85,7 +86,7 @@ SharkBay shells out to local tools for user-visible project workflows:
 - `gh` for Teamwork identity and repository permission checks.
 - `lsof` on macOS for terminal cwd/title inspection.
 - `/bin/zsh -lc command -v ...` and fallback paths for CLI discovery.
-- user shells through `node-pty` for terminal tabs and service commands.
+- user shells through `@lydell/node-pty` (or `bun-pty` under Bun) for terminal tabs and service commands.
 
 ## Packaging
 
@@ -93,7 +94,7 @@ SharkBay shells out to local tools for user-visible project workflows:
 - `npm run build` compiles main-process TypeScript and builds the renderer.
 - Vite uses `base: "./"` so packaged `file://` renderer assets resolve correctly.
 - Electron Builder includes `dist/renderer`, `dist-electron`, `package.json`, and `resources/`.
-- `node-pty` is unpacked from ASAR and rebuilt by install/rebuild scripts.
+- `@lydell/node-pty` and its platform-specific prebuild packages are unpacked from ASAR; no rebuild step is required because the prebuilds use N-API.
 
 `tsconfig.node.json` currently includes tests in the Node build output. Review packaged contents before release if artifact size or source exposure matters.
 
