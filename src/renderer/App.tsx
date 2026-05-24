@@ -3256,62 +3256,155 @@ function formatDurationLong(ms: number): string {
   return `${hours}h ${remainMinutes}m`;
 }
 
+type AgentCliDefinition = { id: string; label: string; shortLabel: string };
+
+const allAgentCliDefinitions: AgentCliDefinition[] = [
+  { id: "claude", label: "Claude Code", shortLabel: "Cl" },
+  { id: "codex", label: "Codex CLI", shortLabel: "Cx" },
+  { id: "gemini", label: "Gemini CLI", shortLabel: "G" },
+  { id: "kiro", label: "Kiro CLI", shortLabel: "K" },
+  { id: "deepseek", label: "DeepSeek TUI", shortLabel: "D" },
+  { id: "qwen", label: "Qwen Code", shortLabel: "Q" },
+  { id: "opencode", label: "OpenCode", shortLabel: "O" },
+];
+
+type AgentLaunchOption = { flag: string; label: string; description: string; type: "toggle" | "select"; choices?: string[] };
+
+const agentLaunchOptions: Record<string, AgentLaunchOption[]> = {
+  claude: [
+    { flag: "--dangerously-skip-permissions", label: "Skip permissions", description: "Bypass all permission checks. Only for sandboxed environments.", type: "toggle" },
+    { flag: "--model", label: "Model", description: "Model for the session", type: "select", choices: ["sonnet", "opus", "haiku"] },
+    { flag: "--continue", label: "Continue last session", description: "Continue the most recent conversation", type: "toggle" },
+  ],
+  codex: [
+    { flag: "--ask-for-approval", label: "Approval policy", description: "When to require human approval", type: "select", choices: ["untrusted", "on-request", "never"] },
+    { flag: "--model", label: "Model", description: "Model for the session", type: "select", choices: ["o3", "o4-mini", "codex-mini"] },
+    { flag: "--search", label: "Web search", description: "Enable live web search", type: "toggle" },
+  ],
+  gemini: [
+    { flag: "--approval-mode", label: "Approval mode", description: "Control tool approval behavior", type: "select", choices: ["default", "auto_edit", "yolo", "plan"] },
+    { flag: "--model", label: "Model", description: "Model for the session", type: "select", choices: ["gemini-2.5-pro", "gemini-2.5-flash"] },
+    { flag: "--sandbox", label: "Sandbox", description: "Run in sandboxed environment", type: "toggle" },
+  ],
+  kiro: [
+    { flag: "--tui", label: "TUI mode", description: "Launch in TUI mode", type: "toggle" },
+    { flag: "--agent", label: "Agent", description: "Launch with a specific agent", type: "select", choices: ["kiro_default", "kiro_planner", "kiro_guide"] },
+  ],
+  deepseek: [
+    { flag: "--approval-policy", label: "Approval policy", description: "Control command approval", type: "select", choices: ["suggest", "auto-edit", "full-auto"] },
+    { flag: "--model", label: "Model", description: "Model for the session", type: "select", choices: ["deepseek-reasoner", "deepseek-chat"] },
+    { flag: "--provider", label: "Provider", description: "API provider", type: "select", choices: ["deepseek", "openrouter", "ollama"] },
+  ],
+  qwen: [],
+  opencode: [],
+};
+
 function AgentClisSettingsPanel({ active, bridgeAvailable, setToast }: { active: boolean; bridgeAvailable: boolean; setToast: (toast: Toast) => void }) {
-  const [clis, setClis] = useState<AgentCli[] | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [installedClis, setInstalledClis] = useState<AgentCli[] | null>(null);
+  const [selectedId, setSelectedId] = useState<string>("claude");
   const [installDialogOpen, setInstallDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
     const listClis = getBridge().agents?.listClis;
-    if (!listClis) { setLoadError("Agent CLI API is not available."); return; }
-    setLoadError(null);
+    if (!listClis) return;
     listClis()
-      .then((items) => { if (!cancelled) setClis(items); })
-      .catch((error) => { if (!cancelled) setLoadError(asMessage(error)); });
+      .then((items) => { if (!cancelled) setInstalledClis(items); })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, [active]);
 
   function refresh() {
     const listClis = getBridge().agents?.listClis;
     if (!listClis) return;
-    listClis().then(setClis).catch(() => {});
+    listClis().then(setInstalledClis).catch(() => {});
   }
 
-  if (loadError) return <section className="workflow-panel"><div className="inline-connection-result is-error" role="status">{loadError}</div></section>;
-  if (!clis) return <section className="workflow-panel"><div className="form-note">Loading agent CLIs…</div></section>;
+  const installedMap = useMemo(() => {
+    const map = new Map<string, AgentCli>();
+    if (installedClis) for (const cli of installedClis) map.set(cli.id, cli);
+    return map;
+  }, [installedClis]);
+
+  const selectedDef = allAgentCliDefinitions.find((d) => d.id === selectedId) ?? allAgentCliDefinitions[0]!;
+  const selectedInstalled = installedMap.get(selectedId) ?? null;
 
   return (
-    <>
-      <section className="workflow-panel">
-        <div className="panel-title-row compact-title-row">
-          <h4>Installed</h4>
-          <button className="button compact" disabled={!bridgeAvailable} type="button" onClick={() => setInstallDialogOpen(true)}>Install</button>
-        </div>
-        {clis.length ? (
-          <div className="settings-list">
-            {clis.map((cli) => (
-              <div className="settings-list-row" key={cli.id}>
-                <AgentCliIcon agent={cli} />
-                <span className="truncate"><strong>{cli.label}</strong></span>
-                <small className="truncate">{cli.executablePath}</small>
-              </div>
-            ))}
-          </div>
+    <div className="agent-clis-layout">
+      <div className="agent-clis-list">
+        {allAgentCliDefinitions.map((def) => {
+          const installed = installedMap.has(def.id);
+          return (
+            <button className={cx("agent-clis-list-item", selectedId === def.id && "is-selected")} key={def.id} type="button" onClick={() => setSelectedId(def.id)}>
+              <AgentCliIcon agent={def as AgentCli} />
+              <span>{def.label}</span>
+              {installed ? <span className="agent-clis-badge is-installed">Installed</span> : <span className="agent-clis-badge is-not-installed">Not installed</span>}
+            </button>
+          );
+        })}
+      </div>
+      <div className="agent-clis-detail">
+        {selectedInstalled ? (
+          <AgentCliDetailInstalled agent={selectedInstalled} options={agentLaunchOptions[selectedId] ?? []} />
         ) : (
-          <div className="form-note">No agent CLIs detected on this machine.</div>
+          <AgentCliDetailNotInstalled def={selectedDef} bridgeAvailable={bridgeAvailable} installedAgentIds={installedClis?.map((c) => c.id) ?? []} onInstalled={refresh} setToast={setToast} />
         )}
-      </section>
+      </div>
       {installDialogOpen ? (
-        <InstallAgentDialog
-          targetId="local"
-          targetLabel="Local Machine"
-          installedAgentIds={clis.map((cli) => cli.id)}
-          onClose={() => setInstallDialogOpen(false)}
-          onInstalled={refresh}
-          setToast={setToast}
-        />
+        <InstallAgentDialog targetId="local" targetLabel="Local Machine" installedAgentIds={installedClis?.map((c) => c.id) ?? []} onClose={() => setInstallDialogOpen(false)} onInstalled={refresh} setToast={setToast} />
+      ) : null}
+    </div>
+  );
+}
+
+function AgentCliDetailInstalled({ agent, options }: { agent: AgentCli; options: AgentLaunchOption[] }) {
+  return (
+    <>
+      <div className="agent-clis-detail-header">
+        <AgentCliIcon agent={agent} />
+        <div>
+          <h4>{agent.label}</h4>
+          <small>{agent.executablePath}</small>
+        </div>
+      </div>
+      {options.length ? (
+        <div className="agent-clis-options">
+          <div className="agent-clis-options-title">Launch options</div>
+          {options.map((opt) => (
+            <div className="agent-clis-option-row" key={opt.flag}>
+              <div className="agent-clis-option-info">
+                <span className="agent-clis-option-label">{opt.label}</span>
+                <small>{opt.description}</small>
+              </div>
+              <code className="agent-clis-option-flag">{opt.flag}{opt.type === "select" && opt.choices ? ` [${opt.choices.join(" | ")}]` : ""}</code>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="form-note">No configurable launch options for this agent.</div>
+      )}
+    </>
+  );
+}
+
+function AgentCliDetailNotInstalled({ def, bridgeAvailable, installedAgentIds, onInstalled, setToast }: { def: AgentCliDefinition; bridgeAvailable: boolean; installedAgentIds: string[]; onInstalled: () => void; setToast: (toast: Toast) => void }) {
+  const [installDialogOpen, setInstallDialogOpen] = useState(false);
+  return (
+    <>
+      <div className="agent-clis-detail-header">
+        <AgentCliIcon agent={def as AgentCli} />
+        <div>
+          <h4>{def.label}</h4>
+          <small>Not installed</small>
+        </div>
+      </div>
+      <div className="agent-clis-install-prompt">
+        <p>This agent CLI is not detected on your machine.</p>
+        <button className="button compact" disabled={!bridgeAvailable} type="button" onClick={() => setInstallDialogOpen(true)}>Install {def.label}</button>
+      </div>
+      {installDialogOpen ? (
+        <InstallAgentDialog targetId="local" targetLabel="Local Machine" installedAgentIds={installedAgentIds} onClose={() => setInstallDialogOpen(false)} onInstalled={onInstalled} setToast={setToast} />
       ) : null}
     </>
   );
