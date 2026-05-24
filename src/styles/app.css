@@ -291,8 +291,8 @@ textarea::placeholder {
 
 .settings-surface {
   align-items: stretch;
-  overflow: auto;
-  padding-top: 34px;
+  overflow: hidden;
+  padding: 0;
 }
 
 .dashboard-grid {
@@ -2011,14 +2011,11 @@ button.project-file-toggle:focus-visible {
 }
 
 .settings-layout {
-  display: grid;
-  align-content: start;
-  align-items: start;
-  gap: 14px;
+  display: flex;
   flex: 1 1 auto;
   width: 100%;
-  max-width: 1120px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .settings-header {
@@ -2027,25 +2024,58 @@ button.project-file-toggle:focus-visible {
 
 .settings-shell {
   display: grid;
-  grid-template-columns: 236px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 220px minmax(0, 1fr);
+  width: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
 .settings-nav {
-  display: grid;
-  align-content: start;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
-  padding: 6px;
-  background: rgba(255, 255, 255, 0.46);
-  border: 1px solid #ded9cf;
-  border-radius: 8px;
+  padding: 38px 12px 16px;
+  overflow-y: auto;
+  border-right: 1px solid #e8e4db;
+}
+
+.settings-back-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  color: #5a6b70;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-back-button:hover {
+  color: #172528;
+  background: rgba(45, 88, 96, 0.05);
+}
+
+.settings-back-button svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .settings-nav-group {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .settings-nav-section-title {
@@ -2054,92 +2084,72 @@ button.project-file-toggle:focus-visible {
   justify-content: space-between;
   gap: 8px;
   min-height: 28px;
-  margin-top: 6px;
-  padding: 3px 3px 3px 9px;
-  color: #697477;
+  margin-top: 16px;
+  margin-bottom: 2px;
+  padding: 3px 10px;
+  color: #8a9497;
   font-size: 11px;
-  font-weight: 740;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .settings-nav-item {
-  display: grid;
-  gap: 1px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
-  min-height: 44px;
+  min-height: 36px;
   color: #364448;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 7px 9px;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
   text-align: left;
+  cursor: pointer;
 }
 
 .settings-nav-item:hover,
 .settings-nav-item:focus-visible {
-  background: rgba(255, 255, 255, 0.7);
-  border-color: #ded9cf;
+  background: rgba(45, 88, 96, 0.06);
+  color: #172528;
   outline: none;
 }
 
 .settings-nav-item.is-selected {
   color: #172528;
-  background: #fffdfa;
-  border-color: #d5d0c5;
+  background: rgba(45, 88, 96, 0.10);
+}
+
+.settings-nav-item svg {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
 }
 
 .settings-nav-item span {
-  font-size: 13px;
-  font-weight: 680;
+  font-size: 13.5px;
+  font-weight: 520;
 }
 
-.settings-nav-item small {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #737d7f;
-  font-size: 11px;
-}
-
-.settings-nav-item.is-remote-machine {
-  min-height: 52px;
-  margin-left: 6px;
-  padding: 8px 9px 8px 11px;
-  background: rgba(255, 253, 250, 0.52);
-  border-color: rgba(222, 217, 207, 0.72);
-}
-
-.settings-nav-item.is-remote-machine.is-selected {
-  background: #fffdfa;
-  border-color: #b8cac5;
-  box-shadow: inset 3px 0 0 #2d5860;
-}
-
-.settings-nav-item.is-remote-machine small {
-  display: grid;
-  gap: 1px;
-}
-
-.settings-nav-item.is-remote-machine small span {
-  min-width: 0;
-  overflow: hidden;
-  color: #737d7f;
-  font-size: 11px;
-  font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.settings-nav-item.is-selected span {
+  font-weight: 620;
 }
 
 .settings-add-remote-button {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 24px;
-  height: 24px;
-  color: #2f4d53;
-  background: #eef7f5;
-  border: 1px solid #c5dbd7;
-  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  color: #5a6b70;
+  background: transparent;
+  border: 1px solid #d8d4ca;
+  border-radius: 5px;
   padding: 0;
   font: inherit;
   cursor: pointer;
@@ -2147,8 +2157,8 @@ button.project-file-toggle:focus-visible {
 
 .settings-add-remote-button svg {
   flex: 0 0 auto;
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -2157,9 +2167,9 @@ button.project-file-toggle:focus-visible {
 
 .settings-add-remote-button:hover,
 .settings-add-remote-button:focus-visible {
-  color: #18383f;
-  background: #e1f0ec;
-  border-color: #7fa39d;
+  color: #172528;
+  background: rgba(45, 88, 96, 0.06);
+  border-color: #b8cac5;
   outline: none;
 }
 
@@ -2187,17 +2197,15 @@ button.project-file-toggle:focus-visible {
 .settings-content {
   min-width: 0;
   min-height: 0;
-  background: rgba(255, 255, 255, 0.74);
-  border: 1px solid #d8d4ca;
-  border-radius: 8px;
-  box-shadow: 0 1px 0 rgba(32, 49, 54, 0.04);
-  padding: 14px;
+  padding: 32px 40px;
+  overflow-y: auto;
 }
 
 .settings-section-panel {
   display: grid;
   align-content: start;
-  gap: 14px;
+  gap: 24px;
+  max-width: 720px;
 }
 
 .settings-section-panel[hidden] {
@@ -2206,23 +2214,63 @@ button.project-file-toggle:focus-visible {
 
 .settings-section-heading {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 12px;
   min-height: 28px;
+  margin-bottom: 4px;
 }
 
 .settings-section-heading h4 {
   margin: 0;
-  color: #243033;
-  font-size: 16px;
-  font-weight: 720;
-  letter-spacing: 0;
+  color: #172528;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .settings-section-heading span {
   color: #697477;
   font-size: 12px;
+}
+
+.settings-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.settings-theme-card {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  padding: 8px;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.settings-theme-card:hover {
+  background: rgba(45, 88, 96, 0.04);
+}
+
+.settings-theme-card.is-selected {
+  border-color: #8b6d4a;
+}
+
+.settings-theme-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+.settings-theme-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #364448;
 }
 
 .settings-status-panel {
@@ -3921,6 +3969,27 @@ body.is-resizing-columns .app-shell[data-theme="night"] .column-resizer::before 
   color: #ffffff;
   background: #2b4448;
   border-color: #4e6d73;
+}
+
+.app-shell[data-theme="night"] .settings-theme-card.is-selected {
+  border-color: #b89a6a;
+}
+
+.app-shell[data-theme="night"] .settings-theme-label {
+  color: #9fb0ac;
+}
+
+.app-shell[data-theme="night"] .settings-back-button {
+  color: #9fb0ac;
+}
+
+.app-shell[data-theme="night"] .settings-back-button:hover {
+  color: #d6e0dc;
+  background: #223235;
+}
+
+.app-shell[data-theme="night"] .settings-nav {
+  border-right-color: #32474b;
 }
 
 .app-shell[data-theme="night"] .settings-nav-item small,

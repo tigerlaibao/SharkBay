@@ -3058,21 +3058,10 @@ function SettingsView({ appearanceTheme, configuredProjects, configuredRemotePro
   onBack: () => void; onRemoveProject: (path: string) => Promise<void>;
   onAddRemoteMachine: (input: RemoteMachineInput) => Promise<void>; onRemoveRemoteMachine: (id: string) => Promise<void>; onTestRemoteMachine: (input: { id: string } | RemoteMachineInput) => Promise<RemoteMachineTestResult>; onThemeChange: (theme: AppearanceTheme) => Promise<void>;
 }) {
-  const [activeSection, setActiveSection] = useState<SettingsSection>("local-machine");
+  const [activeSection, setActiveSection] = useState<SettingsSection>("appearance");
   const [remoteMachineModalOpen, setRemoteMachineModalOpen] = useState(false);
   const activeRemoteMachineId = activeSection.startsWith("remote-machine:") ? activeSection.slice("remote-machine:".length) : null;
   const activeRemoteMachine = activeRemoteMachineId ? remoteMachines.find((machine) => machine.id === activeRemoteMachineId) ?? null : null;
-
-  function sectionMeta(section: SettingsSection): string {
-    if (section === "local-machine") {
-      const projectCount = configuredProjects.length + configuredRemoteProjects.length;
-      return `${projectCount} project${projectCount === 1 ? "" : "s"}`;
-    }
-    if (section.startsWith("remote-machine:")) return "Remote";
-    if (section === "extensions") return "Plugins";
-    if (section === "diagnostics") return "Activity & latency";
-    return appearanceThemes.find((theme) => theme.id === appearanceTheme)?.label ?? "Theme";
-  }
 
   async function addRemoteMachine(input: RemoteMachineInput): Promise<void> {
     await onAddRemoteMachine(input);
@@ -3081,15 +3070,18 @@ function SettingsView({ appearanceTheme, configuredProjects, configuredRemotePro
 
   return (
     <div className="settings-layout">
-      <div className="detail-header settings-header">
-        <button aria-label="Back to projects" className="icon-button" title="Back to projects" type="button" onClick={onBack}><ArrowLeftIcon /></button>
-        <div><h3>Settings</h3><div className="path-line">Manage local and remote machines</div></div>
-      </div>
       <div className="settings-shell">
         <aside className="settings-nav" aria-label="Settings sections">
+          <button className="settings-back-button" type="button" onClick={onBack}><ArrowLeftIcon /><span>Back</span></button>
           <div className="settings-nav-group">
-            <button aria-current={activeSection === "local-machine" ? "page" : undefined} className={cx("settings-nav-item", activeSection === "local-machine" && "is-selected")} type="button" onClick={() => setActiveSection("local-machine")}>
-              <span>Local Machine</span><small>{sectionMeta("local-machine")}</small>
+            <button aria-current={activeSection === "appearance" ? "page" : undefined} className={cx("settings-nav-item", activeSection === "appearance" && "is-selected")} type="button" onClick={() => setActiveSection("appearance")}>
+              <SunIcon /><span>Appearance</span>
+            </button>
+            <button aria-current={activeSection === "extensions" ? "page" : undefined} className={cx("settings-nav-item", activeSection === "extensions" && "is-selected")} type="button" onClick={() => setActiveSection("extensions")}>
+              <PuzzleIcon /><span>Extensions</span>
+            </button>
+            <button aria-current={activeSection === "diagnostics" ? "page" : undefined} className={cx("settings-nav-item", activeSection === "diagnostics" && "is-selected")} type="button" onClick={() => setActiveSection("diagnostics")}>
+              <ActivityIcon /><span>Diagnostics</span>
             </button>
             <div className="settings-nav-section-title">
               <span>Remote machines</span>
@@ -3100,31 +3092,14 @@ function SettingsView({ appearanceTheme, configuredProjects, configuredRemotePro
             {remoteMachines.map((machine) => {
               const sectionId = `remote-machine:${machine.id}` as const;
               return (
-                <button aria-current={sectionId === activeSection ? "page" : undefined} className={cx("settings-nav-item", "is-remote-machine", sectionId === activeSection && "is-selected")} key={machine.id} type="button" onClick={() => setActiveSection(sectionId)}>
-                  <span>{machine.label}</span>
-                  <small><span>{remoteMachineAuthLabel(machine.authMode)}</span><span>{machine.sshConfigHost ?? machine.host}</span></small>
+                <button aria-current={sectionId === activeSection ? "page" : undefined} className={cx("settings-nav-item", sectionId === activeSection && "is-selected")} key={machine.id} type="button" onClick={() => setActiveSection(sectionId)}>
+                  <ServerIcon /><span>{machine.label}</span>
                 </button>
               );
             })}
           </div>
-          <div className="settings-nav-group">
-            <button aria-current={activeSection === "extensions" ? "page" : undefined} className={cx("settings-nav-item", activeSection === "extensions" && "is-selected")} type="button" onClick={() => setActiveSection("extensions")}>
-              <span>Extensions</span><small>{sectionMeta("extensions")}</small>
-            </button>
-            <button aria-current={activeSection === "diagnostics" ? "page" : undefined} className={cx("settings-nav-item", activeSection === "diagnostics" && "is-selected")} type="button" onClick={() => setActiveSection("diagnostics")}>
-              <span>Diagnostics</span><small>{sectionMeta("diagnostics")}</small>
-            </button>
-            <button aria-current={activeSection === "appearance" ? "page" : undefined} className={cx("settings-nav-item", activeSection === "appearance" && "is-selected")} type="button" onClick={() => setActiveSection("appearance")}>
-              <span>Appearance</span><small>{sectionMeta("appearance")}</small>
-            </button>
-          </div>
         </aside>
         <section className="settings-content" aria-label="Settings content">
-          <div className="settings-section-panel" hidden={activeSection !== "local-machine"}>
-            <div className="settings-section-heading"><h4>Local Machine</h4><span>{configuredProjects.length + configuredRemoteProjects.length} project{configuredProjects.length + configuredRemoteProjects.length === 1 ? "" : "s"}</span></div>
-            <ProjectWorkflowPanel configuredProjects={configuredProjects} configuredRemoteProjects={configuredRemoteProjects} remoteMachines={remoteMachines} onRemoveProject={onRemoveProject} setToast={setToast} />
-            <SettingsStatusPanel candidates={candidates} scanErrors={scanErrors} />
-          </div>
           {activeRemoteMachine ? (
             <div className="settings-section-panel">
               <RemoteMachineDetailPanel machine={activeRemoteMachine} setToast={setToast} onRemove={async (id) => { await onRemoveRemoteMachine(id); setActiveSection("local-machine"); }} onTest={onTestRemoteMachine} />
@@ -3378,19 +3353,46 @@ function AppearanceSettingsPanel({ appearanceTheme, setToast, onThemeChange }: {
     try { await onThemeChange(theme); } catch (error) { setToast({ tone: "error", message: asMessage(error) }); } finally { setSavingTheme(null); }
   }
   return (
-    <section className="subpanel appearance-panel">
-      <div className="compact-title-row"><h4>Appearance</h4><span className="path-line">{appearanceDescription(appearanceTheme)}</span></div>
-      <div className="segmented-control" role="radiogroup" aria-label="Appearance theme">
-        {appearanceThemes.map((theme) => {
-          const selected = theme.id === appearanceTheme;
-          return (
-            <button aria-checked={selected} className={cx("segmented-option", selected && "is-selected")} disabled={Boolean(savingTheme)} key={theme.id} role="radio" type="button" onClick={() => void chooseTheme(theme.id)}>
-              <span className={cx("theme-swatch", `theme-swatch-${theme.id}`)} aria-hidden="true" /><span>{savingTheme === theme.id ? "Saving" : theme.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
+    <div className="settings-theme-grid" role="radiogroup" aria-label="Appearance theme">
+      {appearanceThemes.map((theme) => {
+        const selected = theme.id === appearanceTheme;
+        return (
+          <button aria-checked={selected} className={cx("settings-theme-card", selected && "is-selected")} disabled={Boolean(savingTheme)} key={theme.id} role="radio" type="button" onClick={() => void chooseTheme(theme.id)}>
+            <ThemePreviewSvg theme={theme.id} />
+            <span className="settings-theme-label">{savingTheme === theme.id ? "Saving…" : theme.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ThemePreviewSvg({ theme }: { theme: AppearanceTheme }) {
+  const colors = {
+    day: { bg: "#f4f1eb", panel: "#fffdfa", terminal: "#f7f1e4", border: "#dedad1", text: "#263235", textMuted: "#a09a90" },
+    night: { bg: "#101719", panel: "#1a2628", terminal: "#101719", border: "#32474b", text: "#d9e5df", textMuted: "#4a5c5f" },
+    morning: { bg: "#f4f1eb", panel: "#fffdfa", terminal: "#172022", border: "#dedad1", text: "#263235", textMuted: "#4a5c5f" },
+  }[theme];
+  return (
+    <svg className="settings-theme-preview" viewBox="0 0 120 80" aria-hidden="true">
+      <rect width="120" height="80" rx="4" fill={colors.bg} />
+      <rect x="4" y="8" width="28" height="68" rx="3" fill={colors.panel} stroke={colors.border} strokeWidth="0.5" />
+      <rect x="7" y="12" width="22" height="8" rx="1.5" fill={colors.border} />
+      <rect x="7" y="23" width="22" height="8" rx="1.5" fill={colors.border} />
+      <rect x="7" y="34" width="22" height="8" rx="1.5" fill={colors.border} />
+      <rect x="35" y="8" width="50" height="68" rx="3" fill={colors.terminal} stroke={colors.border} strokeWidth="0.5" />
+      <rect x="39" y="14" width="18" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="39" y="19" width="24" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="39" y="24" width="14" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="39" y="29" width="20" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="88" y="8" width="28" height="68" rx="3" fill={colors.panel} stroke={colors.border} strokeWidth="0.5" />
+      <rect x="91" y="12" width="22" height="3" rx="1" fill={colors.border} />
+      <rect x="91" y="18" width="16" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="91" y="23" width="19" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="91" y="28" width="12" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="91" y="33" width="17" height="2" rx="1" fill={colors.textMuted} />
+      <rect x="91" y="38" width="14" height="2" rx="1" fill={colors.textMuted} />
+    </svg>
   );
 }
 
@@ -3867,6 +3869,26 @@ function RefreshIcon() {
 
 function GlobeIcon() {
   return <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16"><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 0 20" /><path d="M12 2a15.3 15.3 0 0 0 0 20" /></svg>;
+}
+
+function SettingsGearIcon() {
+  return <svg aria-hidden="true" fill="none" height="18" viewBox="0 0 24 24" width="18"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>;
+}
+
+function SunIcon() {
+  return <svg aria-hidden="true" fill="none" height="18" viewBox="0 0 24 24" width="18"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>;
+}
+
+function PuzzleIcon() {
+  return <svg aria-hidden="true" fill="none" height="18" viewBox="0 0 24 24" width="18"><path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 2c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.969a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02Z" /></svg>;
+}
+
+function ActivityIcon() {
+  return <svg aria-hidden="true" fill="none" height="18" viewBox="0 0 24 24" width="18"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></svg>;
+}
+
+function ServerIcon() {
+  return <svg aria-hidden="true" fill="none" height="18" viewBox="0 0 24 24" width="18"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /><rect width="20" height="8" x="2" y="14" rx="2" ry="2" /><line x1="6" x2="6.01" y1="6" y2="6" /><line x1="6" x2="6.01" y1="18" y2="18" /></svg>;
 }
 
 function DownloadIcon() {
