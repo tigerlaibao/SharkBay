@@ -2205,7 +2205,6 @@ button.project-file-toggle:focus-visible {
   display: grid;
   align-content: start;
   gap: 24px;
-  max-width: 720px;
 }
 
 .settings-section-panel[hidden] {
@@ -2403,16 +2402,26 @@ button.project-file-toggle:focus-visible {
 .agent-clis-option-row {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 12px;
   padding: 10px 0;
   border-top: 1px solid #f0ece3;
+  cursor: pointer;
+}
+
+.agent-clis-option-row input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: #2d5860;
+  cursor: pointer;
 }
 
 .agent-clis-option-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1 1 auto;
   min-width: 0;
 }
 

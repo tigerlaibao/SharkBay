@@ -506,6 +506,7 @@ function remoteProjectLabel(uri: string, machines: RemoteMachine[]): string {
 
 export function App() {
   const [view, setView] = useState<View>("dashboard");
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>("appearance");
   const [configuredProjects, setConfiguredProjects] = useState<string[]>([]);
   const [configuredRemoteProjects, setConfiguredRemoteProjects] = useState<string[]>([]);
   const [remoteMachines, setRemoteMachines] = useState<RemoteMachine[]>([]);
@@ -628,6 +629,7 @@ export function App() {
               setToast={setToast}
               onRefresh={refreshWorkspace}
               onOpenSettings={() => setView("settings")}
+              onOpenAgentCliSettings={() => { setSettingsSection("agent-clis"); setView("settings"); }}
               onAddProject={async (pathOrUri) => { pathOrUri.startsWith("ssh://") ? await addProjectUri(pathOrUri) : await addProject(pathOrUri); await refreshProjects({ showToast: true }); }}
               onPickProject={async () => {
                 const paths = await pickAndAddProjects();
@@ -652,6 +654,7 @@ export function App() {
                 bridgeAvailable={bridgeAvailable}
                 candidates={candidates}
                 scanErrors={scanErrors}
+                initialSection={settingsSection}
                 setToast={setToast}
                 onBack={() => setView("dashboard")}
                 onRemoveProject={async (path) => { await removeProject(path); await refreshProjects({ showToast: true }); }}
@@ -703,6 +706,7 @@ function DashboardView({
   setToast,
   onRefresh,
   onOpenSettings,
+  onOpenAgentCliSettings,
   onAddProject,
   onPickProject,
   onRemoveProject,
@@ -723,6 +727,7 @@ function DashboardView({
   setToast: (toast: Toast) => void;
   onRefresh: () => Promise<void>;
   onOpenSettings: () => void;
+  onOpenAgentCliSettings: () => void;
   onAddProject: (pathOrUri: string) => Promise<void>;
   onPickProject: () => Promise<void>;
   onRemoveProject: (uri: string) => Promise<void>;
@@ -898,6 +903,7 @@ function DashboardView({
           setToast={setToast}
           onActiveTabKindChange={setActiveTerminalTabKind}
           onAgentListRefreshRequested={() => setAgentListVersion((current) => current + 1)}
+          onOpenAgentCliSettings={onOpenAgentCliSettings}
           onRunningServiceProjectIdsChange={(nextIds) =>
             setRunningServiceProjectIds((currentIds) => sameStringSet(currentIds, nextIds) ? currentIds : nextIds)
           }
@@ -962,12 +968,12 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   setToast: (toast: Toast) => void;
   onActiveTabKindChange: (kind: ActiveTerminalTabKind) => void;
   onAgentListRefreshRequested: () => void;
+  onOpenAgentCliSettings: () => void;
   onRunningServiceProjectIdsChange: (projectIds: Set<string>) => void;
   onTerminalActivityProjectStatesChange: (states: Record<string, ProjectTerminalActivityState>) => void;
-}>(function TerminalPane({ appearanceTheme, agentClis, bridgeAvailable, candidate, projectAliases, isVisible, setToast, onActiveTabKindChange, onAgentListRefreshRequested, onRunningServiceProjectIdsChange, onTerminalActivityProjectStatesChange }, ref) {
+}>(function TerminalPane({ appearanceTheme, agentClis, bridgeAvailable, candidate, projectAliases, isVisible, setToast, onActiveTabKindChange, onAgentListRefreshRequested, onOpenAgentCliSettings, onRunningServiceProjectIdsChange, onTerminalActivityProjectStatesChange }, ref) {
   const [spaces, setSpaces] = useState<Record<string, TerminalSpace>>({});
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
-  const [installAgentDialogOpen, setInstallAgentDialogOpen] = useState(false);
   const spacesRef = useRef<Record<string, TerminalSpace>>({});
   const creatingProjects = useRef(new Set<string>());
   const quietTimers = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
@@ -1065,7 +1071,9 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
   async function openAgentProjectTab(agent: AgentCli) {
     if (!candidate?.uri) return;
     const isRemote = candidate.providerKind === "ssh";
-    const launchCommand = isRemote ? agent.command : (agent.executablePath || agent.command);
+    const baseCommand = isRemote ? agent.command : (agent.executablePath || agent.command);
+    const flags = getAgentLaunchFlags(agent.id);
+    const launchCommand = flags.length ? `${baseCommand} ${flags.join(" ")}` : baseCommand;
     await openProjectTab(candidate.id, candidate.uri, displayProjectName ?? candidate.name, candidate.displayPath, false, { agentId: agent.id, initialCommand: shellQuote(launchCommand), initialCommandTitle: agent.label });
   }
 
@@ -1448,7 +1456,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
                   <AgentCliIcon agent={agent} />
                 </button>
               ))}
-              <button aria-label="Install agent" className="icon-button terminal-tab-add terminal-agent-install-button" disabled={!candidate?.providerId} title="Install agent CLI" type="button" onClick={() => setInstallAgentDialogOpen(true)}>
+              <button aria-label="Agent CLIs" className="icon-button terminal-tab-add terminal-agent-install-button" title="Agent CLIs" type="button" onClick={onOpenAgentCliSettings}>
                 <DownloadIcon />
               </button>
             </div>
@@ -1487,7 +1495,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
                   <AgentCliIcon agent={agent} />
                 </button>
               ))}
-              <button aria-label="Install agent" className="icon-button terminal-tab-add terminal-agent-install-button" disabled={!candidate?.providerId} title="Install agent CLI" type="button" onClick={() => setInstallAgentDialogOpen(true)}>
+              <button aria-label="Agent CLIs" className="icon-button terminal-tab-add terminal-agent-install-button" title="Agent CLIs" type="button" onClick={onOpenAgentCliSettings}>
                 <DownloadIcon />
               </button>
             </div>
@@ -1495,16 +1503,6 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
           </div>
         ) : null}
       </div>
-      {installAgentDialogOpen && candidate?.providerId ? (
-        <InstallAgentDialog
-          targetId={candidate.providerId}
-          targetLabel={candidate.providerKind === "ssh" ? candidate.displayPath : "Local Machine"}
-          installedAgentIds={agentClis.map((agent) => agent.id)}
-          onClose={() => setInstallAgentDialogOpen(false)}
-          onInstalled={onAgentListRefreshRequested}
-          setToast={setToast}
-        />
-      ) : null}
     </div>
   );
 });
@@ -3053,13 +3051,14 @@ function updateProjectFileChildren(items: ProjectFileTreeItem[], targetPath: str
   });
 }
 
-function SettingsView({ appearanceTheme, configuredProjects, configuredRemoteProjects, remoteMachines, bridgeAvailable, candidates, scanErrors, setToast, onBack, onRemoveProject, onAddRemoteMachine, onRemoveRemoteMachine, onTestRemoteMachine, onThemeChange }: {
-  appearanceTheme: AppearanceTheme; configuredProjects: string[]; configuredRemoteProjects: string[]; remoteMachines: RemoteMachine[]; bridgeAvailable: boolean; candidates: ProjectCandidate[]; scanErrors: string[]; setToast: (toast: Toast) => void;
+function SettingsView({ appearanceTheme, configuredProjects, configuredRemoteProjects, remoteMachines, bridgeAvailable, candidates, scanErrors, initialSection, setToast, onBack, onRemoveProject, onAddRemoteMachine, onRemoveRemoteMachine, onTestRemoteMachine, onThemeChange }: {
+  appearanceTheme: AppearanceTheme; configuredProjects: string[]; configuredRemoteProjects: string[]; remoteMachines: RemoteMachine[]; bridgeAvailable: boolean; candidates: ProjectCandidate[]; scanErrors: string[]; initialSection?: SettingsSection; setToast: (toast: Toast) => void;
   onBack: () => void; onRemoveProject: (path: string) => Promise<void>;
   onAddRemoteMachine: (input: RemoteMachineInput) => Promise<void>; onRemoveRemoteMachine: (id: string) => Promise<void>; onTestRemoteMachine: (input: { id: string } | RemoteMachineInput) => Promise<RemoteMachineTestResult>; onThemeChange: (theme: AppearanceTheme) => Promise<void>;
 }) {
-  const [activeSection, setActiveSection] = useState<SettingsSection>("appearance");
+  const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection ?? "appearance");
   const [remoteMachineModalOpen, setRemoteMachineModalOpen] = useState(false);
+  useEffect(() => { if (initialSection) setActiveSection(initialSection); }, [initialSection]);
   const activeRemoteMachineId = activeSection.startsWith("remote-machine:") ? activeSection.slice("remote-machine:".length) : null;
   const activeRemoteMachine = activeRemoteMachineId ? remoteMachines.find((machine) => machine.id === activeRemoteMachineId) ?? null : null;
 
@@ -3358,7 +3357,27 @@ function AgentClisSettingsPanel({ active, bridgeAvailable, setToast }: { active:
   );
 }
 
+function getAgentLaunchFlags(agentId: string): string[] {
+  try { return JSON.parse(localStorage.getItem(`sharkbay:agent-launch-flags:${agentId}`) ?? "[]"); } catch { return []; }
+}
+
+function setAgentLaunchFlags(agentId: string, flags: string[]) {
+  localStorage.setItem(`sharkbay:agent-launch-flags:${agentId}`, JSON.stringify(flags));
+}
+
 function AgentCliDetailInstalled({ agent, options }: { agent: AgentCli; options: AgentLaunchOption[] }) {
+  const [enabledFlags, setEnabledFlags] = useState<string[]>(() => getAgentLaunchFlags(agent.id));
+
+  useEffect(() => { setEnabledFlags(getAgentLaunchFlags(agent.id)); }, [agent.id]);
+
+  function toggleFlag(flag: string) {
+    setEnabledFlags((current) => {
+      const next = current.includes(flag) ? current.filter((f) => f !== flag) : [...current, flag];
+      setAgentLaunchFlags(agent.id, next);
+      return next;
+    });
+  }
+
   return (
     <>
       <div className="agent-clis-detail-header">
@@ -3372,13 +3391,14 @@ function AgentCliDetailInstalled({ agent, options }: { agent: AgentCli; options:
         <div className="agent-clis-options">
           <div className="agent-clis-options-title">Launch options</div>
           {options.map((opt) => (
-            <div className="agent-clis-option-row" key={opt.flag}>
+            <label className="agent-clis-option-row" key={opt.flag}>
+              <input type="checkbox" checked={enabledFlags.includes(opt.flag)} onChange={() => toggleFlag(opt.flag)} />
               <div className="agent-clis-option-info">
                 <span className="agent-clis-option-label">{opt.label}</span>
                 <small>{opt.description}</small>
               </div>
-              <code className="agent-clis-option-flag">{opt.flag}{opt.type === "select" && opt.choices ? ` [${opt.choices.join(" | ")}]` : ""}</code>
-            </div>
+              <code className="agent-clis-option-flag">{opt.flag}</code>
+            </label>
           ))}
         </div>
       ) : (
