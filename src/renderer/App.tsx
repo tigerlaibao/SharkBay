@@ -3290,7 +3290,6 @@ const agentLaunchOptions: Record<string, AgentLaunchOption[]> = {
 function AgentClisSettingsPanel({ active, bridgeAvailable, setToast }: { active: boolean; bridgeAvailable: boolean; setToast: (toast: Toast) => void }) {
   const [installedClis, setInstalledClis] = useState<AgentCli[] | null>(null);
   const [selectedId, setSelectedId] = useState<string>("claude");
-  const [installDialogOpen, setInstallDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!active) return;
@@ -3336,12 +3335,9 @@ function AgentClisSettingsPanel({ active, bridgeAvailable, setToast }: { active:
         {selectedInstalled ? (
           <AgentCliDetailInstalled agent={selectedInstalled} options={agentLaunchOptions[selectedId] ?? []} />
         ) : (
-          <AgentCliDetailNotInstalled def={selectedDef} bridgeAvailable={bridgeAvailable} installedAgentIds={installedClis?.map((c) => c.id) ?? []} onInstalled={refresh} setToast={setToast} />
+          <AgentCliDetailNotInstalled def={selectedDef} bridgeAvailable={bridgeAvailable} onInstalled={refresh} setToast={setToast} />
         )}
       </div>
-      {installDialogOpen ? (
-        <InstallAgentDialog targetId="local" targetLabel="Local Machine" installedAgentIds={installedClis?.map((c) => c.id) ?? []} onClose={() => setInstallDialogOpen(false)} onInstalled={refresh} setToast={setToast} />
-      ) : null}
     </div>
   );
 }
@@ -3397,8 +3393,36 @@ function AgentCliDetailInstalled({ agent, options }: { agent: AgentCli; options:
   );
 }
 
-function AgentCliDetailNotInstalled({ def, bridgeAvailable, installedAgentIds, onInstalled, setToast }: { def: AgentCliDefinition; bridgeAvailable: boolean; installedAgentIds: string[]; onInstalled: () => void; setToast: (toast: Toast) => void }) {
-  const [installDialogOpen, setInstallDialogOpen] = useState(false);
+function AgentCliDetailNotInstalled({ def, bridgeAvailable, onInstalled, setToast }: { def: AgentCliDefinition; bridgeAvailable: boolean; onInstalled: () => void; setToast: (toast: Toast) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [logLines, setLogLines] = useState<string[]>([]);
+  const logsRef = useRef<HTMLPreElement | null>(null);
+
+  useEffect(() => {
+    if (!logsRef.current) return;
+    logsRef.current.scrollTop = logsRef.current.scrollHeight;
+  }, [logLines]);
+
+  async function runInstall() {
+    const listRecipes = getBridge().agents?.listInstallRecipes;
+    const installTool = getBridge().agents?.installTool;
+    const subscribe = getBridge().agents?.onInstallLog;
+    if (!listRecipes || !installTool) { setToast({ tone: "error", message: "Install API not available." }); return; }
+    setBusy(true);
+    setLogLines([]);
+    try {
+      const recipes = await listRecipes({ targetId: "local" });
+      const recipe = recipes.find((r) => r.toolId === def.id);
+      if (!recipe) { setToast({ tone: "error", message: `No install recipe found for ${def.label}.` }); setBusy(false); return; }
+      const unsub = subscribe?.((event) => { if (event.recipeId === recipe.id) setLogLines((c) => [...c, formatInstallLogLine(event)]); });
+      const result = await installTool({ targetId: "local", recipeId: recipe.id });
+      unsub?.();
+      if (result.ok) { setToast({ tone: "success", message: `Installed ${def.label}` }); onInstalled(); }
+      else { setToast({ tone: "error", message: `Install failed: ${result.logs.slice(-1)[0] ?? "unknown error"}` }); }
+    } catch (error) { setToast({ tone: "error", message: asMessage(error) }); }
+    finally { setBusy(false); }
+  }
+
   return (
     <>
       <div className="agent-clis-detail-header">
@@ -3410,11 +3434,9 @@ function AgentCliDetailNotInstalled({ def, bridgeAvailable, installedAgentIds, o
       </div>
       <div className="agent-clis-install-prompt">
         <p>This agent CLI is not detected on your machine.</p>
-        <button className="button compact" disabled={!bridgeAvailable} type="button" onClick={() => setInstallDialogOpen(true)}>Install {def.label}</button>
+        <button className="button compact" disabled={!bridgeAvailable || busy} type="button" onClick={runInstall}>{busy ? "Installing…" : `Install ${def.label}`}</button>
       </div>
-      {installDialogOpen ? (
-        <InstallAgentDialog targetId="local" targetLabel="Local Machine" installedAgentIds={installedAgentIds} onClose={() => setInstallDialogOpen(false)} onInstalled={onInstalled} setToast={setToast} />
-      ) : null}
+      {logLines.length > 0 && <pre className="agent-clis-install-logs" ref={logsRef}>{logLines.join("\n")}</pre>}
     </>
   );
 }
