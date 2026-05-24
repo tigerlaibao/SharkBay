@@ -1073,8 +1073,8 @@ const TerminalPane = forwardRef<TerminalPaneHandle, {
     const isRemote = candidate.providerKind === "ssh";
     const baseCommand = isRemote ? agent.command : (agent.executablePath || agent.command);
     const flags = getAgentLaunchFlags(agent.id);
-    const launchCommand = flags.length ? `${baseCommand} ${flags.join(" ")}` : baseCommand;
-    await openProjectTab(candidate.id, candidate.uri, displayProjectName ?? candidate.name, candidate.displayPath, false, { agentId: agent.id, initialCommand: shellQuote(launchCommand), initialCommandTitle: agent.label });
+    const launchCommand = flags.length ? `${shellQuote(baseCommand)} ${flags.join(" ")}` : shellQuote(baseCommand);
+    await openProjectTab(candidate.id, candidate.uri, displayProjectName ?? candidate.name, candidate.displayPath, false, { agentId: agent.id, initialCommand: launchCommand, initialCommandTitle: agent.label });
   }
 
   async function openBrowserProjectTab() {
