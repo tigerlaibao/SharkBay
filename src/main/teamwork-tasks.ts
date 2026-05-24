@@ -17,6 +17,7 @@ export type TaskViewModel = {
   updatedAt?: string;
   completedAt?: string;
   commit?: string;
+  commits?: string[];
   files?: string[];
   summary?: string;
   verification?: string;
@@ -67,6 +68,7 @@ export async function parseTaskFile(filePath: string): Promise<TaskViewModel | n
     updatedAt: fm["updatedAt"],
     completedAt: fm["completedAt"],
     commit: fm["commit"],
+    commits: extractCommitsList(raw, fm),
     files: extractFilesList(body),
     summary: extractSection(body, "Summary"),
     verification: extractSection(body, "Verification"),
@@ -164,6 +166,15 @@ function extractSection(body: string, heading: string): string | undefined {
   const re = new RegExp(`^##\\s+${heading}\\s*\\n([\\s\\S]*?)(?=^##\\s|$)`, "m");
   const m = body.match(re);
   return m?.[1]?.trim() || undefined;
+}
+
+function extractCommitsList(raw: string, fm: Record<string, string>): string[] | undefined {
+  // Support both "commit: x" (single) and "commits:\n  - x\n  - y" (list)
+  if (fm["commit"]) return [fm["commit"]];
+  const match = raw.match(/^commits:\s*\n((?:\s+-\s+.+\n?)+)/m);
+  if (!match) return undefined;
+  const items = match[1]!.split("\n").map((l) => l.replace(/^\s*-\s*/, "").trim()).filter(Boolean);
+  return items.length > 0 ? items : undefined;
 }
 
 function extractFilesList(body: string): string[] | undefined {

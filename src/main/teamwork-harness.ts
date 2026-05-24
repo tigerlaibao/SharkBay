@@ -746,7 +746,14 @@ When the task is ready for team sync, add:
 
 status: completed
 completedAt: 2026-05-15T11:40:00Z
-commit: abc1234
+commits:
+  - abc1234
+  - def5678
+
+List every commit produced by the task, in chronological order.
+A task may produce multiple commits (iterative fixes, follow-up adjustments).
+All related commits must be recorded so the full change context is preserved,
+even when commits from other concurrent tasks are interleaved.
 
 ## Required Sections
 
@@ -785,7 +792,7 @@ Before setting status: completed, make sure:
 - Files lists changed project files
 - Work captures the important steps or decisions
 - Verification is filled
-- commit is present when the task produced a commit
+- commits lists all commits produced by the task (if any)
 
 ## Safety
 
