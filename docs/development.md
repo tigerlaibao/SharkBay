@@ -15,8 +15,6 @@
 npm install
 ```
 
-The install hook rebuilds `node-pty` for Electron and fixes native helper permissions.
-
 ## Run The App
 
 ```bash
@@ -41,13 +39,7 @@ See [Testing](testing.md) for the current test suite and [Release and packaging]
 
 ## Native Module Rebuilds
 
-Run this after Electron or native terminal dependency changes:
-
-```bash
-npm run rebuild:native
-```
-
-This runs `electron-rebuild` for `node-pty` and then fixes `spawn-helper` permissions.
+The PTY layer (`@lydell/node-pty` for Node/Electron, `bun-pty` for Bun) ships N-API prebuilt binaries, so no rebuild step is required after Electron or Node upgrades — a plain `npm install` is enough.
 
 ## Packaging
 
