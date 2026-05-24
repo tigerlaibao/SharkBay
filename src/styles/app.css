@@ -654,7 +654,7 @@ body.is-resizing-columns * {
 .project-context-menu {
   position: fixed;
   z-index: 30;
-  min-width: 178px;
+  width: 178px;
   padding: 5px;
   background: #fffdfa;
   border: 1px solid #d7d2c8;
@@ -673,6 +673,9 @@ body.is-resizing-columns * {
   font-size: 12px;
   font-weight: 700;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .project-context-menu-item:hover,
