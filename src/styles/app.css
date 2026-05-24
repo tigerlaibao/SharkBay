@@ -2274,7 +2274,7 @@ button.project-file-toggle:focus-visible {
 
 .agent-clis-layout {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
   gap: 0;
   border: 1px solid #e8e4db;
   border-radius: 10px;
