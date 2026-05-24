@@ -3267,32 +3267,21 @@ const allAgentCliDefinitions: AgentCliDefinition[] = [
   { id: "opencode", label: "OpenCode", shortLabel: "O" },
 ];
 
-type AgentLaunchOption = { flag: string; label: string; description: string; type: "toggle" | "select"; choices?: string[] };
+type AgentLaunchOption = { flag: string; label: string; description: string; type: "toggle" };
 
 const agentLaunchOptions: Record<string, AgentLaunchOption[]> = {
   claude: [
-    { flag: "--dangerously-skip-permissions", label: "Skip permissions", description: "Bypass all permission checks. Only for sandboxed environments.", type: "toggle" },
-    { flag: "--model", label: "Model", description: "Model for the session", type: "select", choices: ["sonnet", "opus", "haiku"] },
-    { flag: "--continue", label: "Continue last session", description: "Continue the most recent conversation", type: "toggle" },
+    { flag: "--dangerously-skip-permissions", label: "Skip permissions", description: "Bypass all permission checks", type: "toggle" },
   ],
   codex: [
-    { flag: "--ask-for-approval", label: "Approval policy", description: "When to require human approval", type: "select", choices: ["untrusted", "on-request", "never"] },
-    { flag: "--model", label: "Model", description: "Model for the session", type: "select", choices: ["o3", "o4-mini", "codex-mini"] },
-    { flag: "--search", label: "Web search", description: "Enable live web search", type: "toggle" },
+    { flag: "--ask-for-approval never", label: "Skip approval", description: "Never ask for human approval", type: "toggle" },
   ],
   gemini: [
-    { flag: "--approval-mode", label: "Approval mode", description: "Control tool approval behavior", type: "select", choices: ["default", "auto_edit", "yolo", "plan"] },
-    { flag: "--model", label: "Model", description: "Model for the session", type: "select", choices: ["gemini-2.5-pro", "gemini-2.5-flash"] },
-    { flag: "--sandbox", label: "Sandbox", description: "Run in sandboxed environment", type: "toggle" },
+    { flag: "--yolo", label: "YOLO mode", description: "Auto-approve all tool actions", type: "toggle" },
   ],
-  kiro: [
-    { flag: "--tui", label: "TUI mode", description: "Launch in TUI mode", type: "toggle" },
-    { flag: "--agent", label: "Agent", description: "Launch with a specific agent", type: "select", choices: ["kiro_default", "kiro_planner", "kiro_guide"] },
-  ],
+  kiro: [],
   deepseek: [
-    { flag: "--approval-policy", label: "Approval policy", description: "Control command approval", type: "select", choices: ["suggest", "auto-edit", "full-auto"] },
-    { flag: "--model", label: "Model", description: "Model for the session", type: "select", choices: ["deepseek-reasoner", "deepseek-chat"] },
-    { flag: "--provider", label: "Provider", description: "API provider", type: "select", choices: ["deepseek", "openrouter", "ollama"] },
+    { flag: "--approval-policy full-auto", label: "Full auto", description: "Run all commands without approval", type: "toggle" },
   ],
   qwen: [],
   opencode: [],
