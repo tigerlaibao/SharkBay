@@ -55,7 +55,7 @@ import type { WorkflowProjectTerminalActivityState } from "./workflow";
 
 type View = "dashboard" | "settings";
 type DetailTab = "team" | "git" | "stack" | "files" | "forwards";
-type SettingsSection = "local-machine" | "appearance" | "extensions" | "diagnostics" | `remote-machine:${string}`;
+type SettingsSection = "agent-clis" | "appearance" | "extensions" | "diagnostics" | `remote-machine:${string}`;
 
 const remoteConnectionMethods: Array<{
   id: RemoteMachineInput["authMode"];
@@ -3077,6 +3077,9 @@ function SettingsView({ appearanceTheme, configuredProjects, configuredRemotePro
             <button aria-current={activeSection === "appearance" ? "page" : undefined} className={cx("settings-nav-item", activeSection === "appearance" && "is-selected")} type="button" onClick={() => setActiveSection("appearance")}>
               <SunIcon /><span>Appearance</span>
             </button>
+            <button aria-current={activeSection === "agent-clis" ? "page" : undefined} className={cx("settings-nav-item", activeSection === "agent-clis" && "is-selected")} type="button" onClick={() => setActiveSection("agent-clis")}>
+              <TerminalIcon /><span>Agent CLIs</span>
+            </button>
             <button aria-current={activeSection === "extensions" ? "page" : undefined} className={cx("settings-nav-item", activeSection === "extensions" && "is-selected")} type="button" onClick={() => setActiveSection("extensions")}>
               <PuzzleIcon /><span>Extensions</span>
             </button>
@@ -3102,9 +3105,13 @@ function SettingsView({ appearanceTheme, configuredProjects, configuredRemotePro
         <section className="settings-content" aria-label="Settings content">
           {activeRemoteMachine ? (
             <div className="settings-section-panel">
-              <RemoteMachineDetailPanel machine={activeRemoteMachine} setToast={setToast} onRemove={async (id) => { await onRemoveRemoteMachine(id); setActiveSection("local-machine"); }} onTest={onTestRemoteMachine} />
+              <RemoteMachineDetailPanel machine={activeRemoteMachine} setToast={setToast} onRemove={async (id) => { await onRemoveRemoteMachine(id); setActiveSection("appearance"); }} onTest={onTestRemoteMachine} />
             </div>
           ) : null}
+          <div className="settings-section-panel" hidden={activeSection !== "agent-clis"}>
+            <div className="settings-section-heading"><h4>Agent CLIs</h4><span>Installed coding agents</span></div>
+            <AgentClisSettingsPanel active={activeSection === "agent-clis"} bridgeAvailable={bridgeAvailable} setToast={setToast} />
+          </div>
           <div className="settings-section-panel" hidden={activeSection !== "extensions"}>
             <div className="settings-section-heading"><h4>Extensions</h4><span>Manage installed plugins</span></div>
             <ExtensionsSettingsPanel active={activeSection === "extensions"} setToast={setToast} />
@@ -3247,6 +3254,67 @@ function formatDurationLong(ms: number): string {
   const hours = Math.floor(minutes / 60);
   const remainMinutes = minutes % 60;
   return `${hours}h ${remainMinutes}m`;
+}
+
+function AgentClisSettingsPanel({ active, bridgeAvailable, setToast }: { active: boolean; bridgeAvailable: boolean; setToast: (toast: Toast) => void }) {
+  const [clis, setClis] = useState<AgentCli[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [installDialogOpen, setInstallDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    const listClis = getBridge().agents?.listClis;
+    if (!listClis) { setLoadError("Agent CLI API is not available."); return; }
+    setLoadError(null);
+    listClis()
+      .then((items) => { if (!cancelled) setClis(items); })
+      .catch((error) => { if (!cancelled) setLoadError(asMessage(error)); });
+    return () => { cancelled = true; };
+  }, [active]);
+
+  function refresh() {
+    const listClis = getBridge().agents?.listClis;
+    if (!listClis) return;
+    listClis().then(setClis).catch(() => {});
+  }
+
+  if (loadError) return <section className="workflow-panel"><div className="inline-connection-result is-error" role="status">{loadError}</div></section>;
+  if (!clis) return <section className="workflow-panel"><div className="form-note">Loading agent CLIs…</div></section>;
+
+  return (
+    <>
+      <section className="workflow-panel">
+        <div className="panel-title-row compact-title-row">
+          <h4>Installed</h4>
+          <button className="button compact" disabled={!bridgeAvailable} type="button" onClick={() => setInstallDialogOpen(true)}>Install</button>
+        </div>
+        {clis.length ? (
+          <div className="settings-list">
+            {clis.map((cli) => (
+              <div className="settings-list-row" key={cli.id}>
+                <AgentCliIcon agent={cli} />
+                <span className="truncate"><strong>{cli.label}</strong></span>
+                <small className="truncate">{cli.executablePath}</small>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="form-note">No agent CLIs detected on this machine.</div>
+        )}
+      </section>
+      {installDialogOpen ? (
+        <InstallAgentDialog
+          targetId="local"
+          targetLabel="Local Machine"
+          installedAgentIds={clis.map((cli) => cli.id)}
+          onClose={() => setInstallDialogOpen(false)}
+          onInstalled={refresh}
+          setToast={setToast}
+        />
+      ) : null}
+    </>
+  );
 }
 
 function ExtensionsSettingsPanel({ active, setToast }: { active: boolean; setToast: (toast: Toast) => void }) {
@@ -3889,6 +3957,10 @@ function ActivityIcon() {
 
 function ServerIcon() {
   return <svg aria-hidden="true" fill="none" height="18" viewBox="0 0 24 24" width="18"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /><rect width="20" height="8" x="2" y="14" rx="2" ry="2" /><line x1="6" x2="6.01" y1="6" y2="6" /><line x1="6" x2="6.01" y1="18" y2="18" /></svg>;
+}
+
+function TerminalIcon() {
+  return <svg aria-hidden="true" fill="none" height="18" viewBox="0 0 24 24" width="18"><polyline points="4 17 10 11 4 5" /><line x1="12" x2="20" y1="19" y2="19" /></svg>;
 }
 
 function DownloadIcon() {
