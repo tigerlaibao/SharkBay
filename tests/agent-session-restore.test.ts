@@ -43,6 +43,16 @@ describe("agent session restore commands", () => {
       title: "Restore Claude Code",
     });
   });
+
+  it("includes configured launch flags before restore arguments", () => {
+    const restore = buildAgentSessionRestoreCommand({
+      agentName: "Codex GPT-5",
+      sessionId: "33333333-3333-4333-8333-333333333333",
+      launchFlags: ["--ask-for-approval never"],
+    });
+
+    expect(restore?.command).toBe("SHARKBAY_RESTORED_SESSION_ID='33333333-3333-4333-8333-333333333333' 'codex' --ask-for-approval never resume '33333333-3333-4333-8333-333333333333'");
+  });
 });
 
 function commandFor(agentName: string, sessionId: string): string | undefined {

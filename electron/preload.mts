@@ -63,7 +63,10 @@ import type {
   TeamworkTasksChangedEvent,
   TeamworkUninstallInput,
   TeamworkUninstallResult,
-  GitHubIdentity
+  GitHubIdentity,
+  UsageReportFilter,
+  UsageReportResult,
+  UsageSummary
 } from "../src/shared/types.js";
 
 const openSettingsListeners = new Set<() => void>();
@@ -206,6 +209,11 @@ const sharkBayApi = {
       ipcRenderer.on(channels.portForwardUpdate, listener);
       return () => ipcRenderer.removeListener(channels.portForwardUpdate, listener);
     }
+  },
+  usage: {
+    getSummary: (input?: { periodDays?: number }) => invoke<UsageSummary>(channels.usageGetSummary, input),
+    getReport: (input: UsageReportFilter) => invoke<UsageReportResult>(channels.usageGetReport, input),
+    openDetail: () => invoke<void>(channels.usageOpenDetail)
   }
 };
 

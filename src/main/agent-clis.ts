@@ -8,6 +8,7 @@ import { parseProjectUri } from "../core/project-uri.js";
 import { quoteForRemoteShell, runSshCommand, sshArgsForRemoteMachine, type SshCommandRunner } from "./remote-machines.js";
 import { createDefaultSecretStore, type SecretStore } from "./secrets.js";
 import type { AgentCli, AgentProjectStatusEvent, IpcRuntimeLike, RemoteMachine } from "../shared/types.js";
+import type { TokenUsageCollector } from "./token-usage-collector.js";
 
 export { resolveCommandPath } from "./command-path.js";
 
@@ -17,7 +18,9 @@ export type AgentSessionState = {
   cwd: string | null;
   ignored: boolean;
   offset: number;
+  lineByteOffset: number;
   sessionId: string | null;
+  filePath: string;
 };
 
 type AgentCliDefinition = {
@@ -161,6 +164,7 @@ export class AgentSessionWatcher extends EventEmitter<AgentSessionWatcherEvents>
   private readonly files = new Map<string, AgentSessionState>();
   private timer: ReturnType<typeof setInterval> | null = null;
   private scanning = false;
+  private usageCollector: TokenUsageCollector | null = null;
 
   constructor(options: {
     codexSessionsRoot?: string;
@@ -173,6 +177,10 @@ export class AgentSessionWatcher extends EventEmitter<AgentSessionWatcherEvents>
     this.claudeProjectsRoot = options.claudeProjectsRoot ?? path.join(os.homedir(), ".claude", "projects");
     this.pollIntervalMs = options.pollIntervalMs ?? defaultPollIntervalMs;
     this.startedAt = options.startedAt ?? Date.now();
+  }
+
+  setUsageCollector(collector: TokenUsageCollector): void {
+    this.usageCollector = collector;
   }
 
   start(): void {
@@ -221,7 +229,9 @@ export class AgentSessionWatcher extends EventEmitter<AgentSessionWatcherEvents>
         cwd: null,
         ignored: false,
         offset: existingBeforeWatcher ? stat.size : 0,
+        lineByteOffset: existingBeforeWatcher ? stat.size : 0,
         sessionId: null,
+        filePath: file.filePath,
       };
       this.files.set(key, state);
       if (existingBeforeWatcher) return;
@@ -229,6 +239,7 @@ export class AgentSessionWatcher extends EventEmitter<AgentSessionWatcherEvents>
 
     if (stat.size < state.offset) {
       state.offset = 0;
+      state.lineByteOffset = 0;
       state.buffer = "";
       state.cwd = null;
       state.ignored = false;
@@ -253,6 +264,9 @@ export class AgentSessionWatcher extends EventEmitter<AgentSessionWatcherEvents>
     const lines = text.split(/\r?\n/);
     state.buffer = lines.pop() ?? "";
     for (const line of lines) {
+      const lineOffset = state.lineByteOffset;
+      state.lineByteOffset += Buffer.byteLength(line, "utf8") + 1;
+
       const status = statusFromJsonLine(line, state);
       if (status && state.cwd) {
         this.emit("status", {
@@ -261,6 +275,14 @@ export class AgentSessionWatcher extends EventEmitter<AgentSessionWatcherEvents>
           sessionId: state.sessionId,
           text: status,
           timestamp: new Date().toISOString(),
+        });
+      }
+
+      if (this.usageCollector) {
+        this.usageCollector.processLine(line, state.filePath, lineOffset, {
+          agentId: state.agentId,
+          sessionId: state.sessionId,
+          projectPath: state.cwd,
         });
       }
     }

@@ -6,7 +6,7 @@ import { Terminal as XTerm } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import defaultProjectIconUrl from "./assets/shark-fin.png";
 import { CodeEditor } from "./code-editor";
-import { buildAgentSessionRestoreCommand, type AgentSessionRestoreCommand } from "../shared/agent-session-restore";
+import { buildAgentSessionRestoreCommand, inferAgentSessionRestoreAgent, type AgentSessionRestoreCommand } from "../shared/agent-session-restore";
 import type {
   AgentCli,
   AgentProjectStatusEvent,
@@ -52,6 +52,7 @@ import {
   validTerminalResizeDimensions,
 } from "./workflow";
 import type { WorkflowProjectTerminalActivityState } from "./workflow";
+import { UsageSummary } from "./UsageSummary";
 
 type View = "dashboard" | "settings";
 type DetailTab = "team" | "git" | "stack" | "files" | "forwards";
@@ -884,6 +885,7 @@ function DashboardView({
             </div>
           )}
         </div>
+        <UsageSummary />
       </section>
 
       <div aria-label="Resize project column" aria-orientation="vertical" className="column-resizer" role="separator" tabIndex={0}
@@ -2438,7 +2440,13 @@ function taskRestoreCommand(task: TaskViewModel, status: TeamworkStatus | null, 
   if (!status?.githubUserId || !status.machineId) return null;
   if (task.owner.githubUserId !== status.githubUserId) return null;
   if (task.machine !== status.machineId) return null;
-  return buildAgentSessionRestoreCommand({ agentName: task.agent, sessionId: task.sessionId, availableAgents: agentClis });
+  const agentId = inferAgentSessionRestoreAgent(task.agent);
+  return buildAgentSessionRestoreCommand({
+    agentName: task.agent,
+    sessionId: task.sessionId,
+    availableAgents: agentClis,
+    launchFlags: agentId ? getAgentLaunchFlags(agentId) : [],
+  });
 }
 
 function TaskSessionRestoreCard({ agentName, restore, onRestore }: {
@@ -3343,7 +3351,12 @@ function AgentClisSettingsPanel({ active, bridgeAvailable, setToast }: { active:
 }
 
 function getAgentLaunchFlags(agentId: string): string[] {
-  try { return JSON.parse(localStorage.getItem(`sharkbay:agent-launch-flags:${agentId}`) ?? "[]"); } catch { return []; }
+  try {
+    const value = JSON.parse(localStorage.getItem(`sharkbay:agent-launch-flags:${agentId}`) ?? "[]");
+    return Array.isArray(value) ? value.filter((flag): flag is string => typeof flag === "string" && flag.trim().length > 0) : [];
+  } catch {
+    return [];
+  }
 }
 
 function setAgentLaunchFlags(agentId: string, flags: string[]) {

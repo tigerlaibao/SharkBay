@@ -6,6 +6,7 @@
   "type": "module",
   "main": "dist-electron/electron/main.js",
   "scripts": {
+    "postinstall": "electron-rebuild -f -w better-sqlite3",
     "dev": "concurrently -k \"vite --host 127.0.0.1\" \"tsc -p tsconfig.node.json --watch --preserveWatchOutput\" \"wait-on tcp:5173 dist-electron/electron/main.js && electron .\"",
     "typecheck": "tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "lint": "npm run typecheck",
@@ -37,6 +38,7 @@
     "@xterm/addon-web-links": "^0.12.0",
     "@xterm/xterm": "^6.0.0",
     "codemirror": "^6.0.2",
+    "better-sqlite3": "^11.7.0",
     "@lydell/node-pty": "^1.2.0-beta.12",
     "marked": "15.0.7",
     "react": "^18.2.0",
@@ -46,6 +48,7 @@
     "bun-pty": "^0.4.8"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^20.11.30",
     "@types/react": "^18.2.67",
     "@types/react-dom": "^18.2.22",
@@ -80,7 +83,8 @@
     ],
     "asarUnpack": [
       "node_modules/@lydell/node-pty/**/*",
-      "node_modules/@lydell/node-pty-*/**/*"
+      "node_modules/@lydell/node-pty-*/**/*",
+      "node_modules/better-sqlite3/**/*"
     ],
     "mac": {
       "category": "public.app-category.developer-tools",

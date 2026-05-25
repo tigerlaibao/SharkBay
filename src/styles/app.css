@@ -589,6 +589,56 @@ body.is-resizing-columns * {
   display: none;
 }
 
+.usage-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: auto;
+  border: none;
+  border-top: 1px solid #e8e4dc;
+  background: transparent;
+  color: #5f6c6e;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.usage-summary-bar:hover {
+  background: rgba(45, 88, 96, 0.05);
+  color: #203136;
+}
+
+.usage-summary-tokens {
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-summary-cost {
+  font-weight: 700;
+  color: #203136;
+}
+
+.usage-summary-period {
+  margin-left: auto;
+  opacity: 0.65;
+}
+
+.app-shell[data-theme="night"] .usage-summary-bar {
+  border-top-color: #32474b;
+  color: #8fa09c;
+}
+
+.app-shell[data-theme="night"] .usage-summary-bar:hover {
+  background: rgba(147, 215, 164, 0.06);
+  color: #edf2ef;
+}
+
+.app-shell[data-theme="night"] .usage-summary-cost {
+  color: #edf2ef;
+}
+
 .project-section {
   display: grid;
   gap: 7px;

@@ -14,6 +14,9 @@ import type {
   AppConfig,
   AppearanceTheme,
   AppearanceThemeInput,
+  UsageReportFilter,
+  UsageReportResult,
+  UsageSummary,
   BrowserActionInput,
   BrowserCloseInput,
   BrowserCreateInput,
@@ -71,6 +74,8 @@ import type {
 } from "../src/shared/types.js";
 import { ipcChannels as channels } from "../src/shared/ipc-channels.js";
 import { AgentSessionWatcher } from "../src/main/agent-clis.js";
+import { TokenUsageDb } from "../src/main/token-usage-db.js";
+import { TokenUsageCollector } from "../src/main/token-usage-collector.js";
 import { BrowserManager } from "../src/main/browser-tabs.js";
 import { PortForwardManager } from "../src/main/port-forwards.js";
 import { readGitMetadata } from "../src/main/git.js";
@@ -96,6 +101,7 @@ export type IpcCallbacks = {
 
 const secretStore = createDefaultSecretStore();
 let core: CoreClient | null = null;
+let tokenUsageDb: TokenUsageDb | null = null;
 const agentSessionWatcher = new AgentSessionWatcher();
 const browserManager = new BrowserManager();
 const portForwardManager = new PortForwardManager({ secretStore });
@@ -266,6 +272,14 @@ export async function registerIpcHandlers(
       window.webContents.send(channels.agentStatus, event);
     });
   });
+
+  if (!tokenUsageDb) {
+    tokenUsageDb = new TokenUsageDb(runtime.userDataPath);
+    const collector = new TokenUsageCollector(tokenUsageDb);
+    agentSessionWatcher.setUsageCollector(collector);
+    collector.backfill().catch(() => {});
+  }
+
   agentSessionWatcher.start();
   browserManager.on("update", (event: BrowserUpdateEvent) => {
     BrowserWindow.getAllWindows().forEach((window) => {
@@ -495,5 +509,18 @@ export async function registerIpcHandlers(
   handle<{ repoPath: string }, string>(channels.knowledgeSiteGetPath, async (payload) => {
     const repoPath = await resolveTeamworkRepoPath(runtime, payload.repoPath);
     return getKnowledgeSitePath(repoPath);
+  });
+
+  handle<{ periodDays?: number } | undefined, UsageSummary>(channels.usageGetSummary, async (payload) => {
+    return tokenUsageDb!.getSummary(payload?.periodDays ?? 1);
+  });
+
+  handle<UsageReportFilter, UsageReportResult>(channels.usageGetReport, async (payload) => {
+    return tokenUsageDb!.getReport(payload ?? {});
+  });
+
+  handle<void, void>(channels.usageOpenDetail, async () => {
+    const { createUsageWindow } = await import("./usage-window.js");
+    createUsageWindow();
   });
 }

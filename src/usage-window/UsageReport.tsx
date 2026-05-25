@@ -1,0 +1,297 @@
+import { useEffect, useMemo, useState } from "react";
+import type { UsageGroupRowView, UsageReportFilterView, UsageReportResultView } from "../renderer/types.js";
+
+type QuickRange = "1" | "7" | "30" | "all";
+
+export function UsageReport() {
+  const [report, setReport] = useState<UsageReportResultView | null>(null);
+  const [projectFilter, setProjectFilter] = useState("");
+  const [agentFilter, setAgentFilter] = useState("");
+  const [quickRange, setQuickRange] = useState<QuickRange>("7");
+  const [loading, setLoading] = useState(true);
+
+  const filter = useMemo((): UsageReportFilterView => {
+    const f: UsageReportFilterView = {};
+    if (projectFilter) f.projectPath = projectFilter;
+    if (agentFilter) f.agentId = agentFilter;
+    if (quickRange !== "all") {
+      const days = Number(quickRange);
+      f.startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    }
+    return f;
+  }, [projectFilter, agentFilter, quickRange]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    window.sharkBay?.usage?.getReport?.(filter)?.then((result) => {
+      if (!cancelled) {
+        setReport(normalizeUsageReport(result));
+        setLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [filter]);
+
+  const projects = report?.byProject.map((r) => r.key).filter(Boolean) ?? [];
+  const agents = report?.byAgent.map((r) => r.key).filter(Boolean) ?? [];
+
+  return (
+    <div className="app-shell" data-theme="day">
+      <div className="usage-window">
+        <div className="usage-titlebar">
+          <h1>Token Usage</h1>
+        </div>
+
+        <div className="usage-filters">
+          <div className="filter-group">
+            <span className="filter-label">Project</span>
+            <select value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)}>
+              <option value="">All Projects</option>
+              {projects.map((p) => (
+                <option key={p} value={p}>{shortPath(p)}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-separator" />
+
+          <div className="filter-group">
+            <span className="filter-label">Agent</span>
+            <select value={agentFilter} onChange={(e) => setAgentFilter(e.target.value)}>
+              <option value="">All Agents</option>
+              {agents.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-separator" />
+
+          <div className="filter-group">
+            <span className="filter-label">Period</span>
+            <div className="quick-range">
+              {(["1", "7", "30", "all"] as QuickRange[]).map((r) => (
+                <button
+                  key={r}
+                  className={r === quickRange ? "is-active" : ""}
+                  onClick={() => setQuickRange(r)}
+                >
+                  {r === "1" ? "Today" : r === "all" ? "All" : `${r} Days`}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {report && !loading ? (
+          <>
+            <SummaryCards report={report} days={quickRange === "all" ? null : Number(quickRange)} />
+            <div className="usage-content">
+              <DailyChart byDay={report.byDay} />
+              <BreakdownTable title="By Project" rows={report.byProject} labelFn={shortPath} />
+              <BreakdownTable title="By Agent" rows={report.byAgent} labelFn={(k) => k} isAgent />
+            </div>
+          </>
+        ) : (
+          <div className="usage-empty">{loading ? "Loading..." : "No usage data yet."}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type RawUsageGroupRowView = Partial<UsageGroupRowView> & {
+  key?: string | null;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  cache_read_tokens?: number | null;
+  cost_usd?: number | null;
+};
+
+type RawUsageTotalsView = Partial<UsageReportResultView["totals"]> & {
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  cache_read_tokens?: number | null;
+  cost_usd?: number | null;
+};
+
+type RawUsageReportResultView = Partial<UsageReportResultView> & {
+  byProject?: RawUsageGroupRowView[];
+  byAgent?: RawUsageGroupRowView[];
+  byDay?: RawUsageGroupRowView[];
+  totals?: RawUsageTotalsView;
+};
+
+function normalizeUsageReport(report: UsageReportResultView): UsageReportResultView {
+  const raw = report as RawUsageReportResultView;
+  const totals: RawUsageTotalsView = raw.totals ?? {};
+  return {
+    byProject: (raw.byProject ?? []).map(normalizeUsageGroupRow),
+    byAgent: (raw.byAgent ?? []).map(normalizeUsageGroupRow),
+    byDay: (raw.byDay ?? []).map(normalizeUsageGroupRow),
+    totals: {
+      inputTokens: finiteNumber(totals.inputTokens ?? totals.input_tokens),
+      outputTokens: finiteNumber(totals.outputTokens ?? totals.output_tokens),
+      cacheReadTokens: finiteNumber(totals.cacheReadTokens ?? totals.cache_read_tokens),
+      costUsd: nullableNumber(totals.costUsd ?? totals.cost_usd),
+    },
+  };
+}
+
+function normalizeUsageGroupRow(row: RawUsageGroupRowView): UsageGroupRowView {
+  return {
+    key: row.key ?? "Unknown",
+    inputTokens: finiteNumber(row.inputTokens ?? row.input_tokens),
+    outputTokens: finiteNumber(row.outputTokens ?? row.output_tokens),
+    cacheReadTokens: finiteNumber(row.cacheReadTokens ?? row.cache_read_tokens),
+    costUsd: nullableNumber(row.costUsd ?? row.cost_usd),
+  };
+}
+
+function finiteNumber(value: number | null | undefined): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function nullableNumber(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function SummaryCards({ report, days }: { report: UsageReportResultView; days: number | null }) {
+  const { totals } = report;
+  const dayCount = days ?? Math.max(report.byDay.length, 1);
+  const avgInput = dayCount > 0 ? Math.round(totals.inputTokens / dayCount) : 0;
+  const avgCost = dayCount > 0 && totals.costUsd != null ? totals.costUsd / dayCount : null;
+
+  return (
+    <div className="usage-summary-cards">
+      <div className="summary-card">
+        <span className="card-label">Input Tokens</span>
+        <span className="card-value">{formatTokens(totals.inputTokens)}</span>
+        <span className="card-sub">avg {formatTokens(avgInput)} / day</span>
+      </div>
+      <div className="summary-card">
+        <span className="card-label">Output Tokens</span>
+        <span className="card-value">{formatTokens(totals.outputTokens)}</span>
+      </div>
+      <div className="summary-card">
+        <span className="card-label">Cache Read</span>
+        <span className="card-value">{formatTokens(totals.cacheReadTokens)}</span>
+        {totals.inputTokens > 0 && (
+          <span className="card-sub">
+            {Math.round((totals.cacheReadTokens / (totals.inputTokens + totals.cacheReadTokens)) * 100)}% cache hit
+          </span>
+        )}
+      </div>
+      <div className="summary-card">
+        <span className="card-label">Estimated Cost</span>
+        <span className="card-value">
+          {totals.costUsd != null ? (
+            <><span className="currency">$</span>{totals.costUsd.toFixed(2)}</>
+          ) : "—"}
+        </span>
+        {avgCost != null && <span className="card-sub">avg ${avgCost.toFixed(2)} / day</span>}
+      </div>
+    </div>
+  );
+}
+
+function DailyChart({ byDay }: { byDay: UsageGroupRowView[] }) {
+  const days = [...byDay].reverse().slice(-14);
+  const maxTokens = Math.max(...days.map((d) => d.inputTokens + d.outputTokens), 1);
+
+  return (
+    <div className="usage-section full-width">
+      <div className="usage-chart">
+        <div className="chart-legend">
+          <span className="legend-input">Input</span>
+          <span className="legend-output">Output</span>
+        </div>
+        <div className="chart-bars">
+          {days.map((day) => {
+            const inputPct = (day.inputTokens / maxTokens) * 85;
+            const outputPct = (day.outputTokens / maxTokens) * 85;
+            return (
+              <div key={day.key} className="chart-bar-group">
+                <div className="chart-bar-stack">
+                  <div className="chart-bar-input" style={{ height: `${inputPct}%` }} />
+                  <div className="chart-bar-output" style={{ height: `${outputPct}%` }} />
+                </div>
+                <span className="chart-bar-label">{formatDate(day.key)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BreakdownTable({ title, rows, labelFn, isAgent }: {
+  title: string;
+  rows: UsageGroupRowView[];
+  labelFn: (key: string) => string;
+  isAgent?: boolean;
+}) {
+  const total = rows.reduce((sum, r) => sum + (r.costUsd ?? 0), 0);
+  const hasCost = rows.some((r) => r.costUsd != null);
+
+  return (
+    <div className="usage-section">
+      <span className="section-title">{title}</span>
+      <div className="table-wrapper">
+        <table className="usage-table">
+          <thead>
+            <tr>
+              <th>{isAgent ? "Agent" : "Project"}</th>
+              <th>Input</th>
+              <th>Output</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.key}>
+                <td>
+                  {isAgent ? (
+                    <span className="agent-badge">{labelFn(row.key)}</span>
+                  ) : labelFn(row.key)}
+                </td>
+                <td className="tokens-cell">{row.inputTokens.toLocaleString()}</td>
+                <td className="tokens-cell">{row.outputTokens.toLocaleString()}</td>
+                <td className={`cost-cell${row.costUsd == null ? " no-data" : ""}`}>
+                  {row.costUsd != null ? `$${row.costUsd.toFixed(2)}` : "—"}
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr><td colSpan={4} style={{ textAlign: "center", color: "#7a8587" }}>No data</td></tr>
+            )}
+          </tbody>
+        </table>
+        {rows.length > 0 && (
+          <div className="table-footer">
+            <span>{rows.length} {isAgent ? "agents" : "projects"}</span>
+            {hasCost && <span className="total-cost">Total: ${total.toFixed(2)}</span>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
+
+function formatDate(iso: string): string {
+  const [, m, d] = iso.split("-");
+  return `${Number(m)}/${Number(d)}`;
+}
+
+function shortPath(p: string): string {
+  const parts = p.split("/");
+  return parts[parts.length - 1] || p;
+}

@@ -815,3 +815,32 @@ export type KnowledgeSiteResult = {
   sitePath: string;
   reason?: string;
 };
+
+export type UsageSummary = {
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCostUsd: number | null;
+  periodLabel: string;
+};
+
+export type UsageReportFilter = {
+  projectPath?: string;
+  agentId?: string;
+  startDate?: string;
+  endDate?: string;
+};
+
+export type UsageGroupRow = {
+  key: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  costUsd: number | null;
+};
+
+export type UsageReportResult = {
+  byProject: UsageGroupRow[];
+  byAgent: UsageGroupRow[];
+  byDay: UsageGroupRow[];
+  totals: { inputTokens: number; outputTokens: number; cacheReadTokens: number; costUsd: number | null };
+};

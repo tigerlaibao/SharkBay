@@ -676,6 +676,40 @@ export type SharkBayBridge = {
     remove?: (input: { id: string }) => Promise<{ ok: true }>;
     onUpdate?: (callback: (event: { forward: RemotePortForward }) => void) => () => void;
   };
+  usage?: {
+    getSummary?: (input?: { periodDays?: number }) => Promise<UsageSummaryView>;
+    getReport?: (input: UsageReportFilterView) => Promise<UsageReportResultView>;
+    openDetail?: () => Promise<void>;
+  };
+};
+
+export type UsageSummaryView = {
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCostUsd: number | null;
+  periodLabel: string;
+};
+
+export type UsageReportFilterView = {
+  projectPath?: string;
+  agentId?: string;
+  startDate?: string;
+  endDate?: string;
+};
+
+export type UsageGroupRowView = {
+  key: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  costUsd: number | null;
+};
+
+export type UsageReportResultView = {
+  byProject: UsageGroupRowView[];
+  byAgent: UsageGroupRowView[];
+  byDay: UsageGroupRowView[];
+  totals: { inputTokens: number; outputTokens: number; cacheReadTokens: number; costUsd: number | null };
 };
 
 export type PortForwardStatus = "starting" | "running" | "stopped" | "error";

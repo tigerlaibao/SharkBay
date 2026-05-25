@@ -38,6 +38,7 @@ export function buildAgentSessionRestoreCommand(input: {
   agentName: string | null | undefined;
   sessionId: string | null | undefined;
   availableAgents?: AgentCli[];
+  launchFlags?: string[];
 }): AgentSessionRestoreCommand | null {
   const sessionId = input.sessionId?.trim();
   if (!sessionId) return null;
@@ -52,21 +53,23 @@ export function buildAgentSessionRestoreCommand(input: {
     agentId: definition.id,
     label: detectedAgent?.label || definition.label,
     shortLabel: detectedAgent?.shortLabel || definition.shortLabel,
-    command: restoreCommand(definition.id, executable, sessionId),
+    command: restoreCommand(definition.id, executable, sessionId, input.launchFlags),
     title: `Restore ${detectedAgent?.label || definition.label}`,
   };
 }
 
-function restoreCommand(agentId: AgentSessionRestoreAgentId, executable: string, sessionId: string): string {
+function restoreCommand(agentId: AgentSessionRestoreAgentId, executable: string, sessionId: string, launchFlags: string[] = []): string {
   const command = shellQuote(executable);
   const id = shellQuote(sessionId);
   const restoredSessionEnv = `SHARKBAY_RESTORED_SESSION_ID=${id}`;
-  if (agentId === "codex") return `${restoredSessionEnv} ${command} resume ${id}`;
-  if (agentId === "claude") return `${restoredSessionEnv} ${command} --resume ${id}`;
-  if (agentId === "gemini" || agentId === "qwen") return `${restoredSessionEnv} ${command} --resume ${id}`;
-  if (agentId === "kiro") return `${restoredSessionEnv} ${command} chat --resume-id ${id}`;
-  if (agentId === "deepseek") return `${restoredSessionEnv} ${command} resume ${id}`;
-  return `${restoredSessionEnv} ${command} --session ${id}`;
+  const flags = launchFlags.filter((flag) => flag.trim()).join(" ");
+  const commandWithFlags = flags ? `${command} ${flags}` : command;
+  if (agentId === "codex") return `${restoredSessionEnv} ${commandWithFlags} resume ${id}`;
+  if (agentId === "claude") return `${restoredSessionEnv} ${commandWithFlags} --resume ${id}`;
+  if (agentId === "gemini" || agentId === "qwen") return `${restoredSessionEnv} ${commandWithFlags} --resume ${id}`;
+  if (agentId === "kiro") return `${restoredSessionEnv} ${commandWithFlags} chat --resume-id ${id}`;
+  if (agentId === "deepseek") return `${restoredSessionEnv} ${commandWithFlags} resume ${id}`;
+  return `${restoredSessionEnv} ${commandWithFlags} --session ${id}`;
 }
 
 function shellQuote(value: string): string {
