@@ -15,10 +15,10 @@ export function createUsageWindow(): void {
 
   const preload = join(currentDir, "preload.mjs");
   usageWindow = new BrowserWindow({
-    width: 1100,
-    height: 780,
-    minWidth: 860,
-    minHeight: 580,
+    width: 920,
+    height: 720,
+    minWidth: 720,
+    minHeight: 520,
     title: "Token Usage",
     show: false,
     webPreferences: {

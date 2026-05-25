@@ -10,14 +10,13 @@
 .usage-titlebar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  padding: 14px 20px 0;
+  padding: 10px 16px 0;
 }
 
 .usage-titlebar h1 {
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 720;
   color: #203136;
 }
@@ -27,19 +26,19 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 14px 20px 0;
+  padding: 10px 16px 0;
 }
 
 .usage-filters select,
 .usage-filters input[type="date"] {
-  min-height: 30px;
-  padding: 4px 10px;
-  font-size: 12px;
+  min-height: 26px;
+  padding: 3px 8px;
+  font-size: 11px;
   font-weight: 500;
   color: #1f2528;
   background: #ffffff;
   border: 1px solid #d6d0c4;
-  border-radius: 6px;
+  border-radius: 5px;
   outline: none;
 }
 
@@ -50,7 +49,7 @@
 }
 
 .filter-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 650;
   color: #6a7578;
   text-transform: uppercase;
@@ -60,30 +59,30 @@
 .filter-group {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
 .filter-separator {
   width: 1px;
-  height: 18px;
+  height: 16px;
   background: #dedad1;
   margin: 0 4px;
 }
 
 .quick-range {
   display: flex;
-  gap: 3px;
+  gap: 2px;
 }
 
 .quick-range button {
-  min-height: 26px;
-  padding: 3px 8px;
+  min-height: 24px;
+  padding: 2px 7px;
   font-size: 11px;
   font-weight: 650;
   color: #4a575a;
   background: #f4f1eb;
   border: 1px solid #dedad1;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
 }
 
@@ -100,23 +99,23 @@
 .usage-summary-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  padding: 16px 20px;
+  gap: 10px;
+  padding: 12px 16px;
 }
 
 .summary-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 14px 16px;
+  gap: 2px;
+  padding: 10px 12px;
   background: #ffffff;
   border: 1px solid #e8e4dc;
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .summary-card .card-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 650;
   color: #7a8587;
   text-transform: uppercase;
@@ -124,24 +123,23 @@
 }
 
 .summary-card .card-value {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 750;
   color: #203136;
   font-variant-numeric: tabular-nums;
 }
 
 .summary-card .card-sub {
-  font-size: 11px;
+  font-size: 10px;
   color: #7a8587;
-  margin-top: 2px;
+  margin-top: 1px;
 }
-
 
 .usage-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  padding: 0 20px 20px;
+  gap: 12px;
+  padding: 0 16px 16px;
   overflow: auto;
   align-content: start;
 }
@@ -153,11 +151,11 @@
 .usage-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #203136;
   text-transform: uppercase;
@@ -166,11 +164,11 @@
 
 .usage-chart {
   width: 100%;
-  height: 140px;
+  height: 110px;
   background: #ffffff;
   border: 1px solid #e8e4dc;
-  border-radius: 10px;
-  padding: 16px 20px;
+  border-radius: 8px;
+  padding: 12px 14px;
   position: relative;
   overflow: hidden;
 }
@@ -178,9 +176,9 @@
 .chart-bars {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: 3px;
   height: 100%;
-  padding-top: 20px;
+  padding-top: 16px;
 }
 
 .chart-bar-group {
@@ -188,7 +186,7 @@
   flex-direction: column;
   align-items: center;
   flex: 1;
-  gap: 4px;
+  gap: 3px;
   height: 100%;
   justify-content: flex-end;
 }
@@ -198,20 +196,20 @@
   flex-direction: column;
   justify-content: flex-end;
   width: 100%;
-  max-width: 28px;
+  max-width: 24px;
   flex: 1;
   gap: 1px;
 }
 
 .chart-bar-input {
   background: #3d8b9e;
-  border-radius: 3px 3px 0 0;
+  border-radius: 2px 2px 0 0;
   min-height: 1px;
 }
 
 .chart-bar-output {
   background: #93d7a4;
-  border-radius: 0 0 3px 3px;
+  border-radius: 0 0 2px 2px;
   min-height: 1px;
 }
 
@@ -224,10 +222,10 @@
 
 .chart-legend {
   position: absolute;
-  top: 12px;
-  right: 16px;
+  top: 8px;
+  right: 12px;
   display: flex;
-  gap: 12px;
+  gap: 10px;
   font-size: 10px;
   color: #7a8587;
   font-weight: 600;
@@ -237,10 +235,10 @@
 .chart-legend .legend-output::before {
   content: "";
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 2px;
-  margin-right: 4px;
+  margin-right: 3px;
   vertical-align: middle;
 }
 
@@ -250,18 +248,18 @@
 .table-wrapper {
   background: #ffffff;
   border: 1px solid #e8e4dc;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
 .usage-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .usage-table th {
-  padding: 7px 10px;
+  padding: 5px 8px;
   font-size: 10px;
   font-weight: 700;
   color: #7a8587;
@@ -278,7 +276,7 @@
 }
 
 .usage-table td {
-  padding: 8px 10px;
+  padding: 6px 8px;
   border-bottom: 1px solid #f0ede7;
   color: #2d3e42;
   font-variant-numeric: tabular-nums;
@@ -293,37 +291,35 @@
   font-size: 11px;
 }
 
-
 .usage-table .agent-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 7px;
-  font-size: 11px;
+  padding: 1px 6px;
+  font-size: 10px;
   font-weight: 650;
   color: #2d5860;
   background: #e5f3f0;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .table-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
+  padding: 5px 8px;
   background: #faf9f6;
   border-top: 1px solid #e8e4dc;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 650;
   color: #4a575a;
 }
 
-
 .usage-empty {
-  padding: 40px 20px;
+  padding: 40px 16px;
   text-align: center;
   color: #7a8587;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* Night theme overrides */
@@ -381,7 +377,6 @@
   color: #edf2ef;
 }
 
-
 .app-shell[data-theme="night"] .summary-card .card-sub {
   color: #8fa09c;
 }
@@ -416,7 +411,6 @@
   border-bottom-color: rgba(50, 71, 75, 0.5);
 }
 
-
 .app-shell[data-theme="night"] .usage-table .agent-badge {
   color: #93d7a4;
   background: rgba(147, 215, 164, 0.12);
@@ -427,4 +421,3 @@
   border-top-color: #32474b;
   color: #9fb0ac;
 }
-
