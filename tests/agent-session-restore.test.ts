@@ -15,13 +15,13 @@ describe("agent session restore commands", () => {
 
   it("builds agent-specific restore commands", () => {
     const sessionId = "11111111-1111-4111-8111-111111111111";
-    expect(commandFor("Codex GPT-5", sessionId)).toBe("'codex' resume '11111111-1111-4111-8111-111111111111'");
-    expect(commandFor("Claude Code", sessionId)).toBe("'claude' --resume '11111111-1111-4111-8111-111111111111'");
-    expect(commandFor("Gemini CLI", sessionId)).toBe("'gemini' --resume '11111111-1111-4111-8111-111111111111'");
-    expect(commandFor("Qwen Code", sessionId)).toBe("'qwen' --resume '11111111-1111-4111-8111-111111111111'");
-    expect(commandFor("Kiro CLI", sessionId)).toBe("'kiro-cli' chat --resume-id '11111111-1111-4111-8111-111111111111'");
-    expect(commandFor("DeepSeek TUI", sessionId)).toBe("'deepseek' resume '11111111-1111-4111-8111-111111111111'");
-    expect(commandFor("OpenCode", "ses_abc")).toBe("'opencode' --session 'ses_abc'");
+    expect(commandFor("Codex GPT-5", sessionId)).toBe("SHARKBAY_RESTORED_SESSION_ID='11111111-1111-4111-8111-111111111111' 'codex' resume '11111111-1111-4111-8111-111111111111'");
+    expect(commandFor("Claude Code", sessionId)).toBe("SHARKBAY_RESTORED_SESSION_ID='11111111-1111-4111-8111-111111111111' 'claude' --resume '11111111-1111-4111-8111-111111111111'");
+    expect(commandFor("Gemini CLI", sessionId)).toBe("SHARKBAY_RESTORED_SESSION_ID='11111111-1111-4111-8111-111111111111' 'gemini' --resume '11111111-1111-4111-8111-111111111111'");
+    expect(commandFor("Qwen Code", sessionId)).toBe("SHARKBAY_RESTORED_SESSION_ID='11111111-1111-4111-8111-111111111111' 'qwen' --resume '11111111-1111-4111-8111-111111111111'");
+    expect(commandFor("Kiro CLI", sessionId)).toBe("SHARKBAY_RESTORED_SESSION_ID='11111111-1111-4111-8111-111111111111' 'kiro-cli' chat --resume-id '11111111-1111-4111-8111-111111111111'");
+    expect(commandFor("DeepSeek TUI", sessionId)).toBe("SHARKBAY_RESTORED_SESSION_ID='11111111-1111-4111-8111-111111111111' 'deepseek' resume '11111111-1111-4111-8111-111111111111'");
+    expect(commandFor("OpenCode", "ses_abc")).toBe("SHARKBAY_RESTORED_SESSION_ID='ses_abc' 'opencode' --session 'ses_abc'");
   });
 
   it("prefers detected executable paths when available", () => {
@@ -39,7 +39,7 @@ describe("agent session restore commands", () => {
 
     expect(restore).toMatchObject({
       agentId: "claude",
-      command: "'/Users/test/bin/claude' --resume '22222222-2222-4222-8222-222222222222'",
+      command: "SHARKBAY_RESTORED_SESSION_ID='22222222-2222-4222-8222-222222222222' '/Users/test/bin/claude' --resume '22222222-2222-4222-8222-222222222222'",
       title: "Restore Claude Code",
     });
   });

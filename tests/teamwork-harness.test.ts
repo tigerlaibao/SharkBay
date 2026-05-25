@@ -56,6 +56,7 @@ describe("teamwork harness install", () => {
     expect(sessionHelperText).toContain(".deepseek/audit.log");
     expect(sessionHelperText).toContain("*opencode*)");
     expect(sessionHelperText).toContain(".local\\/share\\/opencode\\/log");
+    expect(sessionHelperText).toContain("SHARKBAY_RESTORED_SESSION_ID");
     expect(sessionHelperText).toContain("*claude*|*gemini*|*qwen*)");
     expect(sessionHelperText).toContain("codex|claude|deepseek|gemini|kiro|opencode|qwen");
     const exclude = await fs.readFile(path.join(repo, ".git", "info", "exclude"), "utf8");
@@ -88,6 +89,21 @@ describe("teamwork harness install", () => {
     const { stdout } = await execFileAsync("sh", [path.join(repo, ".sharkbay", "harness", "agent-session-id.sh"), "deepseek"], {
       cwd: workspace,
       env: { ...process.env, HOME: home },
+    });
+
+    expect(stdout.trim()).toBe(sessionId);
+  });
+
+  it("returns restored session id directly from the restore environment", async () => {
+    const root = await makeTempRoot("teamwork-restored-session");
+    const repo = await createRealGitRepoFixture(root);
+    const workspace = await fs.realpath(repo);
+    await installHarness(repo, harnessOptions);
+
+    const sessionId = "33333333-3333-4333-8333-333333333333";
+    const { stdout } = await execFileAsync("sh", [path.join(repo, ".sharkbay", "harness", "agent-session-id.sh"), "codex"], {
+      cwd: workspace,
+      env: { ...process.env, SHARKBAY_RESTORED_SESSION_ID: sessionId },
     });
 
     expect(stdout.trim()).toBe(sessionId);

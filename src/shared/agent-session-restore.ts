@@ -60,12 +60,13 @@ export function buildAgentSessionRestoreCommand(input: {
 function restoreCommand(agentId: AgentSessionRestoreAgentId, executable: string, sessionId: string): string {
   const command = shellQuote(executable);
   const id = shellQuote(sessionId);
-  if (agentId === "codex") return `${command} resume ${id}`;
-  if (agentId === "claude") return `${command} --resume ${id}`;
-  if (agentId === "gemini" || agentId === "qwen") return `${command} --resume ${id}`;
-  if (agentId === "kiro") return `${command} chat --resume-id ${id}`;
-  if (agentId === "deepseek") return `${command} resume ${id}`;
-  return `${command} --session ${id}`;
+  const restoredSessionEnv = `SHARKBAY_RESTORED_SESSION_ID=${id}`;
+  if (agentId === "codex") return `${restoredSessionEnv} ${command} resume ${id}`;
+  if (agentId === "claude") return `${restoredSessionEnv} ${command} --resume ${id}`;
+  if (agentId === "gemini" || agentId === "qwen") return `${restoredSessionEnv} ${command} --resume ${id}`;
+  if (agentId === "kiro") return `${restoredSessionEnv} ${command} chat --resume-id ${id}`;
+  if (agentId === "deepseek") return `${restoredSessionEnv} ${command} resume ${id}`;
+  return `${restoredSessionEnv} ${command} --session ${id}`;
 }
 
 function shellQuote(value: string): string {
