@@ -1,3 +1,13 @@
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+}
+
+body {
+  background: #f7f8fa;
+}
+
 .usage-window {
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
@@ -96,19 +106,30 @@
   border-color: #405f66;
 }
 
+.usage-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 348px) minmax(220px, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  min-width: 0;
+  padding: 10px 16px 12px;
+}
+
 .usage-summary-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  padding: 10px 16px;
-  max-width: 600px;
+  min-width: 0;
 }
 
 .summary-card {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 1px;
-  padding: 8px 12px;
+  min-width: 0;
+  min-height: 86px;
+  padding: 8px 10px;
   background: #ffffff;
   border: 1px solid #e8e4dc;
   border-radius: 8px;
@@ -116,48 +137,60 @@
 }
 
 .summary-card .card-label {
+  overflow: hidden;
+  color: #7a8587;
   font-size: 10px;
   font-weight: 650;
-  color: #7a8587;
-  text-transform: uppercase;
   letter-spacing: 0.03em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .summary-card .card-value {
-  font-size: 16px;
-  font-weight: 750;
+  overflow: hidden;
   color: #203136;
+  font-size: 16px;
   font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .summary-card .card-sub {
-  font-size: 10px;
+  overflow: hidden;
   color: #7a8587;
+  font-size: 10px;
   margin-top: 1px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .usage-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
+  align-content: start;
+  min-height: 0;
   padding: 0 16px 16px;
   overflow: auto;
-  align-content: start;
 }
 
 .usage-content .full-width {
   grid-column: 1 / -1;
 }
 
-.usage-content .full-width .table-wrapper {
-  max-width: 600px;
-}
-
 .usage-section {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
   align-self: start;
+}
+
+.usage-overview .usage-section {
+  align-self: stretch;
 }
 
 .section-title {
@@ -169,30 +202,31 @@
 }
 
 .usage-chart {
-  display: inline-flex;
-  flex-direction: column;
-  height: 80px;
+  width: 100%;
+  height: 100%;
+  min-height: 86px;
   background: #ffffff;
   border: 1px solid #e8e4dc;
   border-radius: 8px;
   padding: 10px 14px;
   position: relative;
+  overflow: hidden;
 }
 
 .chart-bars {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: 3px;
   height: 100%;
   padding-top: 12px;
-  justify-content: flex-start;
 }
 
 .chart-bar-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 36px;
+  flex: 1 1 0;
+  min-width: 0;
   gap: 3px;
   height: 100%;
   justify-content: flex-end;
@@ -202,8 +236,8 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  width: 100%;
-  max-width: 24px;
+  align-self: center;
+  width: min(100%, 20px);
   flex: 1;
   gap: 1px;
 }
@@ -225,6 +259,10 @@
   color: #7a8587;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.chart-bar-label.is-hidden {
+  visibility: hidden;
 }
 
 .chart-legend {
@@ -253,17 +291,19 @@
 .chart-legend .legend-output::before { background: #93d7a4; }
 
 .table-wrapper {
+  width: 100%;
+  min-width: 0;
   background: #ffffff;
   border: 1px solid #e8e4dc;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .usage-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 11px;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
 .usage-table th {
@@ -294,14 +334,32 @@
   border-bottom: none;
 }
 
+.usage-table th:first-child,
+.usage-table td:first-child {
+  width: 36%;
+}
+
 .usage-table .tokens-cell {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   font-size: 11px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.usage-table .table-label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: #203136;
+  font-weight: 620;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .usage-table .agent-badge {
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
   gap: 4px;
   padding: 1px 6px;
   font-size: 10px;
@@ -309,6 +367,19 @@
   color: #2d5860;
   background: #e5f3f0;
   border-radius: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-section.full-width .usage-table {
+  min-width: 520px;
+  table-layout: auto;
+}
+
+.usage-section.full-width .usage-table th:first-child,
+.usage-section.full-width .usage-table td:first-child {
+  width: auto;
 }
 
 .table-footer {
@@ -328,6 +399,12 @@
   text-align: center;
   color: #7a8587;
   font-size: 12px;
+}
+
+@media (min-width: 900px) {
+  .usage-content {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
 }
 
 /* Night theme overrides */
@@ -417,6 +494,10 @@
 .app-shell[data-theme="night"] .usage-table td {
   color: #d9e5df;
   border-bottom-color: rgba(50, 71, 75, 0.5);
+}
+
+.app-shell[data-theme="night"] .usage-table .table-label {
+  color: #edf2ef;
 }
 
 .app-shell[data-theme="night"] .usage-table .agent-badge {

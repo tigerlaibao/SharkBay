@@ -86,9 +86,11 @@ export function UsageReport() {
 
         {report && !loading ? (
           <>
-            <SummaryCards report={report} days={quickRange === "all" ? null : Number(quickRange)} />
-            <div className="usage-content">
+            <div className="usage-overview">
+              <SummaryCards report={report} days={quickRange === "all" ? null : Number(quickRange)} />
               <DailyChart byDay={report.byDay} rangeDays={quickRange === "all" ? null : Number(quickRange)} />
+            </div>
+            <div className="usage-content">
               <BreakdownTable title="By Project" rows={report.byProject} labelFn={shortPath} />
               <BreakdownTable title="By Agent" rows={report.byAgent} labelFn={(k) => k} isAgent />
               <DailyBreakdown byDay={report.byDay} />
@@ -186,23 +188,25 @@ function DailyChart({ byDay, rangeDays }: { byDay: UsageGroupRowView[]; rangeDay
   const maxTokens = Math.max(...days.map((d) => d.inputTokens + d.outputTokens), 1);
 
   return (
-    <div className="usage-section full-width">
+    <div className="usage-section">
       <div className="usage-chart">
         <div className="chart-legend">
           <span className="legend-input">Input</span>
           <span className="legend-output">Output</span>
         </div>
         <div className="chart-bars">
-          {days.map((day) => {
+          {days.map((day, index) => {
             const inputPct = (day.inputTokens / maxTokens) * 85;
             const outputPct = (day.outputTokens / maxTokens) * 85;
+            const labelInterval = days.length > 14 ? 5 : 2;
+            const showLabel = days.length <= 10 || index === 0 || index === days.length - 1 || index % labelInterval === 0;
             return (
               <div key={day.key} className="chart-bar-group">
                 <div className="chart-bar-stack">
                   <div className="chart-bar-input" style={{ height: `${inputPct}%` }} />
                   <div className="chart-bar-output" style={{ height: `${outputPct}%` }} />
                 </div>
-                <span className="chart-bar-label">{formatDate(day.key)}</span>
+                <span className={showLabel ? "chart-bar-label" : "chart-bar-label is-hidden"}>{formatDate(day.key)}</span>
               </div>
             );
           })}
@@ -236,8 +240,10 @@ function BreakdownTable({ title, rows, labelFn, isAgent }: {
               <tr key={row.key}>
                 <td>
                   {isAgent ? (
-                    <span className="agent-badge">{labelFn(row.key)}</span>
-                  ) : labelFn(row.key)}
+                    <span className="agent-badge" title={row.key}>{labelFn(row.key)}</span>
+                  ) : (
+                    <span className="table-label" title={row.key}>{labelFn(row.key)}</span>
+                  )}
                 </td>
                 <td className="tokens-cell">{row.inputTokens.toLocaleString()}</td>
                 <td className="tokens-cell">{row.outputTokens.toLocaleString()}</td>
