@@ -615,11 +615,6 @@ body.is-resizing-columns * {
   font-variant-numeric: tabular-nums;
 }
 
-.usage-summary-cost {
-  font-weight: 700;
-  color: #203136;
-}
-
 .usage-summary-period {
   margin-left: auto;
   opacity: 0.65;
@@ -632,10 +627,6 @@ body.is-resizing-columns * {
 
 .app-shell[data-theme="night"] .usage-summary-bar:hover {
   background: rgba(147, 215, 164, 0.06);
-  color: #edf2ef;
-}
-
-.app-shell[data-theme="night"] .usage-summary-cost {
   color: #edf2ef;
 }
 

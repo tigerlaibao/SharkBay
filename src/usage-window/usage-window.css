@@ -99,7 +99,7 @@
 
 .usage-summary-cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   padding: 16px 20px;
 }
@@ -136,11 +136,6 @@
   margin-top: 2px;
 }
 
-.summary-card .card-value .currency {
-  font-size: 15px;
-  font-weight: 650;
-  color: #4a575a;
-}
 
 .usage-content {
   display: grid;
@@ -298,16 +293,6 @@
   font-size: 11px;
 }
 
-.usage-table .cost-cell {
-  font-weight: 680;
-  color: #203136;
-}
-
-.usage-table .cost-cell.no-data {
-  color: #b0b8ba;
-  font-weight: 500;
-  font-style: italic;
-}
 
 .usage-table .agent-badge {
   display: inline-flex;
@@ -333,10 +318,6 @@
   color: #4a575a;
 }
 
-.table-footer .total-cost {
-  font-weight: 720;
-  color: #203136;
-}
 
 .usage-empty {
   padding: 40px 20px;
@@ -400,9 +381,6 @@
   color: #edf2ef;
 }
 
-.app-shell[data-theme="night"] .summary-card .card-value .currency {
-  color: #9fb0ac;
-}
 
 .app-shell[data-theme="night"] .summary-card .card-sub {
   color: #8fa09c;
@@ -438,13 +416,6 @@
   border-bottom-color: rgba(50, 71, 75, 0.5);
 }
 
-.app-shell[data-theme="night"] .usage-table .cost-cell {
-  color: #edf2ef;
-}
-
-.app-shell[data-theme="night"] .usage-table .cost-cell.no-data {
-  color: #5c706c;
-}
 
 .app-shell[data-theme="night"] .usage-table .agent-badge {
   color: #93d7a4;
@@ -457,6 +428,3 @@
   color: #9fb0ac;
 }
 
-.app-shell[data-theme="night"] .table-footer .total-cost {
-  color: #edf2ef;
-}
