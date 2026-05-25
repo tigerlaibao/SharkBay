@@ -88,9 +88,10 @@ export function UsageReport() {
           <>
             <SummaryCards report={report} days={quickRange === "all" ? null : Number(quickRange)} />
             <div className="usage-content">
-              <DailyChart byDay={report.byDay} />
+              <DailyChart byDay={report.byDay} rangeDays={quickRange === "all" ? null : Number(quickRange)} />
               <BreakdownTable title="By Project" rows={report.byProject} labelFn={shortPath} />
               <BreakdownTable title="By Agent" rows={report.byAgent} labelFn={(k) => k} isAgent />
+              <DailyBreakdown byDay={report.byDay} />
             </div>
           </>
         ) : (
@@ -196,8 +197,8 @@ function SummaryCards({ report, days }: { report: UsageReportResultView; days: n
   );
 }
 
-function DailyChart({ byDay }: { byDay: UsageGroupRowView[] }) {
-  const days = [...byDay].reverse().slice(-14);
+function DailyChart({ byDay, rangeDays }: { byDay: UsageGroupRowView[]; rangeDays: number | null }) {
+  const days = fillDayGaps(byDay, rangeDays ?? 30);
   const maxTokens = Math.max(...days.map((d) => d.inputTokens + d.outputTokens), 1);
 
   return (
@@ -294,4 +295,60 @@ function formatDate(iso: string): string {
 function shortPath(p: string): string {
   const parts = p.split("/");
   return parts[parts.length - 1] || p;
+}
+
+function fillDayGaps(byDay: UsageGroupRowView[], rangeDays: number): UsageGroupRowView[] {
+  const map = new Map(byDay.map((d) => [d.key, d]));
+  const result: UsageGroupRowView[] = [];
+  const now = new Date();
+  for (let i = rangeDays - 1; i >= 0; i--) {
+    const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const key = date.toISOString().slice(0, 10);
+    result.push(map.get(key) ?? { key, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, costUsd: null });
+  }
+  return result;
+}
+
+function DailyBreakdown({ byDay }: { byDay: UsageGroupRowView[] }) {
+  const days = [...byDay].slice(0, 14);
+  if (days.length === 0) return null;
+
+  const totalCost = days.reduce((sum, r) => sum + (r.costUsd ?? 0), 0);
+  const hasCost = days.some((r) => r.costUsd != null);
+
+  return (
+    <div className="usage-section full-width">
+      <span className="section-title">Daily Breakdown</span>
+      <div className="table-wrapper">
+        <table className="usage-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Input</th>
+              <th>Output</th>
+              <th>Cache Read</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {days.map((row) => (
+              <tr key={row.key}>
+                <td>{row.key}</td>
+                <td className="tokens-cell">{row.inputTokens.toLocaleString()}</td>
+                <td className="tokens-cell">{row.outputTokens.toLocaleString()}</td>
+                <td className="tokens-cell">{row.cacheReadTokens > 0 ? row.cacheReadTokens.toLocaleString() : "—"}</td>
+                <td className={`cost-cell${row.costUsd == null ? " no-data" : ""}`}>
+                  {row.costUsd != null ? `$${row.costUsd.toFixed(2)}` : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="table-footer">
+          <span>{days.length} days</span>
+          {hasCost && <span className="total-cost">Total: ${totalCost.toFixed(2)}</span>}
+        </div>
+      </div>
+    </div>
+  );
 }

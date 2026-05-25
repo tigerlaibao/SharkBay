@@ -180,16 +180,25 @@ export class TokenUsageDb {
     tx(events);
   }
 
-  getSummary(periodDays = 1): UsageSummary {
+  getSummary(periodDays = 1, allowedProjects?: string[]): UsageSummary {
     const since = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
+    const conditions = ["recorded_at >= ?"];
+    const params: unknown[] = [since];
+
+    if (allowedProjects && allowedProjects.length > 0) {
+      conditions.push(`project_path IN (${allowedProjects.map(() => "?").join(",")})`);
+      params.push(...allowedProjects);
+    }
+
+    const where = `WHERE ${conditions.join(" AND ")}`;
     const row = this.db.prepare(`
       SELECT
         COALESCE(SUM(input_tokens), 0) AS input_tokens,
         COALESCE(SUM(output_tokens), 0) AS output_tokens,
         SUM(cost_usd) AS cost_usd
       FROM token_events
-      WHERE recorded_at >= ?
-    `).get(since) as { input_tokens: number; output_tokens: number; cost_usd: number | null };
+      ${where}
+    `).get(...params) as { input_tokens: number; output_tokens: number; cost_usd: number | null };
 
     const periodLabel = periodDays === 1 ? "Today" : `${periodDays}d`;
     return {
@@ -200,9 +209,14 @@ export class TokenUsageDb {
     };
   }
 
-  getReport(filter: UsageReportFilter): UsageReportResult {
+  getReport(filter: UsageReportFilter, allowedProjects?: string[]): UsageReportResult {
     const conditions: string[] = [];
     const params: unknown[] = [];
+
+    if (allowedProjects && allowedProjects.length > 0) {
+      conditions.push(`project_path IN (${allowedProjects.map(() => "?").join(",")})`);
+      params.push(...allowedProjects);
+    }
 
     if (filter.projectPath) {
       conditions.push("project_path = ?");

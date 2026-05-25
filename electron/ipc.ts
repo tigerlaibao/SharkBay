@@ -512,11 +512,13 @@ export async function registerIpcHandlers(
   });
 
   handle<{ periodDays?: number } | undefined, UsageSummary>(channels.usageGetSummary, async (payload) => {
-    return tokenUsageDb!.getSummary(payload?.periodDays ?? 1);
+    const config = await getConfiguredRoots(runtime);
+    return tokenUsageDb!.getSummary(payload?.periodDays ?? 1, config.configuredProjects);
   });
 
   handle<UsageReportFilter, UsageReportResult>(channels.usageGetReport, async (payload) => {
-    return tokenUsageDb!.getReport(payload ?? {});
+    const config = await getConfiguredRoots(runtime);
+    return tokenUsageDb!.getReport(payload ?? {}, config.configuredProjects);
   });
 
   handle<void, void>(channels.usageOpenDetail, async () => {
