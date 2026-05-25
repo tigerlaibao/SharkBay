@@ -169,14 +169,14 @@
 }
 
 .usage-chart {
-  width: 100%;
+  display: inline-flex;
+  flex-direction: column;
   height: 80px;
   background: #ffffff;
   border: 1px solid #e8e4dc;
   border-radius: 8px;
   padding: 10px 14px;
   position: relative;
-  overflow: hidden;
 }
 
 .chart-bars {
