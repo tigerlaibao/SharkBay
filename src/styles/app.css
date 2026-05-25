@@ -2084,6 +2084,26 @@ button.project-file-toggle:focus-visible {
   border-right: 1px solid #e8e4db;
 }
 
+.settings-nav,
+.settings-content,
+.agent-clis-detail,
+.agent-clis-install-logs,
+.settings-layout .modal-panel,
+.settings-layout .install-agent-command pre,
+.settings-layout .install-agent-log pre {
+  scrollbar-width: none;
+}
+
+.settings-nav::-webkit-scrollbar,
+.settings-content::-webkit-scrollbar,
+.agent-clis-detail::-webkit-scrollbar,
+.agent-clis-install-logs::-webkit-scrollbar,
+.settings-layout .modal-panel::-webkit-scrollbar,
+.settings-layout .install-agent-command pre::-webkit-scrollbar,
+.settings-layout .install-agent-log pre::-webkit-scrollbar {
+  display: none;
+}
+
 .settings-back-button {
   display: flex;
   align-items: center;
