@@ -107,14 +107,12 @@ type RawUsageGroupRowView = Partial<UsageGroupRowView> & {
   input_tokens?: number | null;
   output_tokens?: number | null;
   cache_read_tokens?: number | null;
-  cost_usd?: number | null;
 };
 
 type RawUsageTotalsView = Partial<UsageReportResultView["totals"]> & {
   input_tokens?: number | null;
   output_tokens?: number | null;
   cache_read_tokens?: number | null;
-  cost_usd?: number | null;
 };
 
 type RawUsageReportResultView = Partial<UsageReportResultView> & {
@@ -135,7 +133,7 @@ function normalizeUsageReport(report: UsageReportResultView): UsageReportResultV
       inputTokens: finiteNumber(totals.inputTokens ?? totals.input_tokens),
       outputTokens: finiteNumber(totals.outputTokens ?? totals.output_tokens),
       cacheReadTokens: finiteNumber(totals.cacheReadTokens ?? totals.cache_read_tokens),
-      costUsd: nullableNumber(totals.costUsd ?? totals.cost_usd),
+      costUsd: null,
     },
   };
 }
@@ -146,7 +144,7 @@ function normalizeUsageGroupRow(row: RawUsageGroupRowView): UsageGroupRowView {
     inputTokens: finiteNumber(row.inputTokens ?? row.input_tokens),
     outputTokens: finiteNumber(row.outputTokens ?? row.output_tokens),
     cacheReadTokens: finiteNumber(row.cacheReadTokens ?? row.cache_read_tokens),
-    costUsd: nullableNumber(row.costUsd ?? row.cost_usd),
+    costUsd: null,
   };
 }
 
@@ -154,15 +152,10 @@ function finiteNumber(value: number | null | undefined): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-function nullableNumber(value: number | null | undefined): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
 function SummaryCards({ report, days }: { report: UsageReportResultView; days: number | null }) {
   const { totals } = report;
   const dayCount = days ?? Math.max(report.byDay.length, 1);
   const avgInput = dayCount > 0 ? Math.round(totals.inputTokens / dayCount) : 0;
-  const avgCost = dayCount > 0 && totals.costUsd != null ? totals.costUsd / dayCount : null;
 
   return (
     <div className="usage-summary-cards">
@@ -183,15 +176,6 @@ function SummaryCards({ report, days }: { report: UsageReportResultView; days: n
             {Math.round((totals.cacheReadTokens / (totals.inputTokens + totals.cacheReadTokens)) * 100)}% cache hit
           </span>
         )}
-      </div>
-      <div className="summary-card">
-        <span className="card-label">Estimated Cost</span>
-        <span className="card-value">
-          {totals.costUsd != null ? (
-            <><span className="currency">$</span>{totals.costUsd.toFixed(2)}</>
-          ) : "—"}
-        </span>
-        {avgCost != null && <span className="card-sub">avg ${avgCost.toFixed(2)} / day</span>}
       </div>
     </div>
   );
@@ -234,9 +218,6 @@ function BreakdownTable({ title, rows, labelFn, isAgent }: {
   labelFn: (key: string) => string;
   isAgent?: boolean;
 }) {
-  const total = rows.reduce((sum, r) => sum + (r.costUsd ?? 0), 0);
-  const hasCost = rows.some((r) => r.costUsd != null);
-
   return (
     <div className="usage-section">
       <span className="section-title">{title}</span>
@@ -247,7 +228,7 @@ function BreakdownTable({ title, rows, labelFn, isAgent }: {
               <th>{isAgent ? "Agent" : "Project"}</th>
               <th>Input</th>
               <th>Output</th>
-              <th>Cost</th>
+              <th>Cache Read</th>
             </tr>
           </thead>
           <tbody>
@@ -260,9 +241,7 @@ function BreakdownTable({ title, rows, labelFn, isAgent }: {
                 </td>
                 <td className="tokens-cell">{row.inputTokens.toLocaleString()}</td>
                 <td className="tokens-cell">{row.outputTokens.toLocaleString()}</td>
-                <td className={`cost-cell${row.costUsd == null ? " no-data" : ""}`}>
-                  {row.costUsd != null ? `$${row.costUsd.toFixed(2)}` : "—"}
-                </td>
+                <td className="tokens-cell">{row.cacheReadTokens > 0 ? row.cacheReadTokens.toLocaleString() : "—"}</td>
               </tr>
             ))}
             {rows.length === 0 && (
@@ -273,7 +252,6 @@ function BreakdownTable({ title, rows, labelFn, isAgent }: {
         {rows.length > 0 && (
           <div className="table-footer">
             <span>{rows.length} {isAgent ? "agents" : "projects"}</span>
-            {hasCost && <span className="total-cost">Total: ${total.toFixed(2)}</span>}
           </div>
         )}
       </div>
@@ -313,9 +291,6 @@ function DailyBreakdown({ byDay }: { byDay: UsageGroupRowView[] }) {
   const days = [...byDay].slice(0, 14);
   if (days.length === 0) return null;
 
-  const totalCost = days.reduce((sum, r) => sum + (r.costUsd ?? 0), 0);
-  const hasCost = days.some((r) => r.costUsd != null);
-
   return (
     <div className="usage-section full-width">
       <span className="section-title">Daily Breakdown</span>
@@ -327,7 +302,6 @@ function DailyBreakdown({ byDay }: { byDay: UsageGroupRowView[] }) {
               <th>Input</th>
               <th>Output</th>
               <th>Cache Read</th>
-              <th>Cost</th>
             </tr>
           </thead>
           <tbody>
@@ -337,16 +311,12 @@ function DailyBreakdown({ byDay }: { byDay: UsageGroupRowView[] }) {
                 <td className="tokens-cell">{row.inputTokens.toLocaleString()}</td>
                 <td className="tokens-cell">{row.outputTokens.toLocaleString()}</td>
                 <td className="tokens-cell">{row.cacheReadTokens > 0 ? row.cacheReadTokens.toLocaleString() : "—"}</td>
-                <td className={`cost-cell${row.costUsd == null ? " no-data" : ""}`}>
-                  {row.costUsd != null ? `$${row.costUsd.toFixed(2)}` : "—"}
-                </td>
               </tr>
             ))}
           </tbody>
         </table>
         <div className="table-footer">
           <span>{days.length} days</span>
-          {hasCost && <span className="total-cost">Total: ${totalCost.toFixed(2)}</span>}
         </div>
       </div>
     </div>

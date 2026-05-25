@@ -8,7 +8,6 @@ describe("token usage db", () => {
       input_tokens: 1200,
       output_tokens: 340,
       cache_read_tokens: 56,
-      cost_usd: 0.01,
     });
 
     expect(row).toEqual({
@@ -16,7 +15,7 @@ describe("token usage db", () => {
       inputTokens: 1200,
       outputTokens: 340,
       cacheReadTokens: 56,
-      costUsd: 0.01,
+      costUsd: null,
     });
     expect(row).not.toHaveProperty("input_tokens");
   });

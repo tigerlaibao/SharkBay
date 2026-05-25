@@ -21,7 +21,6 @@ export function UsageSummary() {
   }
 
   const tokens = formatCompact(summary.totalInputTokens + summary.totalOutputTokens);
-  const cost = summary.totalCostUsd != null ? `$${summary.totalCostUsd.toFixed(2)}` : null;
 
   return (
     <button
@@ -31,7 +30,6 @@ export function UsageSummary() {
       onClick={() => window.sharkBay?.usage?.openDetail?.()}
     >
       <span className="usage-summary-tokens">{tokens} tokens</span>
-      {cost && <span className="usage-summary-cost">{cost}</span>}
       <span className="usage-summary-period">{summary.periodLabel.toLowerCase()}</span>
     </button>
   );

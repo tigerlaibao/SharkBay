@@ -1,7 +1,6 @@
 import { createRequire } from "node:module";
 import path from "node:path";
 import type Database from "better-sqlite3";
-import { DEFAULT_PRICING, computeCostUsd, type ModelPricing } from "./token-usage-pricing.js";
 
 const requireFromHere = createRequire(import.meta.url);
 const BetterSqlite3 = requireFromHere("better-sqlite3") as typeof import("better-sqlite3");
@@ -54,12 +53,10 @@ export type UsageGroupSqlRow = {
   input_tokens: number | null;
   output_tokens: number | null;
   cache_read_tokens: number | null;
-  cost_usd: number | null;
 };
 
 export class TokenUsageDb {
   private db: Database.Database;
-  private pricing: ModelPricing[];
   private insertStmt: Database.Statement;
   private dedupStmt: Database.Statement;
 
@@ -69,7 +66,6 @@ export class TokenUsageDb {
     this.db.pragma("journal_mode = WAL");
     this.db.pragma("busy_timeout = 3000");
     this.migrate();
-    this.pricing = this.loadPricing();
     this.insertStmt = this.db.prepare(`
       INSERT OR IGNORE INTO token_events
         (agent_id, session_id, project_path, model, input_tokens, output_tokens,
@@ -105,43 +101,7 @@ export class TokenUsageDb {
       CREATE INDEX IF NOT EXISTS idx_project_time ON token_events(project_path, recorded_at);
       CREATE INDEX IF NOT EXISTS idx_agent_time ON token_events(agent_id, recorded_at);
       CREATE INDEX IF NOT EXISTS idx_time ON token_events(recorded_at);
-
-      CREATE TABLE IF NOT EXISTS pricing (
-        model_pattern TEXT PRIMARY KEY,
-        input_per_mtok REAL NOT NULL,
-        output_per_mtok REAL NOT NULL,
-        cache_creation_per_mtok REAL,
-        cache_read_per_mtok REAL
-      );
     `);
-
-    const count = this.db.prepare("SELECT COUNT(*) AS n FROM pricing").get() as { n: number };
-    if (count.n === 0) {
-      const insert = this.db.prepare(`
-        INSERT OR IGNORE INTO pricing (model_pattern, input_per_mtok, output_per_mtok, cache_creation_per_mtok, cache_read_per_mtok)
-        VALUES (?, ?, ?, ?, ?)
-      `);
-      for (const p of DEFAULT_PRICING) {
-        insert.run(p.pattern, p.inputPerMtok, p.outputPerMtok, p.cacheCreationPerMtok, p.cacheReadPerMtok);
-      }
-    }
-  }
-
-  private loadPricing(): ModelPricing[] {
-    const rows = this.db.prepare("SELECT * FROM pricing").all() as Array<{
-      model_pattern: string;
-      input_per_mtok: number;
-      output_per_mtok: number;
-      cache_creation_per_mtok: number | null;
-      cache_read_per_mtok: number | null;
-    }>;
-    return rows.map((r) => ({
-      pattern: r.model_pattern,
-      inputPerMtok: r.input_per_mtok,
-      outputPerMtok: r.output_per_mtok,
-      cacheCreationPerMtok: r.cache_creation_per_mtok,
-      cacheReadPerMtok: r.cache_read_per_mtok,
-    }));
   }
 
   hasEvent(sourceFile: string, sourceOffset: number): boolean {
@@ -149,14 +109,6 @@ export class TokenUsageDb {
   }
 
   insert(event: TokenEvent): void {
-    const costUsd = computeCostUsd(
-      event.model,
-      event.inputTokens,
-      event.outputTokens,
-      event.cacheCreationTokens,
-      event.cacheReadTokens,
-      this.pricing
-    );
     this.insertStmt.run({
       agentId: event.agentId,
       sessionId: event.sessionId,
@@ -166,7 +118,7 @@ export class TokenUsageDb {
       outputTokens: event.outputTokens,
       cacheCreationTokens: event.cacheCreationTokens,
       cacheReadTokens: event.cacheReadTokens,
-      costUsd,
+      costUsd: null,
       recordedAt: event.recordedAt,
       sourceFile: event.sourceFile,
       sourceOffset: event.sourceOffset,
@@ -194,17 +146,16 @@ export class TokenUsageDb {
     const row = this.db.prepare(`
       SELECT
         COALESCE(SUM(input_tokens), 0) AS input_tokens,
-        COALESCE(SUM(output_tokens), 0) AS output_tokens,
-        SUM(cost_usd) AS cost_usd
+        COALESCE(SUM(output_tokens), 0) AS output_tokens
       FROM token_events
       ${where}
-    `).get(...params) as { input_tokens: number; output_tokens: number; cost_usd: number | null };
+    `).get(...params) as { input_tokens: number; output_tokens: number };
 
     const periodLabel = periodDays === 1 ? "Today" : `${periodDays}d`;
     return {
       totalInputTokens: row.input_tokens,
       totalOutputTokens: row.output_tokens,
-      totalCostUsd: row.cost_usd,
+      totalCostUsd: null,
       periodLabel,
     };
   }
@@ -241,8 +192,7 @@ export class TokenUsageDb {
       SELECT project_path AS key,
         SUM(input_tokens) AS input_tokens,
         SUM(output_tokens) AS output_tokens,
-        SUM(cache_read_tokens) AS cache_read_tokens,
-        SUM(cost_usd) AS cost_usd
+        SUM(cache_read_tokens) AS cache_read_tokens
       FROM token_events ${where}
       GROUP BY project_path ORDER BY input_tokens DESC
     `).all(...params) as UsageGroupSqlRow[];
@@ -251,8 +201,7 @@ export class TokenUsageDb {
       SELECT agent_id AS key,
         SUM(input_tokens) AS input_tokens,
         SUM(output_tokens) AS output_tokens,
-        SUM(cache_read_tokens) AS cache_read_tokens,
-        SUM(cost_usd) AS cost_usd
+        SUM(cache_read_tokens) AS cache_read_tokens
       FROM token_events ${where}
       GROUP BY agent_id ORDER BY input_tokens DESC
     `).all(...params) as UsageGroupSqlRow[];
@@ -261,8 +210,7 @@ export class TokenUsageDb {
       SELECT DATE(recorded_at) AS key,
         SUM(input_tokens) AS input_tokens,
         SUM(output_tokens) AS output_tokens,
-        SUM(cache_read_tokens) AS cache_read_tokens,
-        SUM(cost_usd) AS cost_usd
+        SUM(cache_read_tokens) AS cache_read_tokens
       FROM token_events ${where}
       GROUP BY DATE(recorded_at) ORDER BY key DESC
     `).all(...params) as UsageGroupSqlRow[];
@@ -271,10 +219,9 @@ export class TokenUsageDb {
       SELECT
         COALESCE(SUM(input_tokens), 0) AS input_tokens,
         COALESCE(SUM(output_tokens), 0) AS output_tokens,
-        COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
-        SUM(cost_usd) AS cost_usd
+        COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens
       FROM token_events ${where}
-    `).get(...params) as { input_tokens: number; output_tokens: number; cache_read_tokens: number; cost_usd: number | null };
+    `).get(...params) as { input_tokens: number; output_tokens: number; cache_read_tokens: number };
 
     return {
       byProject: byProject.map(toUsageGroupRow),
@@ -284,7 +231,7 @@ export class TokenUsageDb {
         inputTokens: totals.input_tokens,
         outputTokens: totals.output_tokens,
         cacheReadTokens: totals.cache_read_tokens,
-        costUsd: totals.cost_usd,
+        costUsd: null,
       },
     };
   }
@@ -307,6 +254,6 @@ export function toUsageGroupRow(row: UsageGroupSqlRow): UsageGroupRow {
     inputTokens: row.input_tokens ?? 0,
     outputTokens: row.output_tokens ?? 0,
     cacheReadTokens: row.cache_read_tokens ?? 0,
-    costUsd: row.cost_usd,
+    costUsd: null,
   };
 }
