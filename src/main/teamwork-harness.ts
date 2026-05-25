@@ -747,6 +747,15 @@ If it prints a session id, add \`sessionId: <id>\` immediately after
 Set \`branch\` to the current Git branch when the task is created. Keep that
 original task-creation branch even if later work switches branches.
 
+Before creating or updating any task file, run:
+
+\`date -u +%Y-%m-%dT%H:%M:%SZ\`
+
+Use that output verbatim for \`createdAt\`, \`updatedAt\`, and \`completedAt\`
+when those fields are written or changed.
+
+Never estimate, round, backfill, or fabricate timestamps.
+
 When the task is ready for team sync, add:
 
 status: completed

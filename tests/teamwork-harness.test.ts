@@ -47,6 +47,8 @@ describe("teamwork harness install", () => {
     expect(protocol).toContain(".sharkbay/harness/agent-session-id.sh");
     expect(protocol).toContain("branch: main");
     expect(protocol).toContain("Set `branch` to the current Git branch when the task is created.");
+    expect(protocol).toContain("date -u +%Y-%m-%dT%H:%M:%SZ");
+    expect(protocol).toContain("Never estimate, round, backfill, or fabricate timestamps.");
     expect(protocol).toContain("Use the actual task executor identity in `agent`");
     const sessionHelper = await fs.stat(path.join(repo, ".sharkbay", "harness", "agent-session-id.sh"));
     expect(sessionHelper.mode & 0o111).not.toBe(0);
