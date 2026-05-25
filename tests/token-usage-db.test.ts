@@ -8,6 +8,7 @@ describe("token usage db", () => {
       input_tokens: 1200,
       output_tokens: 340,
       cache_read_tokens: 56,
+      cost_usd: null,
     });
 
     expect(row).toEqual({

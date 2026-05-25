@@ -40,6 +40,8 @@ import type {
   TerminalCreateInput,
   TerminalSession,
   TerminalUpdateEvent,
+  UsageGroupRowView,
+  UsageReportResultView,
 } from "./types";
 import {
   firstHttpUrl,
@@ -52,7 +54,6 @@ import {
   validTerminalResizeDimensions,
 } from "./workflow";
 import type { WorkflowProjectTerminalActivityState } from "./workflow";
-import { UsageSummary } from "./UsageSummary";
 
 type View = "dashboard" | "settings";
 type DetailTab = "team" | "git" | "stack" | "files" | "forwards";
@@ -885,7 +886,6 @@ function DashboardView({
             </div>
           )}
         </div>
-        <UsageSummary />
       </section>
 
       <div aria-label="Resize project column" aria-orientation="vertical" className="column-resizer" role="separator" tabIndex={0}
@@ -3402,8 +3402,177 @@ function AgentCliDetailInstalled({ agent, options }: { agent: AgentCli; options:
       ) : (
         <div className="form-note">No configurable launch options for this agent.</div>
       )}
+      <AgentCliUsageSection agentId={agent.id} />
     </>
   );
+}
+
+type UsageRange = "7" | "30" | "all";
+
+function AgentCliUsageSection({ agentId }: { agentId: string }) {
+  const [range, setRange] = useState<UsageRange>("30");
+  const [report, setReport] = useState<UsageReportResultView | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const filter: { agentId: string; startDate?: string } = { agentId };
+    if (range !== "all") {
+      filter.startDate = new Date(Date.now() - Number(range) * 86400000).toISOString();
+    }
+    window.sharkBay?.usage?.getReport?.(filter)?.then((r) => { if (!cancelled) setReport(r); });
+    return () => { cancelled = true; };
+  }, [agentId, range]);
+
+  const isCredits = agentId === "kiro";
+  const hasData = report && (report.totals.inputTokens > 0 || report.totals.outputTokens > 0 || (report.totals.costUsd ?? 0) > 0);
+
+  return (
+    <div className="agent-clis-usage">
+      <div className="agent-clis-usage-header">
+        <span className="agent-clis-options-title">Usage</span>
+        <div className="agent-clis-usage-range">
+          {(["7", "30", "all"] as UsageRange[]).map((r) => (
+            <button key={r} className={cx("agent-clis-usage-range-btn", r === range && "is-active")} type="button" onClick={() => setRange(r)}>
+              {r === "all" ? "All" : `${r}d`}
+            </button>
+          ))}
+        </div>
+      </div>
+      {!hasData ? (
+        <div className="form-note">No usage data yet.</div>
+      ) : (
+        <>
+          <div className="agent-clis-usage-summary">
+            {isCredits ? (
+              <span className="agent-clis-usage-stat"><small>Credits</small>{(report!.totals.costUsd ?? 0).toFixed(2)}</span>
+            ) : (
+              <>
+                <span className="agent-clis-usage-stat"><small>Input</small>{fmtTokens(report!.totals.inputTokens)}</span>
+                <span className="agent-clis-usage-stat"><small>Output</small>{fmtTokens(report!.totals.outputTokens)}</span>
+                {report!.totals.cacheReadTokens > 0 && <span className="agent-clis-usage-stat"><small>Cached</small>{fmtTokens(report!.totals.cacheReadTokens)}</span>}
+              </>
+            )}
+          </div>
+          <UsageBarChart byDay={report!.byDay} rangeDays={range === "all" ? null : Number(range)} isCredits={isCredits} />
+          <UsageProjectBreakdown rows={report!.byProject} isCredits={isCredits} />
+          <UsageDailyBreakdown rows={report!.byDay} isCredits={isCredits} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function UsageBarChart({ byDay, rangeDays, isCredits }: { byDay: UsageGroupRowView[]; rangeDays: number | null; isCredits: boolean }) {
+  const days = useMemo(() => {
+    if (byDay.length === 0) return [];
+    const earliest = new Date(byDay[byDay.length - 1]!.key).getTime();
+    const now = new Date();
+    const maxSpan = rangeDays != null ? rangeDays : Infinity;
+    const spanStart = Math.max(earliest, now.getTime() - (maxSpan - 1) * 86400000);
+    const count = Math.ceil((now.getTime() - spanStart) / 86400000) + 1;
+    const map = new Map(byDay.map((d) => [d.key, d]));
+    const result: UsageGroupRowView[] = [];
+    for (let i = count - 1; i >= 0; i--) {
+      const key = new Date(now.getTime() - i * 86400000).toISOString().slice(0, 10);
+      result.push(map.get(key) ?? { key, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, costUsd: null });
+    }
+    return result;
+  }, [byDay, rangeDays]);
+
+  const maxVal = Math.max(...days.map((d) => isCredits ? (d.costUsd ?? 0) : d.inputTokens + d.outputTokens), 1);
+
+  return (
+    <div className="agent-clis-usage-chart">
+      {days.map((day, i) => {
+        const pct = isCredits
+          ? ((day.costUsd ?? 0) / maxVal) * 100
+          : ((day.inputTokens + day.outputTokens) / maxVal) * 100;
+        const showLabel = days.length <= 10 || i === 0 || i === days.length - 1;
+        return (
+          <div key={day.key} className="agent-clis-usage-bar-col">
+            <div className="agent-clis-usage-bar" style={{ height: `${Math.max(pct, 1)}%` }} title={`${day.key}: ${isCredits ? `${(day.costUsd ?? 0).toFixed(2)} credits` : `${(day.inputTokens + day.outputTokens).toLocaleString()} tokens`}`} />
+            <span className="agent-clis-usage-bar-label">{showLabel ? day.key.slice(5) : "\u00A0"}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function UsageProjectBreakdown({ rows, isCredits }: { rows: UsageGroupRowView[]; isCredits: boolean }) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="agent-clis-usage-breakdown">
+      <small className="agent-clis-usage-breakdown-title">By project</small>
+      <div className="agent-clis-usage-table-wrap">
+        <table className="agent-clis-usage-table">
+          <thead>
+            <tr>
+              <th>Project</th>
+              {isCredits ? <th>Credits</th> : <><th>Input</th><th>Output</th><th>Cache</th></>}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.slice(0, 8).map((row) => (
+              <tr key={row.key}>
+                <td className="agent-clis-usage-table-label" title={row.key}>{row.key.split("/").pop()}</td>
+                {isCredits ? (
+                  <td className="agent-clis-usage-table-value">{(row.costUsd ?? 0).toFixed(2)}</td>
+                ) : (
+                  <>
+                    <td className="agent-clis-usage-table-value">{fmtTokens(row.inputTokens)}</td>
+                    <td className="agent-clis-usage-table-value">{fmtTokens(row.outputTokens)}</td>
+                    <td className={cx("agent-clis-usage-table-value", row.cacheReadTokens === 0 && "is-dim")}>{row.cacheReadTokens > 0 ? fmtTokens(row.cacheReadTokens) : "—"}</td>
+                  </>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function UsageDailyBreakdown({ rows, isCredits }: { rows: UsageGroupRowView[]; isCredits: boolean }) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="agent-clis-usage-breakdown">
+      <small className="agent-clis-usage-breakdown-title">By day</small>
+      <div className="agent-clis-usage-table-wrap">
+        <table className="agent-clis-usage-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              {isCredits ? <th>Credits</th> : <><th>Input</th><th>Output</th><th>Cache</th></>}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.slice(0, 10).map((row) => (
+              <tr key={row.key}>
+                <td className="agent-clis-usage-table-label">{row.key}</td>
+                {isCredits ? (
+                  <td className="agent-clis-usage-table-value">{(row.costUsd ?? 0).toFixed(2)}</td>
+                ) : (
+                  <>
+                    <td className="agent-clis-usage-table-value">{fmtTokens(row.inputTokens)}</td>
+                    <td className="agent-clis-usage-table-value">{fmtTokens(row.outputTokens)}</td>
+                    <td className={cx("agent-clis-usage-table-value", row.cacheReadTokens === 0 && "is-dim")}>{row.cacheReadTokens > 0 ? fmtTokens(row.cacheReadTokens) : "—"}</td>
+                  </>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function fmtTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
+  return String(n);
 }
 
 function AgentCliDetailNotInstalled({ def, bridgeAvailable, onInstalled, setToast }: { def: AgentCliDefinition; bridgeAvailable: boolean; onInstalled: () => void; setToast: (toast: Toast) => void }) {

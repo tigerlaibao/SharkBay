@@ -72,6 +72,9 @@ export class TokenUsageCollector {
     if (session.agentId === "codex") {
       return this.extractCodexUsage(record, sourceFile, lineByteOffset, session);
     }
+    if (session.agentId === "kiro") {
+      return this.extractKiroUsage(record, sourceFile, lineByteOffset, session);
+    }
     return null;
   }
 
@@ -110,6 +113,7 @@ export class TokenUsageCollector {
       outputTokens,
       cacheCreationTokens,
       cacheReadTokens,
+      costUsd: null,
       recordedAt: timestamp,
       sourceFile,
       sourceOffset: lineByteOffset,
@@ -122,38 +126,55 @@ export class TokenUsageCollector {
     lineByteOffset: number,
     session: CollectorSessionState
   ): TokenEvent | null {
-    if (record.type !== "response_item") return null;
+    if (record.type !== "event_msg") return null;
 
     const payload = record.payload as Record<string, unknown> | undefined;
-    if (!payload || payload.type !== "message" || payload.role !== "assistant") return null;
+    if (!payload || payload.type !== "token_count") return null;
 
-    const usage = payload.usage as Record<string, unknown> | undefined;
-    if (!usage) return null;
+    const info = payload.info as Record<string, unknown> | undefined;
+    if (!info) return null;
 
-    const inputTokens = toInt(usage.input_tokens);
-    const outputTokens = toInt(usage.output_tokens);
+    const lastUsage = info.last_token_usage as Record<string, unknown> | undefined;
+    if (!lastUsage) return null;
+
+    const inputTokens = toInt(lastUsage.input_tokens);
+    const outputTokens = toInt(lastUsage.output_tokens);
     if (inputTokens === 0 && outputTokens === 0) return null;
 
-    const model = typeof payload.model === "string" ? payload.model : null;
+    const timestamp = typeof record.timestamp === "string"
+      ? record.timestamp
+      : new Date().toISOString();
 
     return {
       agentId: session.agentId,
       sessionId: session.sessionId,
       projectPath: session.projectPath,
-      model,
+      model: null,
       inputTokens,
       outputTokens,
       cacheCreationTokens: 0,
-      cacheReadTokens: toInt(usage.cached_tokens),
-      recordedAt: new Date().toISOString(),
+      cacheReadTokens: toInt(lastUsage.cached_input_tokens),
+      costUsd: null,
+      recordedAt: timestamp,
       sourceFile,
       sourceOffset: lineByteOffset,
     };
   }
 
+  // Kiro uses JSON session files, not JSONL. This is a no-op for line processing.
+  private extractKiroUsage(
+    _record: Record<string, unknown>,
+    _sourceFile: string,
+    _lineByteOffset: number,
+    _session: CollectorSessionState
+  ): TokenEvent | null {
+    return null;
+  }
+
   async backfill(): Promise<void> {
     const claudeRoot = path.join(os.homedir(), ".claude", "projects");
     const codexRoot = path.join(os.homedir(), ".codex", "sessions");
+    const kiroRoot = path.join(os.homedir(), ".kiro", "sessions", "cli");
 
     const claudeFiles = await discoverJsonlFiles(claudeRoot, true);
     const codexFiles = await discoverCodexFiles(codexRoot);
@@ -164,6 +185,7 @@ export class TokenUsageCollector {
     for (const filePath of codexFiles) {
       await this.backfillFile(filePath, "codex");
     }
+    await this.backfillKiroSessions(kiroRoot);
     this.flush();
   }
 
@@ -203,6 +225,72 @@ export class TokenUsageCollector {
       this.updateSessionContext(line, session, agentId);
       this.processLine(line, filePath, byteOffset, session);
       byteOffset += Buffer.byteLength(line, "utf8") + 1;
+    }
+  }
+
+  private async backfillKiroSessions(root: string): Promise<void> {
+    let entries;
+    try {
+      entries = await fs.readdir(root, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+      const filePath = path.join(root, entry.name);
+      if (this.db.hasEvent(filePath, 0)) continue;
+
+      let content: string;
+      try {
+        content = await fs.readFile(filePath, "utf8");
+      } catch {
+        continue;
+      }
+
+      let data: Record<string, unknown>;
+      try {
+        data = JSON.parse(content);
+      } catch {
+        continue;
+      }
+
+      const cwd = typeof data.cwd === "string" ? data.cwd : null;
+      const sessionId = typeof data.session_id === "string" ? data.session_id : null;
+      const state = data.session_state as Record<string, unknown> | undefined;
+      const conv = state?.conversation_metadata as Record<string, unknown> | undefined;
+      const turns = conv?.user_turn_metadatas as Record<string, unknown>[] | undefined;
+      if (!turns || turns.length === 0) continue;
+
+      let turnOffset = 0;
+      for (const turn of turns) {
+        const metering = turn.metering_usage as { value?: number; unit?: string }[] | undefined;
+        if (!metering || metering.length === 0) { turnOffset++; continue; }
+
+        const credits = metering.reduce((sum, m) => sum + (typeof m.value === "number" ? m.value : 0), 0);
+        if (credits <= 0) { turnOffset++; continue; }
+
+        const endTs = typeof turn.end_timestamp === "string" ? turn.end_timestamp : null;
+        const recordedAt = endTs ?? new Date().toISOString();
+
+        this.batch.push({
+          agentId: "kiro",
+          sessionId,
+          projectPath: cwd,
+          model: null,
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheCreationTokens: 0,
+          cacheReadTokens: 0,
+          costUsd: credits,
+          recordedAt,
+          sourceFile: filePath,
+          sourceOffset: turnOffset,
+        });
+        turnOffset++;
+      }
+
+      if (this.batch.length >= this.batchSize) this.flush();
     }
   }
 

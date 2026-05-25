@@ -57,5 +57,4 @@ export const ipcChannels = {
   portForwardUpdate: "forwards:update",
   usageGetSummary: "usage:getSummary",
   usageGetReport: "usage:getReport",
-  usageOpenDetail: "usage:openDetail",
 } as const;

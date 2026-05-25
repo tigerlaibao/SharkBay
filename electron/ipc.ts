@@ -520,9 +520,4 @@ export async function registerIpcHandlers(
     const config = await getConfiguredRoots(runtime);
     return tokenUsageDb!.getReport(payload ?? {}, config.configuredProjects);
   });
-
-  handle<void, void>(channels.usageOpenDetail, async () => {
-    const { createUsageWindow } = await import("./usage-window.js");
-    createUsageWindow();
-  });
 }

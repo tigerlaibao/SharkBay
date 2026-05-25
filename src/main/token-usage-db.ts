@@ -14,6 +14,7 @@ export type TokenEvent = {
   outputTokens: number;
   cacheCreationTokens: number;
   cacheReadTokens: number;
+  costUsd: number | null;
   recordedAt: string;
   sourceFile: string;
   sourceOffset: number;
@@ -53,6 +54,7 @@ export type UsageGroupSqlRow = {
   input_tokens: number | null;
   output_tokens: number | null;
   cache_read_tokens: number | null;
+  cost_usd: number | null;
 };
 
 export class TokenUsageDb {
@@ -118,7 +120,7 @@ export class TokenUsageDb {
       outputTokens: event.outputTokens,
       cacheCreationTokens: event.cacheCreationTokens,
       cacheReadTokens: event.cacheReadTokens,
-      costUsd: null,
+      costUsd: event.costUsd,
       recordedAt: event.recordedAt,
       sourceFile: event.sourceFile,
       sourceOffset: event.sourceOffset,
@@ -192,7 +194,8 @@ export class TokenUsageDb {
       SELECT project_path AS key,
         SUM(input_tokens) AS input_tokens,
         SUM(output_tokens) AS output_tokens,
-        SUM(cache_read_tokens) AS cache_read_tokens
+        SUM(cache_read_tokens) AS cache_read_tokens,
+        SUM(cost_usd) AS cost_usd
       FROM token_events ${where}
       GROUP BY project_path ORDER BY input_tokens DESC
     `).all(...params) as UsageGroupSqlRow[];
@@ -201,7 +204,8 @@ export class TokenUsageDb {
       SELECT agent_id AS key,
         SUM(input_tokens) AS input_tokens,
         SUM(output_tokens) AS output_tokens,
-        SUM(cache_read_tokens) AS cache_read_tokens
+        SUM(cache_read_tokens) AS cache_read_tokens,
+        SUM(cost_usd) AS cost_usd
       FROM token_events ${where}
       GROUP BY agent_id ORDER BY input_tokens DESC
     `).all(...params) as UsageGroupSqlRow[];
@@ -210,7 +214,8 @@ export class TokenUsageDb {
       SELECT DATE(recorded_at) AS key,
         SUM(input_tokens) AS input_tokens,
         SUM(output_tokens) AS output_tokens,
-        SUM(cache_read_tokens) AS cache_read_tokens
+        SUM(cache_read_tokens) AS cache_read_tokens,
+        SUM(cost_usd) AS cost_usd
       FROM token_events ${where}
       GROUP BY DATE(recorded_at) ORDER BY key DESC
     `).all(...params) as UsageGroupSqlRow[];
@@ -219,9 +224,10 @@ export class TokenUsageDb {
       SELECT
         COALESCE(SUM(input_tokens), 0) AS input_tokens,
         COALESCE(SUM(output_tokens), 0) AS output_tokens,
-        COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens
+        COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+        SUM(cost_usd) AS cost_usd
       FROM token_events ${where}
-    `).get(...params) as { input_tokens: number; output_tokens: number; cache_read_tokens: number };
+    `).get(...params) as { input_tokens: number; output_tokens: number; cache_read_tokens: number; cost_usd: number | null };
 
     return {
       byProject: byProject.map(toUsageGroupRow),
@@ -231,7 +237,7 @@ export class TokenUsageDb {
         inputTokens: totals.input_tokens,
         outputTokens: totals.output_tokens,
         cacheReadTokens: totals.cache_read_tokens,
-        costUsd: null,
+        costUsd: totals.cost_usd,
       },
     };
   }
@@ -254,6 +260,6 @@ export function toUsageGroupRow(row: UsageGroupSqlRow): UsageGroupRow {
     inputTokens: row.input_tokens ?? 0,
     outputTokens: row.output_tokens ?? 0,
     cacheReadTokens: row.cache_read_tokens ?? 0,
-    costUsd: null,
+    costUsd: row.cost_usd ?? null,
   };
 }

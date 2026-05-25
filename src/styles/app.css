@@ -2325,6 +2325,7 @@ button.project-file-toggle:focus-visible {
   border-radius: 10px;
   overflow: hidden;
   min-height: 320px;
+  max-height: calc(100vh - 160px);
 }
 
 .agent-clis-list {
@@ -2400,6 +2401,7 @@ button.project-file-toggle:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow-y: auto;
 }
 
 .agent-clis-detail-header {
@@ -2518,6 +2520,157 @@ button.project-file-toggle:focus-visible {
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+.agent-clis-usage {
+  margin-top: 18px;
+  border-top: 1px solid #e8e4db;
+  padding-top: 14px;
+}
+.agent-clis-usage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.agent-clis-usage-range {
+  display: flex;
+  gap: 3px;
+}
+.agent-clis-usage-range-btn {
+  min-height: 26px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 650;
+  color: #4a575a;
+  background: #f4f1eb;
+  border: 1px solid #dedad1;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.agent-clis-usage-range-btn:hover {
+  background: #ebe7de;
+}
+.agent-clis-usage-range-btn.is-active {
+  color: #ffffff;
+  background: #405f66;
+  border-color: #405f66;
+}
+.agent-clis-usage-summary {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.agent-clis-usage-stat {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #203136;
+  background: #ffffff;
+  border: 1px solid #e8e4dc;
+  border-radius: 8px;
+}
+.agent-clis-usage-stat small {
+  font-size: 10px;
+  font-weight: 600;
+  color: #7a8587;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: block;
+  margin-bottom: 2px;
+}
+.agent-clis-usage-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 72px;
+  margin-bottom: 16px;
+}
+.agent-clis-usage-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+.agent-clis-usage-bar {
+  width: 100%;
+  min-width: 3px;
+  max-width: 18px;
+  background: #3d8b9e;
+  border-radius: 3px 3px 0 0;
+  transition: height 0.2s;
+}
+.agent-clis-usage-bar-label {
+  font-size: 9px;
+  color: #7a8587;
+  font-weight: 600;
+  white-space: nowrap;
+  height: 12px;
+}
+.agent-clis-usage-breakdown {
+  margin-top: 14px;
+}
+.agent-clis-usage-breakdown-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #203136;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 6px;
+}
+.agent-clis-usage-table-wrap {
+  background: #ffffff;
+  border: 1px solid #e8e4dc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.agent-clis-usage-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.agent-clis-usage-table th {
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #7a8587;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  background: #faf9f6;
+  border-bottom: 1px solid #e8e4dc;
+}
+.agent-clis-usage-table th:not(:first-child) {
+  text-align: right;
+}
+.agent-clis-usage-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #f0ede7;
+  color: #2d3e42;
+  font-variant-numeric: tabular-nums;
+}
+.agent-clis-usage-table tr:last-child td {
+  border-bottom: none;
+}
+.agent-clis-usage-table-label {
+  font-weight: 620;
+  color: #203136;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agent-clis-usage-table-value {
+  text-align: right;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: #2d3e42;
+}
+.agent-clis-usage-table-value.is-dim {
+  color: #b0b8ba;
 }
 
 .settings-status-panel {
