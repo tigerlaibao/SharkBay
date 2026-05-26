@@ -675,15 +675,16 @@ its taskId in the current task's Work Summary or Notes For Future Agents.
 
 ## Code Intelligence
 
-Use CodeGraph for precise structural code queries before broad file reads:
+This project has CodeGraph installed and configured. When searching code,
+prefer CodeGraph over \`rg\`, \`grep\`, or broad file reads:
 - \`codegraph query <symbol-or-name>\`
 - \`codegraph callers <symbol>\`
 - \`codegraph callees <symbol>\`
 - \`codegraph impact <symbol>\`
 - \`codegraph affected <changed-files>\`
 
-Use \`codegraph context\` only for initial exploration when no clear symbol or
-file is known.
+Use \`codegraph context "what you need to understand"\` only for initial
+exploration when no clear symbol or file is known.
 
 ## When To Create Or Update A Task
 

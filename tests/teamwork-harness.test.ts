@@ -51,8 +51,10 @@ describe("teamwork harness install", () => {
     expect(protocol).toContain("Never estimate, round, backfill, or fabricate timestamps.");
     expect(protocol).toContain("Use the actual task executor identity in `agent`");
     expect(protocol).toContain("## Code Intelligence");
+    expect(protocol).toContain("This project has CodeGraph installed and configured.");
+    expect(protocol).toContain("prefer CodeGraph over `rg`, `grep`, or broad file reads");
     expect(protocol).toContain("codegraph query <symbol-or-name>");
-    expect(protocol).toContain("Use `codegraph context` only for initial exploration");
+    expect(protocol).toContain('Use `codegraph context "what you need to understand"` only for initial');
     const sessionHelper = await fs.stat(path.join(repo, ".sharkbay", "harness", "agent-session-id.sh"));
     expect(sessionHelper.mode & 0o111).not.toBe(0);
     const sessionHelperText = await fs.readFile(path.join(repo, ".sharkbay", "harness", "agent-session-id.sh"), "utf8");
