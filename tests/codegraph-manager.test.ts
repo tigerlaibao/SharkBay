@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { CodeGraphManager } from "../src/core/codegraph-manager.js";
+import { buildCodeGraphCommandEnv, CodeGraphManager } from "../src/core/codegraph-manager.js";
 import { toLocalProjectUri } from "../src/core/project-uri.js";
 
 describe("CodeGraphManager", () => {
+  it("prepends the resolved CLI directory to PATH for npm shims", () => {
+    const env = buildCodeGraphCommandEnv("/Users/shark/.nvm/versions/node/v24.14.1/bin/codegraph", {
+      PATH: "/usr/bin:/bin",
+    });
+
+    expect(env.PATH?.split(":").slice(0, 3)).toEqual([
+      "/Users/shark/.nvm/versions/node/v24.14.1/bin",
+      "/usr/bin",
+      "/bin",
+    ]);
+  });
+
   it("reads status without initializing an enabled local project", async () => {
     const calls: string[][] = [];
     const manager = new CodeGraphManager(

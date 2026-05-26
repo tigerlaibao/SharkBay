@@ -32,9 +32,21 @@ const defaultRunner: CommandRunner = async (command, args, options) => {
     cwd: options.cwd,
     timeout: options.timeout,
     maxBuffer: 1024 * 1024,
+    env: buildCodeGraphCommandEnv(command),
   });
   return { stdout: String(result.stdout ?? ""), stderr: String(result.stderr ?? "") };
 };
+
+export function buildCodeGraphCommandEnv(command: string, baseEnv: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  if (!path.isAbsolute(command)) return baseEnv;
+  const commandDirectory = path.dirname(command);
+  const currentPath = baseEnv.PATH ?? "";
+  const pathParts = currentPath.split(":").filter(Boolean);
+  const nextPath = pathParts.includes(commandDirectory)
+    ? currentPath
+    : [commandDirectory, ...pathParts].join(":");
+  return { ...baseEnv, PATH: nextPath };
+}
 
 export class CodeGraphManager {
   private readonly activeStatusJobs = new Map<string, Promise<CodeGraphProjectStatus>>();
@@ -102,7 +114,7 @@ export class CodeGraphManager {
 
       return indexedStatus(projectUri, current);
     } catch (error) {
-      return status(projectUri, "error", `CodeGraph error: ${error instanceof Error ? error.message : String(error)}`);
+      return status(projectUri, "error", `CodeGraph error: ${commandErrorMessage(error)}`);
     }
   }
 
@@ -125,6 +137,15 @@ export class CodeGraphManager {
     }
     await fs.rm(path.join(parsed.path, ".codegraph"), { recursive: true, force: true });
   }
+}
+
+function commandErrorMessage(error: unknown): string {
+  const maybeWithStreams = error as { stderr?: unknown; stdout?: unknown; message?: unknown };
+  const stderr = typeof maybeWithStreams.stderr === "string" ? maybeWithStreams.stderr.trim() : "";
+  if (stderr) return stderr;
+  const stdout = typeof maybeWithStreams.stdout === "string" ? maybeWithStreams.stdout.trim() : "";
+  if (stdout) return stdout;
+  return error instanceof Error ? error.message : String(error);
 }
 
 export function isCodeGraphPlugin(pluginId: string): boolean {
