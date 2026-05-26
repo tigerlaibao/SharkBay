@@ -15,6 +15,7 @@ import type {
   BrowserBounds,
   BrowserSession,
   BrowserUpdateEvent,
+  CodeGraphProjectStatus,
   DiagnosticsSnapshot,
   InstallLogEvent,
   InstallRecipe,
@@ -84,6 +85,12 @@ const remoteConnectionMethods: Array<{
 type Toast = {
   tone: "info" | "error" | "success";
   message: string;
+};
+
+type CodeGraphStatusView = {
+  loading: boolean;
+  status: CodeGraphProjectStatus | null;
+  error: string | null;
 };
 
 type RefreshOptions = {
@@ -156,6 +163,7 @@ const minTerminalColumnWidth = 420;
 const terminalWorkingThresholdMs = 5000;
 const terminalQuietDoneMs = 5000;
 const maxPendingTerminalOutputChars = 1024 * 1024;
+const codeGraphSyncDebounceMs = 10000;
 const defaultProjectColumnWidth = minProjectColumnWidth;
 const defaultDetailColumnWidth = minDetailColumnWidth;
 const resizerColumnWidth = 12;
@@ -336,6 +344,18 @@ async function listProjectFiles(project: ProjectCandidate | ProjectDetail, direc
   const handler = getBridge().projects?.listFiles;
   if (!handler) throw new Error("Project files are not exposed by the preload API.");
   return handler({ projectUri: project.uri, directoryPath });
+}
+
+async function readCodeGraphStatus(projectUri: string): Promise<CodeGraphProjectStatus> {
+  const handler = getBridge().codeGraph?.getStatus;
+  if (!handler) throw new Error("CodeGraph status is not exposed by the preload API.");
+  return handler({ projectUri });
+}
+
+async function ensureCodeGraphStatus(projectUri: string): Promise<CodeGraphProjectStatus> {
+  const handler = getBridge().codeGraph?.ensureStatus;
+  if (!handler) throw new Error("CodeGraph status maintenance is not exposed by the preload API.");
+  return handler({ projectUri });
 }
 
 async function createTerminal(
@@ -2132,9 +2152,64 @@ function ProjectDetailPane({ agentClis, detail, candidate, setToast, onRefresh, 
   const isLocal = candidate.providerKind === "local";
   const availableTabs = detailTabs.filter((tab) => (!tab.remoteOnly || isRemote) && (!tab.localOnly || isLocal));
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>("git");
+  const [codeGraphStatus, setCodeGraphStatus] = useState<CodeGraphStatusView>({ loading: false, status: null, error: null });
+  const lastCodeGraphDirtyCount = useRef<{ projectUri: string; count: number } | null>(null);
+  const isGitManaged = detail ? detail.dirtyWorktree !== null : null;
+  const gitDirtyFileCount = detail ? detail.gitDirtyFiles?.length ?? 0 : null;
   const visibleDetailTab = availableTabs.some((tab) => tab.id === activeDetailTab)
     ? activeDetailTab
     : availableTabs[0]?.id ?? "git";
+
+  useEffect(() => {
+    let cancelled = false;
+    setCodeGraphStatus({ loading: true, status: null, error: null });
+    void readCodeGraphStatus(candidate.uri)
+      .then((status) => {
+        if (!cancelled) setCodeGraphStatus({ loading: false, status, error: null });
+      })
+      .catch((error) => {
+        if (!cancelled) setCodeGraphStatus({ loading: false, status: null, error: asMessage(error) });
+      });
+    return () => { cancelled = true; };
+  }, [candidate.uri]);
+
+  useEffect(() => {
+    if (!isLocal || isGitManaged !== false) return;
+    let cancelled = false;
+    setCodeGraphStatus({ loading: true, status: null, error: null });
+    void ensureCodeGraphStatus(candidate.uri)
+      .then((status) => {
+        if (!cancelled) setCodeGraphStatus({ loading: false, status, error: null });
+      })
+      .catch((error) => {
+        if (!cancelled) setCodeGraphStatus({ loading: false, status: null, error: asMessage(error) });
+      });
+    return () => { cancelled = true; };
+  }, [candidate.uri, isLocal, isGitManaged]);
+
+  useEffect(() => {
+    if (!isLocal || isGitManaged !== true || gitDirtyFileCount === null) return;
+    const previous = lastCodeGraphDirtyCount.current;
+    lastCodeGraphDirtyCount.current = { projectUri: candidate.uri, count: gitDirtyFileCount };
+    if (!previous || previous.projectUri !== candidate.uri || previous.count === gitDirtyFileCount) return;
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setCodeGraphStatus({ loading: true, status: null, error: null });
+      void ensureCodeGraphStatus(candidate.uri)
+        .then((status) => {
+          if (!cancelled) setCodeGraphStatus({ loading: false, status, error: null });
+        })
+        .catch((error) => {
+          if (!cancelled) setCodeGraphStatus({ loading: false, status: null, error: asMessage(error) });
+        });
+    }, codeGraphSyncDebounceMs);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [candidate.uri, gitDirtyFileCount, isGitManaged, isLocal]);
 
   function handleDetailTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, tab: DetailTab) {
     const currentIndex = availableTabs.findIndex((item) => item.id === tab);
@@ -2178,7 +2253,7 @@ function ProjectDetailPane({ agentClis, detail, candidate, setToast, onRefresh, 
         <StackDetailTab active={visibleDetailTab === "stack"} candidate={candidate} setToast={setToast} />
       </div>
       <div aria-labelledby="project-detail-tab-files" className="detail-tab-panel" hidden={visibleDetailTab !== "files"} id="project-detail-tabpanel-files" role="tabpanel">
-        <FilesDetailTab active={visibleDetailTab === "files"} candidate={candidate} detail={detail} setToast={setToast} onOpenFileInEditor={onOpenFileInEditor} />
+        <FilesDetailTab active={visibleDetailTab === "files"} candidate={candidate} codeGraphStatus={codeGraphStatus} detail={detail} setToast={setToast} onOpenFileInEditor={onOpenFileInEditor} />
       </div>
       {isRemote ? (
         <div aria-labelledby="project-detail-tab-forwards" className="detail-tab-panel" hidden={visibleDetailTab !== "forwards"} id="project-detail-tabpanel-forwards" role="tabpanel">
@@ -2888,9 +2963,10 @@ function detectedPortKey(port: RemoteDetectedPort): string {
   return `${port.machineId}:${port.remoteHost}:${port.remotePort}`;
 }
 
-function FilesDetailTab({ active, candidate, detail, setToast, onOpenFileInEditor }: {
+function FilesDetailTab({ active, candidate, codeGraphStatus, detail, setToast, onOpenFileInEditor }: {
   active: boolean;
   candidate: ProjectCandidate;
+  codeGraphStatus: CodeGraphStatusView;
   detail: ProjectDetail | null;
   setToast: (toast: Toast) => void;
   onOpenFileInEditor: (relativePath: string) => Promise<void>;
@@ -2947,17 +3023,39 @@ function FilesDetailTab({ active, candidate, detail, setToast, onOpenFileInEdito
     setExpandedDirectories((current) => new Set(current).add(item.path));
   }
 
-  if (state.loading && !state.files.length) return <EmptyState title="Loading files" body="Reading project files." />;
-  if (state.error) return <EmptyState title="Files unavailable" body={state.error} />;
-  if (!state.files.length) return <EmptyState title="No files" body="This project has no visible files." />;
+  const fileContent = (() => {
+    if (state.loading && !state.files.length) return <EmptyState title="Loading files" body="Reading project files." />;
+    if (state.error) return <EmptyState title="Files unavailable" body={state.error} />;
+    if (!state.files.length) return <EmptyState title="No files" body="This project has no visible files." />;
+    return (
+      <section className="subpanel files-card">
+        <div className="project-file-tree" role="tree" aria-label="Project files">
+          {state.files.map((item) => (
+            <ProjectFileTreeItemRow key={item.path} item={item} level={1} expandedDirectories={expandedDirectories} loadingDirectories={loadingDirectories} onToggleDirectory={toggleDirectory} onOpenFile={openFile} />
+          ))}
+        </div>
+      </section>
+    );
+  })();
 
   return (
-    <section className="subpanel files-card">
-      <div className="project-file-tree" role="tree" aria-label="Project files">
-        {state.files.map((item) => (
-          <ProjectFileTreeItemRow key={item.path} item={item} level={1} expandedDirectories={expandedDirectories} loadingDirectories={loadingDirectories} onToggleDirectory={toggleDirectory} onOpenFile={openFile} />
-        ))}
-      </div>
+    <>
+      <CodeGraphStatusSummary codeGraphStatus={codeGraphStatus} />
+      {fileContent}
+    </>
+  );
+}
+
+function CodeGraphStatusSummary({ codeGraphStatus }: { codeGraphStatus: CodeGraphStatusView }) {
+  const line = codeGraphStatus.loading
+    ? "Checking CodeGraph index."
+    : codeGraphStatus.error
+      ? `CodeGraph status unavailable: ${codeGraphStatus.error}`
+      : codeGraphStatus.status?.summary ?? "CodeGraph status unavailable.";
+  return (
+    <section className="subpanel codegraph-status-card" aria-label="CodeGraph status summary">
+      <h4>CodeGraph</h4>
+      <div className="codegraph-status-line">{line}</div>
     </section>
   );
 }

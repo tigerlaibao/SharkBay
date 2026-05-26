@@ -218,6 +218,22 @@ export type ProjectProfile = {
   warnings: ProfileWarning[];
 };
 
+export type CodeGraphProjectStatus = {
+  projectUri: string;
+  state: "disabled" | "unsupported" | "not-installed" | "uninitialized" | "stale" | "indexed" | "error";
+  summary: string;
+  updatedAt: string;
+  stats?: {
+    files: number;
+    nodes: number;
+    edges: number;
+    pendingChanges?: number;
+    dbSizeBytes?: number;
+    backend?: string;
+    journalMode?: string;
+  };
+};
+
 export type PluginTrustState = "bundled" | "verified" | "trusted" | "untrusted" | "disabled";
 
 export type PluginCapabilityRequest =

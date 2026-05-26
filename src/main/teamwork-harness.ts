@@ -673,6 +673,18 @@ Useful searches:
 If a previous task affects the current work, read that task record and mention
 its taskId in the current task's Work Summary or Notes For Future Agents.
 
+## Code Intelligence
+
+Use CodeGraph for precise structural code queries before broad file reads:
+- \`codegraph query <symbol-or-name>\`
+- \`codegraph callers <symbol>\`
+- \`codegraph callees <symbol>\`
+- \`codegraph impact <symbol>\`
+- \`codegraph affected <changed-files>\`
+
+Use \`codegraph context\` only for initial exploration when no clear symbol or
+file is known.
+
 ## When To Create Or Update A Task
 
 Create or update a SharkBay task file before performing a persistent

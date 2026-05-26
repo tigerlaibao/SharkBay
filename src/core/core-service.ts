@@ -6,6 +6,7 @@ import { resolveProjectUri } from "../main/path-safety.js";
 import type {
   IpcRuntimeLike,
   AgentCli,
+  CodeGraphProjectStatus,
   DiagnosticsSnapshot,
   InstallLogEvent,
   InstallLogStream,
@@ -45,6 +46,7 @@ import { ProfileOrchestrator } from "../profiles/profile-orchestrator.js";
 import { JobScheduler } from "./job-scheduler.js";
 import { ProfileCache } from "../storage/profile-cache.js";
 import { DiagnosticsCollector } from "./diagnostics.js";
+import { CodeGraphManager, isCodeGraphPlugin } from "./codegraph-manager.js";
 
 export type SharkBayCoreServiceEvents = {
   terminalData: [TerminalDataEvent];
@@ -60,6 +62,7 @@ export class SharkBayCoreService extends EventEmitter<SharkBayCoreServiceEvents>
   readonly profileCache: ProfileCache;
   readonly profiles: ProfileOrchestrator;
   readonly diagnostics: DiagnosticsCollector;
+  readonly codeGraph: CodeGraphManager;
   private readonly terminalProviders = new Map<string, ExecutionProvider>();
 
   constructor(providers: ExecutionProvider[] = [], pluginHost = createDefaultPluginHost()) {
@@ -69,6 +72,7 @@ export class SharkBayCoreService extends EventEmitter<SharkBayCoreServiceEvents>
     this.scheduler = new JobScheduler();
     this.profileCache = new ProfileCache();
     this.diagnostics = new DiagnosticsCollector();
+    this.codeGraph = new CodeGraphManager();
     this.profiles = new ProfileOrchestrator(this.providers, this.pluginHost, this.scheduler, this.profileCache, this.diagnostics);
     this.scheduler.on("update", (job) => this.diagnostics.recordJobUpdate(job));
     for (const provider of providers) {
@@ -255,6 +259,32 @@ export class SharkBayCoreService extends EventEmitter<SharkBayCoreServiceEvents>
 
   writeProjectFile(runtime: IpcRuntimeLike, input: WriteFileInput): Promise<WriteFileResult> {
     return this.providers.providerForUri(input.projectUri).writeProjectFile(runtime, input);
+  }
+
+  async readCodeGraphStatus(runtime: IpcRuntimeLike, input: { projectUri: string }): Promise<CodeGraphProjectStatus> {
+    return this.readCodeGraphProjectStatus(runtime, input, "read");
+  }
+
+  async ensureCodeGraphStatus(runtime: IpcRuntimeLike, input: { projectUri: string }): Promise<CodeGraphProjectStatus> {
+    return this.readCodeGraphProjectStatus(runtime, input, "ensure");
+  }
+
+  private async readCodeGraphProjectStatus(runtime: IpcRuntimeLike, input: { projectUri: string }, mode: "read" | "ensure"): Promise<CodeGraphProjectStatus> {
+    const enabled = this.pluginHost.listPlugins().find((plugin) => isCodeGraphPlugin(plugin.id))?.enabled ?? false;
+    const parsed = parseProjectUri(input.projectUri);
+    if (parsed.kind !== "local") {
+      return this.codeGraph.readProjectStatus(input.projectUri, enabled);
+    }
+    const config = await getConfiguredRoots(runtime);
+    const safeRepo = await resolveProjectUri(input.projectUri, config.configuredRoots, config.configuredProjects);
+    return mode === "ensure"
+      ? this.codeGraph.ensureProjectStatus(safeRepo.projectUri, enabled)
+      : this.codeGraph.readProjectStatus(safeRepo.projectUri, enabled);
+  }
+
+  removeCodeGraphIndexes(runtime: IpcRuntimeLike, input: { projectUris: string[] }): Promise<void> {
+    void runtime;
+    return this.codeGraph.removeProjectIndexes(input.projectUris);
   }
 
   readMachineProfile(runtime: IpcRuntimeLike, targetId: string, options?: ProfileReadOptions): Promise<MachineProfile> {

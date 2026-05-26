@@ -41,6 +41,7 @@ describe("PluginHost", () => {
     const ids = host.listPlugins().map((p) => p.id).sort();
     expect(ids).toEqual([
       "xyz.sharkbay.agents",
+      "xyz.sharkbay.codegraph",
       "xyz.sharkbay.core",
       "xyz.sharkbay.language.go",
       "xyz.sharkbay.language.java",

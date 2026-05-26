@@ -284,6 +284,22 @@ export type ProjectProfile = {
   warnings: ProfileWarning[];
 };
 
+export type CodeGraphProjectStatus = {
+  projectUri: string;
+  state: "disabled" | "unsupported" | "not-installed" | "uninitialized" | "stale" | "indexed" | "error";
+  summary: string;
+  updatedAt: string;
+  stats?: {
+    files: number;
+    nodes: number;
+    edges: number;
+    pendingChanges?: number;
+    dbSizeBytes?: number;
+    backend?: string;
+    journalMode?: string;
+  };
+};
+
 export type ProjectIconSource = {
   kind: "local" | "favicon";
   url: string;
@@ -612,6 +628,10 @@ export type SharkBayBridge = {
     listFiles?: (input: ProjectFilesInput) => Promise<ProjectFilesResult>;
     readFile?: (input: ReadFileInput) => Promise<ReadFileResult>;
     writeFile?: (input: WriteFileInput) => Promise<WriteFileResult>;
+  };
+  codeGraph?: {
+    getStatus?: (input: { projectUri: string }) => Promise<CodeGraphProjectStatus>;
+    ensureStatus?: (input: { projectUri: string }) => Promise<CodeGraphProjectStatus>;
   };
   terminal?: {
     create?: (input: TerminalCreateInput) => Promise<TerminalSession>;
