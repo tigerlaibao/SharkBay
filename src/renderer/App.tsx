@@ -3734,8 +3734,8 @@ function ExtensionsSettingsPanel({ active, setToast }: { active: boolean; setToa
               </div>
               <button
                 className={cx("button", "secondary", "compact")}
-                disabled={busyId === plugin.id || plugin.source === "bundled" && plugin.id === "com.sharkbay.core"}
-                title={plugin.source === "bundled" && plugin.id === "com.sharkbay.core" ? "Core plugin cannot be disabled" : undefined}
+                disabled={busyId === plugin.id || plugin.source === "bundled" && plugin.id === "xyz.sharkbay.core"}
+                title={plugin.source === "bundled" && plugin.id === "xyz.sharkbay.core" ? "Core plugin cannot be disabled" : undefined}
                 type="button"
                 onClick={() => void toggle(plugin)}
               >
