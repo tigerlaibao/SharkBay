@@ -700,7 +700,9 @@ export type UsageGroupRowView = {
   key: string;
   inputTokens: number;
   outputTokens: number;
+  cacheCreationTokens: number;
   cacheReadTokens: number;
+  totalInputTokens: number;
   costUsd: number | null;
 };
 
@@ -708,7 +710,14 @@ export type UsageReportResultView = {
   byProject: UsageGroupRowView[];
   byAgent: UsageGroupRowView[];
   byDay: UsageGroupRowView[];
-  totals: { inputTokens: number; outputTokens: number; cacheReadTokens: number; costUsd: number | null };
+  totals: {
+    inputTokens: number;
+    outputTokens: number;
+    cacheCreationTokens: number;
+    cacheReadTokens: number;
+    totalInputTokens: number;
+    costUsd: number | null;
+  };
 };
 
 export type PortForwardStatus = "starting" | "running" | "stopped" | "error";

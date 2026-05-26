@@ -834,7 +834,9 @@ export type UsageGroupRow = {
   key: string;
   inputTokens: number;
   outputTokens: number;
+  cacheCreationTokens: number;
   cacheReadTokens: number;
+  totalInputTokens: number;
   costUsd: number | null;
 };
 
@@ -842,5 +844,12 @@ export type UsageReportResult = {
   byProject: UsageGroupRow[];
   byAgent: UsageGroupRow[];
   byDay: UsageGroupRow[];
-  totals: { inputTokens: number; outputTokens: number; cacheReadTokens: number; costUsd: number | null };
+  totals: {
+    inputTokens: number;
+    outputTokens: number;
+    cacheCreationTokens: number;
+    cacheReadTokens: number;
+    totalInputTokens: number;
+    costUsd: number | null;
+  };
 };

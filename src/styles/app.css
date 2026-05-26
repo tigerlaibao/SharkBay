@@ -2578,6 +2578,7 @@ button.project-file-toggle:focus-visible {
 }
 .agent-clis-usage-summary {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -2645,10 +2646,12 @@ button.project-file-toggle:focus-visible {
   background: #ffffff;
   border: 1px solid #e8e4dc;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 .agent-clis-usage-table {
   width: 100%;
+  min-width: 520px;
   font-size: 12px;
   border-collapse: collapse;
 }
