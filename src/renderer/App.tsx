@@ -48,6 +48,7 @@ import {
   firstHttpUrl,
   projectTerminalActivityStates,
   resolveSelectedCandidate,
+  shouldEnsureCodeGraphForSelection,
   shouldKeepCurrentServiceUrl,
   shouldResetTerminalObservationForInput,
   terminalActivityAfterQuiet,
@@ -2154,8 +2155,9 @@ function ProjectDetailPane({ agentClis, detail, candidate, setToast, onRefresh, 
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>("git");
   const [codeGraphStatus, setCodeGraphStatus] = useState<CodeGraphStatusView>({ loading: false, status: null, error: null });
   const lastCodeGraphDirtyCount = useRef<{ projectUri: string; count: number } | null>(null);
-  const isGitManaged = detail ? detail.dirtyWorktree !== null : null;
-  const gitDirtyFileCount = detail ? detail.gitDirtyFiles?.length ?? 0 : null;
+  const currentDetail = detail?.uri === candidate.uri ? detail : null;
+  const isGitManaged = currentDetail ? currentDetail.dirtyWorktree !== null : null;
+  const gitDirtyFileCount = currentDetail ? currentDetail.gitDirtyFiles?.length ?? 0 : null;
   const visibleDetailTab = availableTabs.some((tab) => tab.id === activeDetailTab)
     ? activeDetailTab
     : availableTabs[0]?.id ?? "git";
@@ -2172,6 +2174,21 @@ function ProjectDetailPane({ agentClis, detail, candidate, setToast, onRefresh, 
       });
     return () => { cancelled = true; };
   }, [candidate.uri]);
+
+  useEffect(() => {
+    const statusState = codeGraphStatus.status?.state;
+    if (!statusState || !shouldEnsureCodeGraphForSelection({ providerKind: candidate.providerKind, isGitManaged, statusState })) return;
+    let cancelled = false;
+    setCodeGraphStatus((current) => ({ ...current, loading: true, error: null }));
+    void ensureCodeGraphStatus(candidate.uri)
+      .then((status) => {
+        if (!cancelled) setCodeGraphStatus({ loading: false, status, error: null });
+      })
+      .catch((error) => {
+        if (!cancelled) setCodeGraphStatus({ loading: false, status: null, error: asMessage(error) });
+      });
+    return () => { cancelled = true; };
+  }, [candidate.providerKind, candidate.uri, codeGraphStatus.status?.state, isGitManaged]);
 
   useEffect(() => {
     if (!isLocal || isGitManaged !== false) return;
