@@ -10,7 +10,7 @@ import { parseProjectUri } from "../core/project-uri.js";
 import { resolveProjectUri } from "./path-safety.js";
 import { createAskPassScript, sshArgsForRemoteMachine } from "./remote-machines.js";
 import { createDefaultSecretStore, type SecretStore } from "./secrets.js";
-import { prepareTeamworkAgentLaunch, TEAMWORK_BOOTSTRAP_PROMPT } from "./teamwork-harness.js";
+import { prepareTeamworkAgentLaunch } from "./teamwork-harness.js";
 import type {
   IpcRuntimeLike,
   RemoteMachine,
@@ -101,9 +101,11 @@ export class TerminalManager extends EventEmitter<TerminalManagerEvents> {
     const initialCommandTitle = initialCommand ? normalizeTerminalCommandLine(input.initialCommandTitle) : null;
     let delayedBootstrapPrompt: string | null = null;
     if (!spec.isRemote && input.agentId && initialCommand && !input.service) {
-      const launch = await prepareTeamworkAgentLaunch(spec.projectRoot, input.agentId, initialCommand);
+      const launch = await prepareTeamworkAgentLaunch(spec.projectRoot, input.agentId, initialCommand, {
+        codeGraphEnabled: input.teamworkBootstrap?.codeGraphEnabled ?? false,
+      });
       if (launch.injected && (input.agentId === "deepseek" || input.agentId === "opencode") && launch.initialCommand === initialCommand) {
-        delayedBootstrapPrompt = TEAMWORK_BOOTSTRAP_PROMPT;
+        delayedBootstrapPrompt = launch.bootstrapPrompt ?? null;
       }
       initialCommand = launch.initialCommand;
     }

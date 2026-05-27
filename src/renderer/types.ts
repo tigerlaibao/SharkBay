@@ -415,6 +415,7 @@ export type TerminalCreateInput = {
   initialCommandTitle?: string;
   agentId?: string;
   service?: { id: string; label: string; command: string };
+  teamworkBootstrap?: { codeGraphEnabled?: boolean };
   cols?: number;
   rows?: number;
 };

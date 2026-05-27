@@ -269,8 +269,12 @@ export class SharkBayCoreService extends EventEmitter<SharkBayCoreServiceEvents>
     return this.readCodeGraphProjectStatus(runtime, input, "ensure");
   }
 
+  private isCodeGraphPluginEnabled(): boolean {
+    return this.pluginHost.listPlugins().find((plugin) => isCodeGraphPlugin(plugin.id))?.enabled ?? false;
+  }
+
   private async readCodeGraphProjectStatus(runtime: IpcRuntimeLike, input: { projectUri: string }, mode: "read" | "ensure"): Promise<CodeGraphProjectStatus> {
-    const enabled = this.pluginHost.listPlugins().find((plugin) => isCodeGraphPlugin(plugin.id))?.enabled ?? false;
+    const enabled = this.isCodeGraphPluginEnabled();
     const parsed = parseProjectUri(input.projectUri);
     if (parsed.kind !== "local") {
       return this.codeGraph.readProjectStatus(input.projectUri, enabled);
@@ -314,7 +318,13 @@ export class SharkBayCoreService extends EventEmitter<SharkBayCoreServiceEvents>
 
   async createTerminal(runtime: IpcRuntimeLike, input: TerminalCreateInput): Promise<TerminalSession> {
     const provider = this.providers.providerForUri(input.cwdUri);
-    const session = await provider.createTerminal(runtime, input);
+    const session = await provider.createTerminal(runtime, {
+      ...input,
+      teamworkBootstrap: {
+        ...input.teamworkBootstrap,
+        codeGraphEnabled: this.isCodeGraphPluginEnabled(),
+      },
+    });
     this.terminalProviders.set(session.id, provider);
     return session;
   }
