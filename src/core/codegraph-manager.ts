@@ -131,12 +131,14 @@ export class CodeGraphManager {
     if (codegraphPath) {
       try {
         await this.runCommand(codegraphPath, ["uninit", "-f", parsed.path], { cwd: parsed.path, timeout: 60_000 });
-        return;
       } catch {
         // Fall through to direct cleanup so disabling the extension still removes local state.
+        await fs.rm(path.join(parsed.path, ".codegraph"), { recursive: true, force: true });
       }
+    } else {
+      await fs.rm(path.join(parsed.path, ".codegraph"), { recursive: true, force: true });
     }
-    await fs.rm(path.join(parsed.path, ".codegraph"), { recursive: true, force: true });
+    await removeGitignoreEntry(parsed.path, ".codegraph").catch(() => {});
   }
 }
 
@@ -210,4 +212,13 @@ export async function ensureGitignoreEntry(projectPath: string, entry: string): 
     }
     throw error;
   }
+}
+
+export async function removeGitignoreEntry(projectPath: string, entry: string): Promise<void> {
+  const gitignorePath = path.join(projectPath, ".gitignore");
+  const content = await fs.readFile(gitignorePath, "utf-8");
+  const lines = content.split("\n");
+  const filtered = lines.filter((line) => line.trim() !== entry && line.trim() !== `${entry}/`);
+  if (filtered.length === lines.length) return;
+  await fs.writeFile(gitignorePath, filtered.join("\n"), "utf-8");
 }
