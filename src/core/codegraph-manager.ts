@@ -98,6 +98,7 @@ export class CodeGraphManager {
           return status(projectUri, "uninitialized", "CodeGraph not initialized");
         }
         await this.runCommand(codegraphPath, ["init", "-i", parsed.path], { cwd: parsed.path, timeout: 120_000 });
+        await ensureGitignoreEntry(parsed.path, ".codegraph").catch(() => {});
         current = await this.readStatusJson(codegraphPath, parsed.path);
       }
       if (current.initialized && pendingChangeCount(current) > 0) {
@@ -192,4 +193,21 @@ function status(
     updatedAt: new Date().toISOString(),
     ...(stats ? { stats } : {}),
   };
+}
+
+export async function ensureGitignoreEntry(projectPath: string, entry: string): Promise<void> {
+  const gitignorePath = path.join(projectPath, ".gitignore");
+  try {
+    const content = await fs.readFile(gitignorePath, "utf-8");
+    const lines = content.split("\n");
+    if (lines.some((line) => line.trim() === entry || line.trim() === `${entry}/`)) return;
+    const separator = content.length > 0 && !content.endsWith("\n") ? "\n" : "";
+    await fs.writeFile(gitignorePath, `${content}${separator}${entry}\n`, "utf-8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      await fs.writeFile(gitignorePath, `${entry}\n`, "utf-8");
+      return;
+    }
+    throw error;
+  }
 }
